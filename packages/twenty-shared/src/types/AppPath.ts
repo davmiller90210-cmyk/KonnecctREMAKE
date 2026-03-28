@@ -30,6 +30,7 @@ export enum AppPath {
   DevelopersCatchAll = `/${Developers}/*`,
 
   Authorize = '/authorize',
+  Chat = '/chat',
 
   // 404 page not found
   NotFoundWildcard = '*',

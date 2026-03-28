@@ -46,6 +46,12 @@ const Authorize = lazy(() =>
   })),
 );
 
+const ChatModule = lazy(() =>
+  import('~/modules/chat/components/ChatModule').then((module) => ({
+    default: module.ChatModule,
+  })),
+);
+
 const CreateWorkspace = lazy(() =>
   import('~/pages/onboarding/CreateWorkspace').then((module) => ({
     default: module.CreateWorkspace,
@@ -209,6 +215,14 @@ export const useCreateAppRouter = (
             element={
               <LazyRoute>
                 <RecordIndexPage />
+              </LazyRoute>
+            }
+          />
+          <Route
+            path={AppPath.Chat}
+            element={
+              <LazyRoute>
+                <ChatModule />
               </LazyRoute>
             }
           />

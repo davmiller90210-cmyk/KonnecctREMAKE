@@ -23,6 +23,12 @@ const WorkspaceSectionDispatcher = lazy(() =>
   })),
 );
 
+import { AppPath } from 'twenty-shared/types';
+import { IconMessage2 } from 'twenty-ui/display';
+import { NavigationDrawerItem } from '@/ui/navigation/navigation-drawer/components/NavigationDrawerItem';
+import { useLingui } from '@lingui/react/macro';
+import { useLocation } from 'react-router-dom';
+
 const StyledScrollableItemsContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -37,6 +43,12 @@ export const MainNavigationDrawerScrollableItems = () => {
         <FavoritesSectionDispatcher />
         <WorkspaceSectionDispatcher />
       </Suspense>
+      <NavigationDrawerItem
+        label={t`Chat`}
+        to={AppPath.Chat}
+        Icon={IconMessage2}
+        active={useLocation().pathname === AppPath.Chat}
+      />
       <NavigationDrawerOtherSection />
     </StyledScrollableItemsContainer>
   );
