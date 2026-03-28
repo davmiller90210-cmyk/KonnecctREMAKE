@@ -36,6 +36,9 @@ const StyledScrollableItemsContainer = styled.div`
 `;
 
 export const MainNavigationDrawerScrollableItems = () => {
+  const { t } = useLingui();
+  const location = useLocation();
+
   return (
     <StyledScrollableItemsContainer>
       <NavigationDrawerOpenedSection />
@@ -47,7 +50,7 @@ export const MainNavigationDrawerScrollableItems = () => {
         label={t`Chat`}
         to={AppPath.Chat}
         Icon={IconMessage2}
-        active={useLocation().pathname === AppPath.Chat}
+        active={location.pathname === AppPath.Chat}
       />
       <NavigationDrawerOtherSection />
     </StyledScrollableItemsContainer>
