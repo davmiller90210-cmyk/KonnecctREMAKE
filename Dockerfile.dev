@@ -1,0 +1,25 @@
+FROM node:24-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache python3 make g++ bash
+
+COPY .yarn .yarn
+COPY .yarnrc.yml package.json yarn.lock ./
+
+RUN yarn install 2>&1 || true
+
+COPY . .
+
+EXPOSE 3000 5173
+
+ENV NODE_ENV=development \
+    PG_DATABASE_URL=postgres://postgres:postgres@host.docker.internal:5432/default \
+    REDIS_URL=redis://host.docker.internal:6379 \
+    SERVER_URL=http://localhost:3000 \
+    APP_SECRET=dev-secret-key \
+    VITE_API_BASE_URL=http://localhost:3000
+
+WORKDIR /app/packages/twenty-front
+
+CMD ["sh", "-c", "npx vite --host 0.0.0.0 & cd /app/packages/twenty-server && npx ts-node --esm src/main.ts"]

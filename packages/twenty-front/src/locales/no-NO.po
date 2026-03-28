@@ -15,7 +15,7 @@ msgstr ""
 "X-Crowdin-Project: cf448e737e0d6d7b78742f963d761c61\n"
 "X-Crowdin-Project-ID: 1\n"
 "X-Crowdin-Language: no\n"
-"X-Crowdin-File: /packages/twenty-front/src/locales/en.po\n"
+"X-Crowdin-File: /packages/Konnecct-front/src/locales/en.po\n"
 "X-Crowdin-File-ID: 29\n"
 
 #. js-lingui-id: lndIq/
@@ -2522,8 +2522,8 @@ msgstr "av {author}"
 
 #. js-lingui-id: 8Pfllj
 #: src/modules/auth/sign-in-up/components/FooterNote.tsx
-msgid "By using Twenty, you agree to the"
-msgstr "Ved å bruke Twenty, samtykker du til"
+msgid "By using Konnecct, you agree to the"
+msgstr "Ved å bruke Konnecct, samtykker du til"
 
 #. js-lingui-id: Yx41df
 #: src/modules/auth/sign-in-up/components/FooterNote.tsx
@@ -2857,8 +2857,8 @@ msgstr "Sjekk innboksen for å bekrefte den nye e-postadressen din."
 
 #. js-lingui-id: SxwQE8
 #: src/modules/settings/billing/hooks/useHandleCheckoutSession.ts
-msgid "Checkout session error. Please retry or contact Twenty team"
-msgstr "Feil ved utsjekkingsøkt. Prøv igjen eller kontakt Twenty-teamet"
+msgid "Checkout session error. Please retry or contact Konnecct team"
+msgstr "Feil ved utsjekkingsøkt. Prøv igjen eller kontakt Konnecct-teamet"
 
 #. js-lingui-id: SviKkE
 #: src/pages/settings/profile/appearance/components/LocalePicker.tsx
@@ -5985,8 +5985,8 @@ msgstr "Feil under avbrytelse av planbytte."
 
 #. js-lingui-id: QmR+2U
 #: src/modules/settings/billing/hooks/useEndSubscriptionTrialPeriod.ts
-msgid "Error while ending trial period. Please contact Twenty team."
-msgstr "Feil ved avslutning av prøveperiode. Vennligst kontakt Twenty-teamet."
+msgid "Error while ending trial period. Please contact Konnecct team."
+msgstr "Feil ved avslutning av prøveperiode. Vennligst kontakt Konnecct-teamet."
 
 #. js-lingui-id: 5g78zo
 #: src/pages/settings/members/SettingsWorkspaceMember.tsx
@@ -10809,8 +10809,8 @@ msgstr "Sidenavn"
 
 #. js-lingui-id: NRvxzv
 #: src/pages/not-found/NotFound.tsx
-msgid "Page Not Found | Twenty"
-msgstr "Siden ble ikke funnet | Twenty"
+msgid "Page Not Found | Konnecct"
+msgstr "Siden ble ikke funnet | Konnecct"
 
 #. js-lingui-id: sF+Xp9
 #: src/pages/settings/security/event-logs/components/EventLogTableSelector.tsx
@@ -11497,8 +11497,8 @@ msgstr "Les profilen din"
 
 #. js-lingui-id: tCXcL7
 #: src/pages/settings/ai/SettingsAIPrompts.tsx
-msgid "Read-only — managed by Twenty"
-msgstr "Skrivebeskyttet — administrert av Twenty"
+msgid "Read-only — managed by Konnecct"
+msgstr "Skrivebeskyttet — administrert av Konnecct"
 
 #. js-lingui-id: W+ApAD
 #: src/modules/workflow/workflow-steps/workflow-actions/components/WorkflowEditActionEmailBase.tsx
@@ -13793,8 +13793,8 @@ msgstr "Synk med Outlook"
 
 #. js-lingui-id: +9x4tK
 #: src/pages/onboarding/SyncEmails.tsx
-msgid "Sync your Emails and Calendar with Twenty. Choose your privacy settings."
-msgstr "Synkroniser e-postene og kalenderen din med Twenty. Velg personverninnstillinger."
+msgid "Sync your Emails and Calendar with Konnecct. Choose your privacy settings."
+msgstr "Synkroniser e-postene og kalenderen din med Konnecct. Velg personverninnstillinger."
 
 #. js-lingui-id: N2FcBE
 #: src/modules/settings/accounts/components/SettingsAccountsConnectedAccountsRowRightContainer.tsx
@@ -14712,8 +14712,8 @@ msgstr "Turkis"
 
 #. js-lingui-id: JnaRPe
 #: src/modules/spreadsheet-import/steps/components/MatchColumnsStep/components/ColumnGrid.tsx
-msgid "Twenty fields"
-msgstr "Twenty-felter"
+msgid "Konnecct fields"
+msgstr "Konnecct-felter"
 
 #. js-lingui-id: YIjS4q
 #: src/pages/settings/ai/components/SettingsAgentModelCapabilities.tsx
@@ -15759,8 +15759,8 @@ msgstr ""
 
 #. js-lingui-id: nTuObL
 #: src/pages/auth/SignInUp.tsx
-msgid "Welcome to Twenty"
-msgstr "Velkommen til Twenty"
+msgid "Welcome to Konnecct"
+msgstr "Velkommen til Konnecct"
 
 #. js-lingui-id: t8ZvkC
 #: src/pages/auth/SignInUp.tsx

@@ -2517,7 +2517,7 @@ msgstr ""
 
 #. js-lingui-id: 8Pfllj
 #: src/modules/auth/sign-in-up/components/FooterNote.tsx
-msgid "By using Twenty, you agree to the"
+msgid "By using Konnecct, you agree to the"
 msgstr ""
 
 #. js-lingui-id: Yx41df
@@ -2852,7 +2852,7 @@ msgstr ""
 
 #. js-lingui-id: SxwQE8
 #: src/modules/settings/billing/hooks/useHandleCheckoutSession.ts
-msgid "Checkout session error. Please retry or contact Twenty team"
+msgid "Checkout session error. Please retry or contact Konnecct team"
 msgstr ""
 
 #. js-lingui-id: SviKkE
@@ -5980,7 +5980,7 @@ msgstr ""
 
 #. js-lingui-id: QmR+2U
 #: src/modules/settings/billing/hooks/useEndSubscriptionTrialPeriod.ts
-msgid "Error while ending trial period. Please contact Twenty team."
+msgid "Error while ending trial period. Please contact Konnecct team."
 msgstr ""
 
 #. js-lingui-id: 5g78zo
@@ -10804,7 +10804,7 @@ msgstr ""
 
 #. js-lingui-id: NRvxzv
 #: src/pages/not-found/NotFound.tsx
-msgid "Page Not Found | Twenty"
+msgid "Page Not Found | Konnecct"
 msgstr ""
 
 #. js-lingui-id: sF+Xp9
@@ -11492,7 +11492,7 @@ msgstr ""
 
 #. js-lingui-id: tCXcL7
 #: src/pages/settings/ai/SettingsAIPrompts.tsx
-msgid "Read-only — managed by Twenty"
+msgid "Read-only — managed by Konnecct"
 msgstr ""
 
 #. js-lingui-id: W+ApAD
@@ -13788,7 +13788,7 @@ msgstr ""
 
 #. js-lingui-id: +9x4tK
 #: src/pages/onboarding/SyncEmails.tsx
-msgid "Sync your Emails and Calendar with Twenty. Choose your privacy settings."
+msgid "Sync your Emails and Calendar with Konnecct. Choose your privacy settings."
 msgstr ""
 
 #. js-lingui-id: N2FcBE
@@ -14707,7 +14707,7 @@ msgstr ""
 
 #. js-lingui-id: JnaRPe
 #: src/modules/spreadsheet-import/steps/components/MatchColumnsStep/components/ColumnGrid.tsx
-msgid "Twenty fields"
+msgid "Konnecct fields"
 msgstr ""
 
 #. js-lingui-id: YIjS4q
@@ -15752,7 +15752,7 @@ msgstr ""
 
 #. js-lingui-id: nTuObL
 #: src/pages/auth/SignInUp.tsx
-msgid "Welcome to Twenty"
+msgid "Welcome to Konnecct"
 msgstr ""
 
 #. js-lingui-id: t8ZvkC

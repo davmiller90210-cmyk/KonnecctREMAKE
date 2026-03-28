@@ -15,7 +15,7 @@ msgstr ""
 "X-Crowdin-Project: cf448e737e0d6d7b78742f963d761c61\n"
 "X-Crowdin-Project-ID: 1\n"
 "X-Crowdin-Language: pt\n"
-"X-Crowdin-File: /packages/twenty-front/src/locales/en.po\n"
+"X-Crowdin-File: /packages/Konnecct-front/src/locales/en.po\n"
 "X-Crowdin-File-ID: 29\n"
 
 #. js-lingui-id: lndIq/
@@ -2522,8 +2522,8 @@ msgstr "por {author}"
 
 #. js-lingui-id: 8Pfllj
 #: src/modules/auth/sign-in-up/components/FooterNote.tsx
-msgid "By using Twenty, you agree to the"
-msgstr "Ao utilizar o Twenty, concorda com a"
+msgid "By using Konnecct, you agree to the"
+msgstr "Ao utilizar o Konnecct, concorda com a"
 
 #. js-lingui-id: Yx41df
 #: src/modules/auth/sign-in-up/components/FooterNote.tsx
@@ -2857,8 +2857,8 @@ msgstr "Verifique a sua caixa de entrada para confirmar o seu novo endereço de 
 
 #. js-lingui-id: SxwQE8
 #: src/modules/settings/billing/hooks/useHandleCheckoutSession.ts
-msgid "Checkout session error. Please retry or contact Twenty team"
-msgstr "Erro na sessão de checkout. Por favor, tente novamente ou entre em contato com a equipe da Twenty"
+msgid "Checkout session error. Please retry or contact Konnecct team"
+msgstr "Erro na sessão de checkout. Por favor, tente novamente ou entre em contato com a equipe da Konnecct"
 
 #. js-lingui-id: SviKkE
 #: src/pages/settings/profile/appearance/components/LocalePicker.tsx
@@ -5985,8 +5985,8 @@ msgstr "Erro ao cancelar a mudança de plano."
 
 #. js-lingui-id: QmR+2U
 #: src/modules/settings/billing/hooks/useEndSubscriptionTrialPeriod.ts
-msgid "Error while ending trial period. Please contact Twenty team."
-msgstr "Erro ao encerrar o período de avaliação. Por favor, entre em contato com a equipe Twenty."
+msgid "Error while ending trial period. Please contact Konnecct team."
+msgstr "Erro ao encerrar o período de avaliação. Por favor, entre em contato com a equipe Konnecct."
 
 #. js-lingui-id: 5g78zo
 #: src/pages/settings/members/SettingsWorkspaceMember.tsx
@@ -10809,8 +10809,8 @@ msgstr "Nome da página"
 
 #. js-lingui-id: NRvxzv
 #: src/pages/not-found/NotFound.tsx
-msgid "Page Not Found | Twenty"
-msgstr "Página não encontrada | Twenty"
+msgid "Page Not Found | Konnecct"
+msgstr "Página não encontrada | Konnecct"
 
 #. js-lingui-id: sF+Xp9
 #: src/pages/settings/security/event-logs/components/EventLogTableSelector.tsx
@@ -11497,8 +11497,8 @@ msgstr "Ler o seu perfil"
 
 #. js-lingui-id: tCXcL7
 #: src/pages/settings/ai/SettingsAIPrompts.tsx
-msgid "Read-only — managed by Twenty"
-msgstr "Só de leitura — gerido pela Twenty"
+msgid "Read-only — managed by Konnecct"
+msgstr "Só de leitura — gerido pela Konnecct"
 
 #. js-lingui-id: W+ApAD
 #: src/modules/workflow/workflow-steps/workflow-actions/components/WorkflowEditActionEmailBase.tsx
@@ -13793,8 +13793,8 @@ msgstr "Sincronizar com o Outlook"
 
 #. js-lingui-id: +9x4tK
 #: src/pages/onboarding/SyncEmails.tsx
-msgid "Sync your Emails and Calendar with Twenty. Choose your privacy settings."
-msgstr "Sincronize os seus E-mails e o Calendário com o Twenty. Escolha as suas definições de privacidade."
+msgid "Sync your Emails and Calendar with Konnecct. Choose your privacy settings."
+msgstr "Sincronize os seus E-mails e o Calendário com o Konnecct. Escolha as suas definições de privacidade."
 
 #. js-lingui-id: N2FcBE
 #: src/modules/settings/accounts/components/SettingsAccountsConnectedAccountsRowRightContainer.tsx
@@ -14712,8 +14712,8 @@ msgstr "Turquesa"
 
 #. js-lingui-id: JnaRPe
 #: src/modules/spreadsheet-import/steps/components/MatchColumnsStep/components/ColumnGrid.tsx
-msgid "Twenty fields"
-msgstr "Campos do Twenty"
+msgid "Konnecct fields"
+msgstr "Campos do Konnecct"
 
 #. js-lingui-id: YIjS4q
 #: src/pages/settings/ai/components/SettingsAgentModelCapabilities.tsx
@@ -15759,8 +15759,8 @@ msgstr ""
 
 #. js-lingui-id: nTuObL
 #: src/pages/auth/SignInUp.tsx
-msgid "Welcome to Twenty"
-msgstr "Bem-vindo ao Twenty"
+msgid "Welcome to Konnecct"
+msgstr "Bem-vindo ao Konnecct"
 
 #. js-lingui-id: t8ZvkC
 #: src/pages/auth/SignInUp.tsx

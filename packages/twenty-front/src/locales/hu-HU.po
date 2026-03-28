@@ -15,7 +15,7 @@ msgstr ""
 "X-Crowdin-Project: cf448e737e0d6d7b78742f963d761c61\n"
 "X-Crowdin-Project-ID: 1\n"
 "X-Crowdin-Language: hu\n"
-"X-Crowdin-File: /packages/twenty-front/src/locales/en.po\n"
+"X-Crowdin-File: /packages/Konnecct-front/src/locales/en.po\n"
 "X-Crowdin-File-ID: 29\n"
 
 #. js-lingui-id: lndIq/
@@ -2522,8 +2522,8 @@ msgstr "készítette: {author}"
 
 #. js-lingui-id: 8Pfllj
 #: src/modules/auth/sign-in-up/components/FooterNote.tsx
-msgid "By using Twenty, you agree to the"
-msgstr "A Twenty használatával elfogadja a"
+msgid "By using Konnecct, you agree to the"
+msgstr "A Konnecct használatával elfogadja a"
 
 #. js-lingui-id: Yx41df
 #: src/modules/auth/sign-in-up/components/FooterNote.tsx
@@ -2857,8 +2857,8 @@ msgstr "Ellenőrizze a beérkező leveleit az új e-mail-cím megerősítéséhe
 
 #. js-lingui-id: SxwQE8
 #: src/modules/settings/billing/hooks/useHandleCheckoutSession.ts
-msgid "Checkout session error. Please retry or contact Twenty team"
-msgstr "Fizetési munkamenet hiba. Kérem, próbálja újra, vagy vegye fel a kapcsolatot a Twenty csapatával"
+msgid "Checkout session error. Please retry or contact Konnecct team"
+msgstr "Fizetési munkamenet hiba. Kérem, próbálja újra, vagy vegye fel a kapcsolatot a Konnecct csapatával"
 
 #. js-lingui-id: SviKkE
 #: src/pages/settings/profile/appearance/components/LocalePicker.tsx
@@ -5985,8 +5985,8 @@ msgstr "Hiba a csomagváltás törlésekor."
 
 #. js-lingui-id: QmR+2U
 #: src/modules/settings/billing/hooks/useEndSubscriptionTrialPeriod.ts
-msgid "Error while ending trial period. Please contact Twenty team."
-msgstr "Hiba a próbaidőszak befejezésekor. Kérjük, vegye fel a kapcsolatot a Twenty csapatával."
+msgid "Error while ending trial period. Please contact Konnecct team."
+msgstr "Hiba a próbaidőszak befejezésekor. Kérjük, vegye fel a kapcsolatot a Konnecct csapatával."
 
 #. js-lingui-id: 5g78zo
 #: src/pages/settings/members/SettingsWorkspaceMember.tsx
@@ -10809,8 +10809,8 @@ msgstr "Oldal neve"
 
 #. js-lingui-id: NRvxzv
 #: src/pages/not-found/NotFound.tsx
-msgid "Page Not Found | Twenty"
-msgstr "Az oldal nem található | Twenty"
+msgid "Page Not Found | Konnecct"
+msgstr "Az oldal nem található | Konnecct"
 
 #. js-lingui-id: sF+Xp9
 #: src/pages/settings/security/event-logs/components/EventLogTableSelector.tsx
@@ -11497,8 +11497,8 @@ msgstr "Profiljának megtekintése"
 
 #. js-lingui-id: tCXcL7
 #: src/pages/settings/ai/SettingsAIPrompts.tsx
-msgid "Read-only — managed by Twenty"
-msgstr "Csak olvasható — a Twenty kezeli"
+msgid "Read-only — managed by Konnecct"
+msgstr "Csak olvasható — a Konnecct kezeli"
 
 #. js-lingui-id: W+ApAD
 #: src/modules/workflow/workflow-steps/workflow-actions/components/WorkflowEditActionEmailBase.tsx
@@ -13793,8 +13793,8 @@ msgstr "Szinkronizálás az Outlook-kal"
 
 #. js-lingui-id: +9x4tK
 #: src/pages/onboarding/SyncEmails.tsx
-msgid "Sync your Emails and Calendar with Twenty. Choose your privacy settings."
-msgstr "Szinkronizálja e-mailjeit és naptárát a Twenty-vel. Válassza ki az adatvédelmi beállításait."
+msgid "Sync your Emails and Calendar with Konnecct. Choose your privacy settings."
+msgstr "Szinkronizálja e-mailjeit és naptárát a Konnecct-vel. Válassza ki az adatvédelmi beállításait."
 
 #. js-lingui-id: N2FcBE
 #: src/modules/settings/accounts/components/SettingsAccountsConnectedAccountsRowRightContainer.tsx
@@ -14712,8 +14712,8 @@ msgstr "Türkiz"
 
 #. js-lingui-id: JnaRPe
 #: src/modules/spreadsheet-import/steps/components/MatchColumnsStep/components/ColumnGrid.tsx
-msgid "Twenty fields"
-msgstr "Twenty mezők"
+msgid "Konnecct fields"
+msgstr "Konnecct mezők"
 
 #. js-lingui-id: YIjS4q
 #: src/pages/settings/ai/components/SettingsAgentModelCapabilities.tsx
@@ -15759,8 +15759,8 @@ msgstr ""
 
 #. js-lingui-id: nTuObL
 #: src/pages/auth/SignInUp.tsx
-msgid "Welcome to Twenty"
-msgstr "Üdvözöljük a Twentyben"
+msgid "Welcome to Konnecct"
+msgstr "Üdvözöljük a Konnecctben"
 
 #. js-lingui-id: t8ZvkC
 #: src/pages/auth/SignInUp.tsx

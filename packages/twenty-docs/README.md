@@ -1,25 +1,25 @@
-# Twenty Documentation
+# Konnecct Documentation
 
-Official documentation for Twenty CRM, powered by [Mintlify](https://mintlify.com).
+Official documentation for Konnecct CRM, powered by [Mintlify](https://mintlify.com).
 
 ## 🌐 Live Site
 
-Visit the documentation at [docs.twenty.com](https://docs.twenty.com)
+Visit the documentation at [docs.Konnecct.com](https://docs.Konnecct.com)
 
 ## 📚 Content
 
 This repository contains:
-- **User Guide** (46 pages) - Complete guide for Twenty users
+- **User Guide** (46 pages) - Complete guide for Konnecct users
 - **Developers** (24 pages) - Technical documentation for developers
-- **Twenty UI** (25 pages) - UI component library documentation
+- **Konnecct UI** (25 pages) - UI component library documentation
 
 ## 🚀 Local Development
 
 To run the documentation locally:
 
 ```bash
-# From the twenty monorepo root
-npx nx run twenty-docs:dev
+# From the Konnecct monorepo root
+npx nx run Konnecct-docs:dev
 ```
 
 The documentation will be available at `http://localhost:3000`
@@ -31,11 +31,11 @@ The documentation will be available at `http://localhost:3000`
 1. Edit MDX files in the appropriate directory:
    - `user-guide/` - User documentation
    - `developers/` - Developer documentation
-   - `twenty-ui/` - Component documentation
+   - `Konnecct-ui/` - Component documentation
 
 2. Update `navigation/base-structure.json` if you need to change the tab/group hierarchy or add/remove pages. This file stays in the repo and is **not** uploaded to Crowdin.
 3. Keep the translation template (`navigation/navigation.template.json`) in sync by running `yarn docs:generate-navigation-template` after editing the base structure. This template is the only file that should be pushed to Crowdin.
-4. For each translated locale pulled from Crowdin, ensure a `packages/twenty-docs/l/<language>/navigation.json` file exists. These files contain **labels only**; page slugs always come from the base structure.
+4. For each translated locale pulled from Crowdin, ensure a `packages/Konnecct-docs/l/<language>/navigation.json` file exists. These files contain **labels only**; page slugs always come from the base structure.
 5. Run `yarn docs:generate` to rebuild `docs.json` from the base structure + translated labels.
 
 ### MDX Format
@@ -76,13 +76,13 @@ Your content here...
 
 ```bash
 # Build the documentation
-npx nx run twenty-docs:build
+npx nx run Konnecct-docs:build
 ```
 
 ## 🔗 Links
 
-- [Twenty Website](https://twenty.com)
-- [GitHub Repository](https://github.com/twentyhq/twenty)
+- [Konnecct Website](https://Konnecct.com)
+- [GitHub Repository](https://github.com/Konneccthq/Konnecct)
 - [Mintlify Documentation](https://mintlify.com/docs)
 
 ## 🤝 Contributing
@@ -90,11 +90,11 @@ npx nx run twenty-docs:build
 To contribute to the documentation:
 
 1. Fork the repository
-2. Make your changes in the `packages/twenty-docs` directory
-3. Test locally with `npx nx run twenty-docs:dev`
+2. Make your changes in the `packages/Konnecct-docs` directory
+3. Test locally with `npx nx run Konnecct-docs:dev`
 4. Submit a pull request
 
 ## 📄 License
 
-This documentation is part of the Twenty project and is licensed under [AGPL-3.0](../../LICENSE).
+This documentation is part of the Konnecct project and is licensed under [AGPL-3.0](../../LICENSE).
 
