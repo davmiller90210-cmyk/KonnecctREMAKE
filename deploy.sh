@@ -15,9 +15,17 @@ if ! [ -x "$(command -v docker)" ]; then
 fi
 
 # Install system dependencies (required for node-canvas / high-end UI components)
-echo "📦 Installing system dependencies (Cairo, Pango, SVG, etc.)..."
+echo "📦 Installing system dependencies (Cairo, Pango, SVG, Deno, etc.)..."
 sudo apt-get update
 sudo apt-get install -y build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
+
+if ! [ -x "$(command -v deno)" ]; then
+  echo "Installing Deno (required for Rocket.Chat Apps-Engine)..."
+  curl -fsSL https://deno.land/install.sh | sh
+  # Add to path for current session
+  export DENO_INSTALL="$HOME/.deno"
+  export PATH="$DENO_INSTALL/bin:$PATH"
+fi
 
 if ! [ -x "$(command -v meteor)" ]; then
   echo "Installing Meteor (required for Chat building)..."
