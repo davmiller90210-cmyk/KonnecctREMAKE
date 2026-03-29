@@ -65,6 +65,12 @@ npx nx run-many -t build -p twenty-shared twenty-ui twenty-front
 echo "🚀 Building Rocket.Chat Bundle (Meteor)..."
 cd ../Rocket.Chat
 yarn install
+
+# Fix broken i18n symlinks (common in copied repos)
+echo "🌐 Syncing Translations..."
+mkdir -p apps/meteor/packages/rocketchat-i18n/i18n
+cp -r packages/i18n/src/locales/*.i18n.json apps/meteor/packages/rocketchat-i18n/i18n/ 2>/dev/null || true
+
 cd apps/meteor
 meteor build --server-only --directory .
 cd ../../KonnecctREMAKE
