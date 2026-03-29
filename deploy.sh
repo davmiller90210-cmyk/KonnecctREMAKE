@@ -14,6 +14,11 @@ if ! [ -x "$(command -v docker)" ]; then
   sh get-docker.sh
 fi
 
+# 1.5 Install System Dependencies (req. for canvas/node-canvas)
+echo "📦 Installing system dependencies (Cairo, Pango, SVG)..."
+sudo apt-get update
+sudo apt-get install -y build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
+
 # 2. Setup SSL directories
 mkdir -p ./nginx/certbot-etc ./nginx/certbot-www
 
