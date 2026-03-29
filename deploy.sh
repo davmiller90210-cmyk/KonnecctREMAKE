@@ -14,6 +14,11 @@ if ! [ -x "$(command -v docker)" ]; then
   sh get-docker.sh
 fi
 
+# Install system dependencies (required for node-canvas / high-end UI components)
+echo "📦 Installing system dependencies (Cairo, Pango, SVG, etc.)..."
+sudo apt-get update
+sudo apt-get install -y build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
+
 if ! [ -x "$(command -v meteor)" ]; then
   echo "Installing Meteor (required for Chat building)..."
   curl https://install.meteor.com/ | sh
@@ -61,10 +66,11 @@ echo "📦 Building Monorepo dependencies..."
 yarn install
 npx nx run-many -t build -p twenty-shared twenty-ui twenty-front
 
-# 4.5 Build Rocket.Chat Bundle
-echo "🚀 Building Rocket.Chat Bundle (Meteor)..."
+# 4.5 Build Rocket.Chat Mono-repo (Livechat, i18n, etc.)
+echo "🚀 Building Rocket.Chat Sub-packages (Turbo)..."
 cd ../Rocket.Chat
 yarn install
+yarn build
 
 # Fix broken i18n symlinks (common in copied repos)
 echo "🌐 Syncing Translations..."
@@ -72,6 +78,7 @@ rm -rf apps/meteor/packages/rocketchat-i18n/i18n
 mkdir -p apps/meteor/packages/rocketchat-i18n/i18n
 cp -r packages/i18n/src/locales/*.i18n.json apps/meteor/packages/rocketchat-i18n/i18n/ 2>/dev/null || true
 
+echo "🚢 Building Rocket.Chat Bundle (Meteor)..."
 cd apps/meteor
 meteor build --server-only --directory .
 cd ../../KonnecctREMAKE
