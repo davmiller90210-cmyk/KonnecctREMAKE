@@ -46,12 +46,10 @@ if [ ! -d "./nginx/certbot-etc/live/$DOMAIN" ]; then
   docker stop nginx-bootstrap && docker rm nginx-bootstrap
 fi
 
-# 4. Build CRM Frontend on Host (to save RAM in Docker)
-echo "📦 Building CRM Frontend..."
-cd packages/twenty-front
+# 4. Build Monorepo Dependencies (Shared -> UI -> Front)
+echo "📦 Building Monorepo dependencies..."
 yarn install
-yarn build
-cd ../..
+npx nx run-many -t build -p twenty-shared twenty-ui twenty-front
 
 # 5. Build and Launch
 echo "🏗️ Building and Launching Docker Containers..."
