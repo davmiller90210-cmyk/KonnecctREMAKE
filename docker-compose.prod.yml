@@ -39,6 +39,27 @@ services:
       VITE_ROCKET_CHAT_URL: https://app.konnecct.com/chat
       APP_SECRET: ${APP_SECRET:-konnecct-secret-6789}
       STORAGE_TYPE: local
+      APP_VERSION: 11.7.0
+    restart: always
+
+  crm-worker:
+    image: konnecctremake-crm-server
+    command: ["node", "dist/queue-worker/queue-worker"]
+    depends_on:
+      crm-db:
+        condition: service_healthy
+      crm-redis:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      PG_DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@crm-db:5432/default
+      REDIS_URL: redis://crm-redis:6379
+      SERVER_URL: https://app.konnecct.com
+      FRONT_URL: https://app.konnecct.com
+      NODE_PORT: 3000
+      APP_SECRET: ${APP_SECRET:-konnecct-secret-6789}
+      STORAGE_TYPE: local
+      APP_VERSION: 11.7.0
     restart: always
 
   # Rocket.Chat Services

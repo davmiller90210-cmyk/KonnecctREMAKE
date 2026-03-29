@@ -186,7 +186,7 @@
     "@wyw-in-js/transform@npm:0.6.0": "patch:@wyw-in-js/transform@npm%3A0.7.0#~/.yarn/patches/@wyw-in-js-transform-npm-0.7.0-ba641dc99f.patch",
     "@wyw-in-js/transform@npm:0.7.0": "patch:@wyw-in-js/transform@npm%3A0.7.0#~/.yarn/patches/@wyw-in-js-transform-npm-0.7.0-ba641dc99f.patch"
   },
-  "version": "0.2.1",
+  "version": "11.7.0",
   "nx": {},
   "scripts": {
     "docs:generate": "tsx packages/twenty-docs/scripts/generate-docs-json.ts",
