@@ -6,6 +6,7 @@ DOMAIN="app.konnecct.com"
 EMAIL="your-email@example.com" # Change this!
 
 echo "🚀 Starting Konnecct All-in-One Deployment on $DOMAIN..."
+CRM_ROOT=$(pwd)
 
 # 1. Install Docker & Compose if not present
 if ! [ -x "$(command -v docker)" ]; then
@@ -89,7 +90,7 @@ cp -r packages/i18n/src/locales/*.i18n.json apps/meteor/packages/rocketchat-i18n
 echo "🚢 Building Rocket.Chat Bundle (Meteor)..."
 cd apps/meteor
 meteor build --server-only --directory .
-cd ../../KonnecctREMAKE
+cd "$CRM_ROOT"
 
 # 5. Build and Launch
 echo "🏗️ Building and Launching Docker Containers..."
