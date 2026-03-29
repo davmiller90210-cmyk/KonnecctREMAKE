@@ -71,9 +71,12 @@ if [ ! -d "./nginx/certbot-etc/live/$DOMAIN" ]; then
 fi
 
 # 4. Build Monorepo Dependencies (Shared -> UI -> Front)
-echo "📦 Building Monorepo dependencies..."
+echo "🧹 Cleaning old build artifacts..."
+rm -rf packages/*/build packages/*/dist
+
+echo "📦 Building Monorepo dependencies (PRODUCTION)..."
 yarn install
-npx nx run-many -t build -p twenty-shared twenty-ui twenty-front
+NODE_ENV=production npx nx run-many -t build -p twenty-shared twenty-ui twenty-front --configuration=production
 
 # 4.5 Build Rocket.Chat Mono-repo (Livechat, i18n, etc.)
 echo "🚀 Building Rocket.Chat Sub-packages (Turbo)..."
