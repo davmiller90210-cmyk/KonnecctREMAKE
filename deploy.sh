@@ -10,7 +10,12 @@ CRM_ROOT=$(pwd)
 
 # Ensure no existing containers are blocking ports 80/443
 docker compose -f docker-compose.prod.yml down || true
+docker compose -f docker-compose.prod.yml rm -f rocketchat || true
 docker rm -f nginx-bootstrap 2>/dev/null || true
+
+# 0. Clean Docker build cache (Fixes "failed to prepare extraction snapshot" errors)
+echo "🧹 Cleaning Docker build cache..."
+docker builder prune -f || true
 
 # 1. Ensure correct Node.js version (Rocket.Chat requires 22.16.0 exactly)
 echo "🟢 Checking Node.js version..."
