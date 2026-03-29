@@ -24,7 +24,7 @@ const WorkspaceSectionDispatcher = lazy(() =>
 );
 
 import { AppPath } from 'twenty-shared/types';
-import { IconMessage2 } from 'twenty-ui/display';
+import { IconMessage } from 'twenty-ui/display';
 import { NavigationDrawerItem } from '@/ui/navigation/navigation-drawer/components/NavigationDrawerItem';
 import { useLingui } from '@lingui/react/macro';
 import { useLocation } from 'react-router-dom';
@@ -49,7 +49,7 @@ export const MainNavigationDrawerScrollableItems = () => {
       <NavigationDrawerItem
         label={t`Chat`}
         to={AppPath.Chat}
-        Icon={IconMessage2}
+        Icon={IconMessage}
         active={location.pathname === AppPath.Chat}
       />
       <NavigationDrawerOtherSection />
