@@ -43,8 +43,8 @@ services:
   # Rocket.Chat Services
   rocketchat:
     build:
-      context: ../Rocket.Chat
-      dockerfile: apps/meteor/.docker/Dockerfile.alpine
+      context: ../Rocket.Chat/apps/meteor
+      dockerfile: .docker/Dockerfile.alpine
     depends_on:
       - chat-mongo
     environment:

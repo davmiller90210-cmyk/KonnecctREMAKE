@@ -14,6 +14,11 @@ if ! [ -x "$(command -v docker)" ]; then
   sh get-docker.sh
 fi
 
+if ! [ -x "$(command -v meteor)" ]; then
+  echo "Installing Meteor (required for Chat building)..."
+  curl https://install.meteor.com/ | sh
+fi
+
 # 1.5 Install System Dependencies (req. for canvas/node-canvas)
 echo "📦 Installing system dependencies (Cairo, Pango, SVG)..."
 sudo apt-get update
@@ -55,6 +60,14 @@ fi
 echo "📦 Building Monorepo dependencies..."
 yarn install
 npx nx run-many -t build -p twenty-shared twenty-ui twenty-front
+
+# 4.5 Build Rocket.Chat Bundle
+echo "🚀 Building Rocket.Chat Bundle (Meteor)..."
+cd ../Rocket.Chat
+yarn install
+cd apps/meteor
+meteor build --server-only --directory .
+cd ../../KonnecctREMAKE
 
 # 5. Build and Launch
 echo "🏗️ Building and Launching Docker Containers..."
