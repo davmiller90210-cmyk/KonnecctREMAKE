@@ -99,7 +99,7 @@ rm -rf packages/*/build packages/*/dist
 
 echo "📦 Building Monorepo dependencies (PRODUCTION)..."
 env -u YARN_IGNORE_ENGINES -u YARN_ENGINE_STRICT yarn install
-NODE_ENV=production env -u YARN_IGNORE_ENGINES -u YARN_ENGINE_STRICT npx nx run-many -t build -p twenty-shared twenty-ui twenty-front --configuration=production
+VITE_MODE=production NODE_ENV=production env -u YARN_IGNORE_ENGINES -u YARN_ENGINE_STRICT npx nx run-many -t build -p twenty-shared twenty-ui twenty-front --configuration=production --skip-nx-cache
 
 # 4.5 Build Rocket.Chat Mono-repo (Livechat, i18n, etc.)
 echo "🚀 Building Rocket.Chat Sub-packages (Turbo)..."
