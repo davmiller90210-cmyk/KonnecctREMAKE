@@ -120,7 +120,7 @@
     "@types/lodash.snakecase": "^4.1.7",
     "@types/lodash.upperfirst": "^4.3.7",
     "@types/ms": "^0.7.31",
-    "@types/node": "^24.0.0",
+    "@types/node": "^20.0.0",
     "@types/passport-google-oauth20": "^2.0.11",
     "@types/passport-jwt": "^3.0.8",
     "@types/passport-microsoft": "^2.1.0",
@@ -169,7 +169,7 @@
     "vitest": "^4.0.18"
   },
   "engines": {
-    "node": "^24.5.0",
+    "node": "^18.20.0 || ^20.0.0 || ^22.0.0",
     "npm": "please-use-yarn",
     "yarn": ">=4.0.2"
   },
