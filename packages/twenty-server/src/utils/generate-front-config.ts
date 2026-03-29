@@ -12,6 +12,7 @@ export function generateFrontConfig(): void {
     window: {
       _env_: {
         REACT_APP_SERVER_BASE_URL: process.env.SERVER_URL,
+        ROCKET_CHAT_URL: process.env.VITE_ROCKET_CHAT_URL,
       },
     },
   };

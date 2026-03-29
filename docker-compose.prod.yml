@@ -1,0 +1,93 @@
+services:
+  # Konnecct CRM Services
+  crm-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: default
+    volumes:
+      - crm-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: pg_isready -U postgres
+      interval: 5s
+    restart: always
+
+  crm-redis:
+    image: redis:7-alpine
+    volumes:
+      - crm-redis-data:/data
+    restart: always
+
+  crm-server:
+    build:
+      context: .
+      target: twenty
+      dockerfile: packages/twenty-docker/twenty/Dockerfile
+    depends_on:
+      crm-db:
+        condition: service_healthy
+      crm-redis:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      PG_DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@crm-db:5432/default
+      REDIS_URL: redis://crm-redis:6379
+      SERVER_URL: https://app.konnecct.com
+      FRONT_URL: https://app.konnecct.com
+      VITE_ROCKET_CHAT_URL: https://app.konnecct.com/chat
+      APP_SECRET: ${APP_SECRET:-konnecct-secret-6789}
+      STORAGE_TYPE: local
+    restart: always
+
+  # Rocket.Chat Services
+  rocketchat:
+    build:
+      context: ../Rocket.Chat
+      dockerfile: apps/meteor/.docker/Dockerfile.alpine
+    depends_on:
+      - chat-mongo
+    environment:
+      - MONGO_URL=mongodb://chat-mongo:27017/rocketchat?replicaSet=rs0
+      - MONGO_OPLOG_URL=mongodb://chat-mongo:27017/local?replicaSet=rs0
+      - ROOT_URL=https://app.konnecct.com/chat
+      - PORT=3000
+      - Accounts_iframe_enabled=true
+      - Accounts_iframe_url=https://app.konnecct.com/authorize
+    restart: always
+
+  chat-mongo:
+    image: mongodb/mongodb-community-server:6.0-ubi8
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    volumes:
+      - chat-mongo-data:/data/db
+    restart: always
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:1.25-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certbot-etc:/etc/letsencrypt:ro
+      - ./nginx/certbot-www:/var/www/certbot:ro
+    depends_on:
+      - crm-server
+      - rocketchat
+    restart: always
+
+  # Certbot (SSL Renewal)
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./nginx/certbot-etc:/etc/letsencrypt:rw
+      - ./nginx/certbot-www:/var/www/certbot:rw
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    restart: always
+
+volumes:
+  crm-postgres-data:
+  crm-redis-data:
+  chat-mongo-data:

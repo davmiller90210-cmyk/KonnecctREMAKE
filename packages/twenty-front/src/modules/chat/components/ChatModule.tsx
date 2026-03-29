@@ -20,12 +20,14 @@ const StyledIframe = styled.iframe`
   width: 100%;
 `;
 
+import { H2Title } from 'twenty-ui/display';
+
 export const ChatModule = () => {
   const { t } = useLingui();
   const tokenPair = useAtomValue(tokenPairState.atom);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   
-  const rocketChatUrl = (window as any).CONFIG?.ROCKET_CHAT_URL || 'http://localhost:3000';
+  const rocketChatUrl = (window as any)._env_?.ROCKET_CHAT_URL || window.location.origin + '/chat';
   const chatUrl = `${rocketChatUrl}/home?layout=embedded`;
 
   useEffect(() => {
@@ -49,7 +51,10 @@ export const ChatModule = () => {
   }, [tokenPair, rocketChatUrl]);
 
   return (
-    <Section title={t`Chat`}>
+    <Section>
+      <div style={{ padding: '16px 24px 8px' }}>
+         <H2Title>{t`Chat`}</H2Title>
+      </div>
       <StyledContainer>
         <StyledIframe
           ref={iframeRef}

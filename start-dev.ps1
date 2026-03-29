@@ -1,35 +1,33 @@
-$ErrorActionPreference = "Stop"
-
-Write-Host "Starting KonnecctREMAKE Dev Environment" -ForegroundColor Green
-
-# Start databases
-Write-Host "`n1. Starting PostgreSQL & Redis..." -ForegroundColor Yellow
-docker run -d --name dev-postgres -p 5432:5432 -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=default -v postgres-dev-data:/var/lib/postgresql/data postgres:16
-docker run -d --name dev-redis -p 6379:6379 redis:7-alpine
-
-Write-Host "   Waiting for databases to be ready..." -ForegroundColor Gray
-Start-Sleep -Seconds 8
-
-# Set environment variables
 $env:NODE_ENV = "development"
 $env:PG_DATABASE_URL = "postgres://postgres:postgres@localhost:5432/default"
 $env:REDIS_URL = "redis://localhost:6379"
 $env:SERVER_URL = "http://localhost:3000"
-$env:APP_SECRET = "dev-secret-key"
+$env:APP_SECRET = "dev-secret-key-12345"
 $env:VITE_API_BASE_URL = "http://localhost:3000"
 
-Write-Host "`n2. Starting Backend Server (localhost:3000)..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd $PSScriptRoot\packages\twenty-server; `$env:NODE_ENV='development'; `$env:PG_DATABASE_URL='postgres://postgres:postgres@localhost:5432/default'; `$env:REDIS_URL='redis://localhost:6379'; `$env:SERVER_URL='http://localhost:3000'; `$env:APP_SECRET='dev-secret-key'; npx nx start"
+Write-Host "Starting Konnecct Dev Environment..." -ForegroundColor Green
+Write-Host ""
+Write-Host "Terminal 1: Backend Server (Port 3000)" -ForegroundColor Cyan
+Write-Host "Terminal 2: Frontend Dev Server (Port 5173)" -ForegroundColor Cyan
+Write-Host ""
 
-Write-Host "`n3. Starting Frontend Dev Server (localhost:5173)..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd $PSScriptRoot\packages\twenty-front; `$env:VITE_API_BASE_URL='http://localhost:3000'; npx nx start"
+# Start backend in new window
+$backendScript = {
+    cd $args[0]
+    yarn start
+}
 
-Write-Host "`n✅ Environment started!" -ForegroundColor Green
-Write-Host "`n📱 Access your app:" -ForegroundColor Cyan
-Write-Host "   Frontend: http://localhost:5173" -ForegroundColor Cyan
-Write-Host "   Backend:  http://localhost:3000" -ForegroundColor Cyan
-Write-Host "`n💾 Database:" -ForegroundColor Cyan
-Write-Host "   postgres://postgres:postgres@localhost:5432/default" -ForegroundColor Cyan
-Write-Host "   Redis: localhost:6379" -ForegroundColor Cyan
+# Start frontend in new window  
+$frontendScript = {
+    cd $args[0]
+    yarn start
+}
 
-Write-Host "`n⚠️  Both servers may take 30-60 seconds to start. Monitor output in their respective windows." -ForegroundColor Magenta
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$pwd/packages/twenty-server'; yarn start" -WindowStyle Normal
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$pwd/packages/twenty-front'; yarn start" -WindowStyle Normal
+
+Write-Host ""
+Write-Host "Servers starting in new windows..." -ForegroundColor Yellow
+Write-Host "Wait 30-60 seconds, then open:" -ForegroundColor Yellow
+Write-Host "  Frontend: http://localhost:5173" -ForegroundColor Cyan
+Write-Host "  (Frontend proxies to backend on 3000)" -ForegroundColor Cyan
