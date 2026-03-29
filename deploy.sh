@@ -34,7 +34,7 @@ fi
 # Rocket.Chat is extremely strict about the node version, but 22.22.x is compatible with 22.16.x
 # This will ignore minor version mismatches in Yarn 4.
 unset YARN_IGNORE_ENGINES
-export YARN_ENGINE_STRICT=0
+unset YARN_ENGINE_STRICT
 export YARN_NM_IGNORE_ENGINES=true
 
 # Install system dependencies (required for node-canvas / high-end UI components)
@@ -97,14 +97,14 @@ echo "🧹 Cleaning old build artifacts..."
 rm -rf packages/*/build packages/*/dist
 
 echo "📦 Building Monorepo dependencies (PRODUCTION)..."
-env -u YARN_IGNORE_ENGINES yarn install
-NODE_ENV=production env -u YARN_IGNORE_ENGINES npx nx run-many -t build -p twenty-shared twenty-ui twenty-front --configuration=production
+env -u YARN_IGNORE_ENGINES -u YARN_ENGINE_STRICT yarn install
+NODE_ENV=production env -u YARN_IGNORE_ENGINES -u YARN_ENGINE_STRICT npx nx run-many -t build -p twenty-shared twenty-ui twenty-front --configuration=production
 
 # 4.5 Build Rocket.Chat Mono-repo (Livechat, i18n, etc.)
 echo "🚀 Building Rocket.Chat Sub-packages (Turbo)..."
 cd ../Rocket.Chat
-env -u YARN_IGNORE_ENGINES yarn install
-env -u YARN_IGNORE_ENGINES yarn build
+env -u YARN_IGNORE_ENGINES -u YARN_ENGINE_STRICT yarn install
+env -u YARN_IGNORE_ENGINES -u YARN_ENGINE_STRICT yarn build
 
 # Fix broken i18n symlinks (common in copied repos)
 echo "🌐 Syncing Translations..."
@@ -114,7 +114,7 @@ cp -r packages/i18n/src/locales/*.i18n.json apps/meteor/packages/rocketchat-i18n
 
 echo "🚢 Building Rocket.Chat Bundle (Meteor)..."
 cd apps/meteor
-env -u YARN_IGNORE_ENGINES meteor build --server-only --directory .
+env -u YARN_IGNORE_ENGINES -u YARN_ENGINE_STRICT meteor build --server-only --directory .
 cd "$CRM_ROOT"
 
 # 5. Build and Launch
