@@ -8,6 +8,9 @@ EMAIL="your-email@example.com" # Change this!
 echo "🚀 Starting Konnecct All-in-One Deployment on $DOMAIN..."
 CRM_ROOT=$(pwd)
 
+# Ensure no existing containers are blocking ports 80/443
+docker compose -f docker-compose.prod.yml down || true
+
 # 1. Install Docker & Compose if not present
 if ! [ -x "$(command -v docker)" ]; then
   echo "Installing Docker..."
