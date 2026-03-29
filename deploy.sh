@@ -33,6 +33,7 @@ fi
 
 # Rocket.Chat is extremely strict about the node version, but 22.22.x is compatible with 22.16.x
 # This will ignore minor version mismatches in Yarn 4.
+export YARN_ENABLE_STRICT_SETTINGS=false
 unset YARN_IGNORE_ENGINES
 unset YARN_ENGINE_STRICT
 export YARN_NM_IGNORE_ENGINES=true
