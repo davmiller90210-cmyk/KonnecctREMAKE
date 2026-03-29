@@ -115,6 +115,7 @@ cp -r packages/i18n/src/locales/*.i18n.json apps/meteor/packages/rocketchat-i18n
 
 echo "🚢 Building Rocket.Chat Bundle (Meteor)..."
 cd apps/meteor
+rm -rf bundle
 env -u YARN_IGNORE_ENGINES -u YARN_ENGINE_STRICT meteor build --server-only --directory .
 cd "$CRM_ROOT"
 
