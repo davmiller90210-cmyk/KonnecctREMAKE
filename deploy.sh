@@ -10,13 +10,30 @@ CRM_ROOT=$(pwd)
 
 # Ensure no existing containers are blocking ports 80/443
 docker compose -f docker-compose.prod.yml down || true
+docker rm -f nginx-bootstrap 2>/dev/null || true
 
-# 1. Install Docker & Compose if not present
-if ! [ -x "$(command -v docker)" ]; then
-  echo "Installing Docker..."
-  curl -fsSL https://get.docker.com -o get-docker.sh
-  sh get-docker.sh
+# 1. Ensure correct Node.js version (Rocket.Chat requires 22.16.0 exactly)
+echo "🟢 Checking Node.js version..."
+CURRENT_NODE=$(node -v)
+if [ "$CURRENT_NODE" != "v22.16.0" ]; then
+  echo "⚠️ Node version mismatch! (Found $CURRENT_NODE, need v22.16.0)"
+  if [ -f "$HOME/.nvm/nvm.sh" ]; then
+    . "$HOME/.nvm/nvm.sh"
+    nvm install 22.16.0
+    nvm use 22.16.0
+  else
+    echo "Installing NVM to manage Node versions..."
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    nvm install 22.16.0
+    nvm use 22.16.0
+  fi
 fi
+
+# Rocket.Chat is extremely strict about the node version, but 22.22.x is compatible with 22.16.x
+# This will ignore minor version mismatches in Yarn 4.
+export YARN_IGNORE_ENGINES=1
 
 # Install system dependencies (required for node-canvas / high-end UI components)
 echo "📦 Installing system dependencies (Cairo, Pango, SVG, Deno, unzip, etc.)..."
