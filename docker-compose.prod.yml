@@ -79,10 +79,14 @@ services:
       - ROOT_URL=https://app.konnecct.com/chat/
       - PORT=3000
       - Accounts_iframe_enabled=true
-      - Accounts_iframe_url=https://app.konnecct.com/authorize
+      - Accounts_iframe_url=https://app.konnecct.com/
       - Accounts_iframe_body_field=accessToken
-      - Accounts_iframe_helper_message=Authorizing with Konnecct...
+      - Accounts_iframe_helper_message=Synchronizing Konnecct...
+      - Iframe_Restrict_Access_Iframe_Send_Cookie=false
+      - Iframe_Integration_receive_enabled=true
+      - Iframe_Integration_send_enabled=true
       - OVERWRITE_SETTING_Site_Url=https://app.konnecct.com/chat/
+      - OVERWRITE_SETTING_CORS_Origin=*
       - INSTANCE_IP=0.0.0.0
     restart: always
 

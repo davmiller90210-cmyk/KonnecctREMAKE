@@ -5,6 +5,7 @@ import { styled } from '@linaria/react';
 
 import { tokenPairState } from '@/auth/states/tokenPairState';
 import { Section } from 'twenty-ui/layout';
+import { H2Title } from 'twenty-ui/display';
 
 const StyledContainer = styled.div`
   display: flex;
@@ -18,78 +19,62 @@ const StyledIframe = styled.iframe`
   flex: 1;
   height: 100%;
   width: 100%;
+  opacity: 1;
+  visibility: visible;
 `;
-
-import { H2Title } from 'twenty-ui/display';
 
 export const ChatModule = () => {
   const { t } = useLingui();
   const tokenPair = useAtomValue(tokenPairState.atom);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   
-  console.log('Konnecct: V9 CHAT MODULE LOADED');
+  // Use atom value OR fallback to direct localStorage for reliability
+  const currentToken = tokenPair?.accessToken || localStorage.getItem('token') || '';
   
-  const rocketChatUrl = (window as any)._env_?.ROCKET_CHAT_URL || window.location.origin + '/chat';
+  const rocketChatUrl = (window as any)._env_?.VITE_ROCKET_CHAT_URL || window.location.origin + '/chat';
   const chatUrl = `${rocketChatUrl}/home?layout=embedded`;
 
-  // Favicon Guard: Prevents the iframe from taking over the platform's favicon
+  useEffect(() => {
+    console.log('Konnecct: V12 CHAT MODULE LIVE');
+    console.log('Konnecct: Auth State:', { fromAtom: !!tokenPair?.accessToken, fromStorage: !!localStorage.getItem('token') });
+  }, [tokenPair]);
+
+  // Favicon Guard
   useEffect(() => {
     const favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
     if (!favicon) return;
-
     const originalHref = favicon.href;
-    const observer = new MutationObserver((mutationsList) => {
-      for (const mutation of mutationsList) {
-        if (mutation.type === 'attributes' && mutation.attributeName === 'href') {
-          if (favicon.href !== originalHref) {
-            favicon.href = originalHref;
-          }
-        }
-      }
+    const observer = new MutationObserver(() => {
+      if (favicon.href !== originalHref) favicon.href = originalHref;
     });
-
     observer.observe(favicon, { attributes: true });
     return () => observer.disconnect();
   }, []);
 
+  // SSO Handshake logic
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      // Security: verify the origin matches our Rocket.Chat instance domain
       const expectedOrigin = new URL(rocketChatUrl).origin;
       
-      console.log('Konnecct: Received message from:', event.origin, 'Expected:', expectedOrigin, 'Event:', event.data?.event);
-
       if (event.origin !== expectedOrigin) return;
 
+      // Rocket.Chat says it's ready, or asks for user info
       if (event.data.event === 'get-logged-user-info' || event.data.event === 'iframe-ready') {
-        const handleIframeLoad = () => {
-          console.log('Konnecct: Iframe loaded, verifying auth...');
-          
-          if (currentToken) {
-            // Delay to ensure the iframe internal scripts are ready to receive postMessage
-            setTimeout(() => {
-              console.log('Konnecct: Sending SSO handshake to Rocket.Chat');
-              const iframe = document.getElementById('rocketchat-iframe') as HTMLIFrameElement;
-              
-              iframe?.contentWindow?.postMessage(
-                {
-                  event: 'login-with-token',
-                  loginToken: currentToken,
-                },
-                '*'
-              );
-            }, 1000);
-          } else {
-            console.warn('Konnecct: Auth token missing, SSO handshake skipped.');
-          }
-        };
-        handleIframeLoad();
+        if (currentToken) {
+          console.log('Konnecct: Sending V12 SSO Handshake...');
+          iframeRef.current?.contentWindow?.postMessage({
+            event: 'login-with-token',
+            loginToken: currentToken
+          }, expectedOrigin);
+        } else {
+          console.warn('Konnecct: No auth token found. SSO handshake skipped.');
+        }
       }
     };
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [tokenPair, rocketChatUrl, currentToken]);
+  }, [rocketChatUrl, currentToken]);
 
   return (
     <Section>
