@@ -27,6 +27,8 @@ export const ChatModule = () => {
   const tokenPair = useAtomValue(tokenPairState.atom);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   
+  console.log('Konnecct: V9 CHAT MODULE LOADED');
+  
   const rocketChatUrl = (window as any)._env_?.ROCKET_CHAT_URL || window.location.origin + '/chat';
   const chatUrl = `${rocketChatUrl}/home?layout=embedded`;
 
@@ -54,9 +56,10 @@ export const ChatModule = () => {
     const handleMessage = (event: MessageEvent) => {
       // Security: verify the origin matches our Rocket.Chat instance domain
       const expectedOrigin = new URL(rocketChatUrl).origin;
-      if (event.origin !== expectedOrigin) return;
+      
+      console.log('Konnecct: Received message from:', event.origin, 'Expected:', expectedOrigin, 'Event:', event.data?.event);
 
-      console.log('Konnecct: Received iframe message:', event.data.event);
+      if (event.origin !== expectedOrigin) return;
 
       if (event.data.event === 'get-logged-user-info' || event.data.event === 'iframe-ready') {
         const token = tokenPair?.accessToken;
