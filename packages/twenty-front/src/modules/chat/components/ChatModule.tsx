@@ -56,13 +56,16 @@ export const ChatModule = () => {
       const expectedOrigin = new URL(rocketChatUrl).origin;
       if (event.origin !== expectedOrigin) return;
 
-      if (event.data.event === 'get-logged-user-info') {
+      if (event.data.event === 'get-logged-user-info' || event.data.event === 'iframe-ready') {
         const token = tokenPair?.accessToken;
         if (token) {
-          iframeRef.current?.contentWindow?.postMessage({
-            event: 'login-with-token',
-            loginToken: token
-          }, expectedOrigin);
+          // Add a small delay to ensure Rocket.Chat's internal Meteor is ready for the login call
+          setTimeout(() => {
+            iframeRef.current?.contentWindow?.postMessage({
+              event: 'login-with-token',
+              loginToken: token
+            }, expectedOrigin);
+          }, 500);
         }
       }
     };
