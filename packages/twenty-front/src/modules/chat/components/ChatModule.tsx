@@ -62,25 +62,34 @@ export const ChatModule = () => {
       if (event.origin !== expectedOrigin) return;
 
       if (event.data.event === 'get-logged-user-info' || event.data.event === 'iframe-ready') {
-        const token = tokenPair?.accessToken;
-        console.log('Konnecct: Attempting SSO login with token status:', !!token);
-        
-        if (token) {
-          // Add a small delay to ensure Rocket.Chat's internal Meteor is ready for the login call
-          setTimeout(() => {
-            console.log('Konnecct: Sending login-with-token to Rocket.Chat');
-            iframeRef.current?.contentWindow?.postMessage({
-              event: 'login-with-token',
-              loginToken: token
-            }, expectedOrigin);
-          }, 500);
-        }
+        const handleIframeLoad = () => {
+          console.log('Konnecct: Iframe loaded, verifying auth...');
+          
+          if (currentToken) {
+            // Delay to ensure the iframe internal scripts are ready to receive postMessage
+            setTimeout(() => {
+              console.log('Konnecct: Sending SSO handshake to Rocket.Chat');
+              const iframe = document.getElementById('rocketchat-iframe') as HTMLIFrameElement;
+              
+              iframe?.contentWindow?.postMessage(
+                {
+                  event: 'login-with-token',
+                  loginToken: currentToken,
+                },
+                '*'
+              );
+            }, 1000);
+          } else {
+            console.warn('Konnecct: Auth token missing, SSO handshake skipped.');
+          }
+        };
+        handleIframeLoad();
       }
     };
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [tokenPair, rocketChatUrl]);
+  }, [tokenPair, rocketChatUrl, currentToken]);
 
   return (
     <Section>
