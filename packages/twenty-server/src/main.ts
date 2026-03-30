@@ -19,6 +19,7 @@ import { UnhandledExceptionFilter } from 'src/filters/unhandled-exception.filter
 import { AppModule } from './app.module';
 import './instrument';
 
+import { chatProxyInstance } from './engine/middlewares/chat-proxy.middleware';
 import { settings } from './engine/constants/settings';
 import { generateFrontConfig } from './utils/generate-front-config';
 
@@ -78,6 +79,15 @@ const bootstrap = async () => {
 
   // Inject the server url in the frontend page
   generateFrontConfig();
+
+  // THE CRITICAL PROTOCOL FIX: Bind the HTTP 'upgrade' event to the proxy
+  const server = app.getHttpServer();
+  server.on('upgrade', (req: any, socket: any, head: any) => {
+    if (req.url?.startsWith('/chat')) {
+      // @ts-ignore - Manual WebSocket upgrade binding for the One-App Gateway
+      chatProxyInstance.upgrade(req, socket, head);
+    }
+  });
 
   const port = twentyConfigService.get('NODE_PORT') || 3000;
   await app.listen(port, '0.0.0.0');

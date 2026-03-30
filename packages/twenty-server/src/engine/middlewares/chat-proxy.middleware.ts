@@ -1,34 +1,36 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 
+// V17: We export the instance so main.ts can access its .upgrade() method directly
+export const chatProxyInstance = createProxyMiddleware({
+  target: 'http://rocketchat:3000',
+  changeOrigin: true,
+  ws: true, // Internal WebSocket support for proxy
+  logger: console,
+  pathRewrite: {
+    '^/chat$': '/chat/', // Force trailing slash INTERNALLY to avoid 301 -> 405 GET downgrade
+    '^/chat/': '/chat/',
+  },
+  on: {
+    proxyReq: (proxyReq) => {
+      // Internal Rocket.Chat protocol handshake
+      proxyReq.setHeader('X-Forwarded-Prefix', '/chat');
+    },
+    error: (err, req, res: any) => {
+      console.error('Chat Gateway Proxy Error:', err);
+      if (res.status && !res.headersSent) {
+        res.status(502).send('Chat Gateway Protocol Error');
+      }
+    },
+  },
+});
+
 @Injectable()
 export class ChatProxyMiddleware implements NestMiddleware {
-  private proxy = createProxyMiddleware({
-    target: 'http://rocketchat:3000',
-    changeOrigin: true,
-    ws: true,
-    logger: console,
-    pathRewrite: {
-      '^/chat': '/chat', // Preserve the /chat prefix for Rocket.Chat's internal routing
-    },
-    on: {
-      proxyReq: (proxyReq) => {
-        // Ensure Rocket.Chat knows it is behind a /chat subpath
-        proxyReq.setHeader('X-Forwarded-Prefix', '/chat');
-      },
-      error: (err, req, res: any) => {
-        console.error('Chat Gateway Proxy Error:', err);
-        if (res.status && !res.headersSent) {
-          res.status(502).send('Chat Gateway (Singular Backend) Connection Error');
-        }
-      },
-    },
-  });
-
   use(req: any, res: any, next: () => void) {
-    // Only proxy if the path starts with /chat
     if (req.url.startsWith('/chat')) {
-      return this.proxy(req, res, next);
+      // @ts-ignore - Direct execution of the proxy instance
+      return chatProxyInstance(req, res, next);
     }
     next();
   }
