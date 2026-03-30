@@ -84,6 +84,7 @@ services:
     restart: always
     volumes:
       - chat-mongo-data:/var/lib/mongodb
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
 
   chat-mongo-init:
     image: mongodb/mongodb-community-server:8.0-ubi9
