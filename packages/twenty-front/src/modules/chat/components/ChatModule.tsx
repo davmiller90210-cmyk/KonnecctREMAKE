@@ -56,11 +56,16 @@ export const ChatModule = () => {
       const expectedOrigin = new URL(rocketChatUrl).origin;
       if (event.origin !== expectedOrigin) return;
 
+      console.log('Konnecct: Received iframe message:', event.data.event);
+
       if (event.data.event === 'get-logged-user-info' || event.data.event === 'iframe-ready') {
         const token = tokenPair?.accessToken;
+        console.log('Konnecct: Attempting SSO login with token status:', !!token);
+        
         if (token) {
           // Add a small delay to ensure Rocket.Chat's internal Meteor is ready for the login call
           setTimeout(() => {
+            console.log('Konnecct: Sending login-with-token to Rocket.Chat');
             iframeRef.current?.contentWindow?.postMessage({
               event: 'login-with-token',
               loginToken: token
