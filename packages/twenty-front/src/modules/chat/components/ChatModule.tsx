@@ -79,7 +79,7 @@ export const ChatModule = () => {
   return (
     <Section>
       <div style={{ padding: '16px 24px 8px' }}>
-         <H2Title>{t`Chat`}</H2Title>
+         <H2Title title={t`Chat`} />
       </div>
       <StyledContainer>
         <StyledIframe
