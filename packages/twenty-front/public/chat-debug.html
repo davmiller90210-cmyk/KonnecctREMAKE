@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konnecct Chat Diagnostic</title>
+    <style>
+        body { font-family: sans-serif; padding: 2rem; background: #111; color: #eee; }
+        .log { background: #222; border: 1px solid #444; padding: 1rem; border-radius: 8px; font-family: monospace; white-space: pre-wrap; margin-top: 1rem; }
+        .status { padding: 0.5rem 1rem; border-radius: 4px; display: inline-block; font-weight: bold; }
+        .success { background: #1fb31f; color: white; }
+        .error { background: #bc2031; color: white; }
+        .pending { background: #dc9b01; color: white; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Konnecct Chat Diagnostic (V14)</h1>
+    <p>Testing connection to <strong>https://app.konnecct.com/chat/</strong>...</p>
+    
+    <div id="info-status" class="status pending">TESTING API INFO...</div>
+    <div id="info-log" class="log">Waiting...</div>
+
+    <div id="settings-status" class="status pending" style="margin-top: 2rem;">TESTING PUBLIC SETTINGS...</div>
+    <div id="settings-log" class="log">Waiting...</div>
+
+    <script>
+        const log = (id, msg) => { document.getElementById(id).innerText += '\n' + msg; };
+        const setStatus = (id, success, msg) => { 
+            const el = document.getElementById(id);
+            el.className = 'status ' + (success ? 'success' : 'error');
+            el.innerText = msg;
+        };
+
+        async function runDiagnostics() {
+            // Test 1: API Info
+            try {
+                log('info-log', 'Fetching https://app.konnecct.com/chat/api/v1/info...');
+                const res = await fetch('/chat/api/v1/info');
+                const data = await res.json();
+                if (res.ok) {
+                    setStatus('info-status', true, 'CONNECTED');
+                    log('info-log', 'Success! Version: ' + data.version);
+                } else {
+                    throw new Error('HTTP ' + res.status);
+                }
+            } catch (e) {
+                setStatus('info-status', false, 'FAILED');
+                log('info-log', 'Error: ' + e.message);
+            }
+
+            // Test 2: Public Settings Handshake
+            try {
+                log('settings-log', 'Fetching https://app.konnecct.com/chat/api/v1/method.callAnon/public-settings:get...');
+                // We test with GET first because that is what caused the 405 error
+                const res = await fetch('/chat/api/v1/method.callAnon/public-settings:get?params=' + encodeURIComponent(JSON.stringify([])));
+                const data = await res.json();
+                if (res.ok) {
+                    setStatus('settings-status', true, 'CONNECTED');
+                    log('settings-log', 'Success! Settings Handshake Received.');
+                } else {
+                    throw new Error('HTTP ' + res.status + ' - ' + (data.message || 'No message'));
+                }
+            } catch (e) {
+                setStatus('settings-status', false, 'FAILED');
+                log('settings-log', 'Error: ' + e.message);
+                log('settings-log', '\nTIP: If you see HTTP 405, the Engine Fix V14 was not built correctly.');
+                log('settings-log', 'TIP: If you see HTTP 404, Nginx subpath routing is broken.');
+            }
+        }
+
+        runDiagnostics();
+    </script>
+</body>
+</html>
