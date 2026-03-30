@@ -79,14 +79,16 @@ services:
     restart: always
 
   chat-mongo:
-    image: mongodb/mongodb-community-server:6.0-ubi8
-    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
-    volumes:
-      - chat-mongo-data:/data/db
+    image: mongodb/mongodb-community-server:8.0-ubi9
+    container_name: chat-mongo
     restart: always
+    volumes:
+      - chat-mongo-data:/var/lib/mongodb
+    networks:
+      - crm-network
 
   chat-mongo-init:
-    image: mongodb/mongodb-community-server:6.0-ubi8
+    image: mongodb/mongodb-community-server:8.0-ubi9
     depends_on:
       - chat-mongo
     restart: "no"
