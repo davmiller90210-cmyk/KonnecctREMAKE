@@ -1,13 +1,18 @@
 import { Module } from '@nestjs/common';
+import { HttpModule } from '@nestjs/axios';
 
 import { FeatureFlagModule } from 'src/engine/core-modules/feature-flag/feature-flag.module';
 import { FileModule } from 'src/engine/core-modules/file/file.module';
 import { TwentyORMModule } from 'src/engine/twenty-orm/twenty-orm.module';
 import { WorkspaceMemberAvatarFileDeletionListener } from 'src/modules/workspace-member/listeners/workspace-member-avatar-file-deletion.listener';
+import { WorkspaceMemberRocketChatSyncListener } from 'src/modules/workspace-member/listeners/workspace-member-rocketchat-sync.listener';
 
 @Module({
-  imports: [TwentyORMModule, FeatureFlagModule, FileModule],
+  imports: [TwentyORMModule, FeatureFlagModule, FileModule, HttpModule],
 
-  providers: [WorkspaceMemberAvatarFileDeletionListener],
+  providers: [
+    WorkspaceMemberAvatarFileDeletionListener,
+    WorkspaceMemberRocketChatSyncListener,
+  ],
 })
 export class WorkspaceMemberModule {}
