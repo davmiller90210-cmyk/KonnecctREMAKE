@@ -76,13 +76,13 @@ services:
     environment:
       - MONGO_URL=mongodb://chat-mongo:27017/rocketchat?replicaSet=rs0
       - MONGO_OPLOG_URL=mongodb://chat-mongo:27017/local?replicaSet=rs0
-      - ROOT_URL=https://app.konnecct.com/chat
+      - ROOT_URL=https://app.konnecct.com/chat/
       - PORT=3000
       - Accounts_iframe_enabled=true
       - Accounts_iframe_url=https://app.konnecct.com/authorize
       - Accounts_iframe_body_field=accessToken
       - Accounts_iframe_helper_message=Authorizing with Konnecct...
-      - OVERWRITE_SETTING_Site_Url=https://app.konnecct.com/chat
+      - OVERWRITE_SETTING_Site_Url=https://app.konnecct.com/chat/
     restart: always
 
   chat-mongo:
