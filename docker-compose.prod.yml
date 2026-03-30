@@ -84,8 +84,6 @@ services:
     restart: always
     volumes:
       - chat-mongo-data:/var/lib/mongodb
-    networks:
-      - crm-network
 
   chat-mongo-init:
     image: mongodb/mongodb-community-server:8.0-ubi9
