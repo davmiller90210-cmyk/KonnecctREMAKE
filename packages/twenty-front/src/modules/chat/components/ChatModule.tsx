@@ -52,8 +52,9 @@ export const ChatModule = () => {
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      // Security: verify the origin matches our Rocket.Chat instance
-      if (!event.origin.startsWith(rocketChatUrl)) return;
+      // Security: verify the origin matches our Rocket.Chat instance domain
+      const expectedOrigin = new URL(rocketChatUrl).origin;
+      if (event.origin !== expectedOrigin) return;
 
       if (event.data.event === 'get-logged-user-info') {
         const token = tokenPair?.accessToken;
@@ -61,7 +62,7 @@ export const ChatModule = () => {
           iframeRef.current?.contentWindow?.postMessage({
             event: 'login-with-token',
             loginToken: token
-          }, rocketChatUrl);
+          }, expectedOrigin);
         }
       }
     };
