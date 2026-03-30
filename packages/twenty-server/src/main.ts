@@ -54,9 +54,9 @@ const bootstrap = async () => {
 
   app.useGlobalFilters(new UnhandledExceptionFilter());
 
-  // THE V18 BULLETPROOF FIX: Register proxy BEFORE body-parsers
-  // @ts-ignore - Direct execution of the proxy instance
-  app.use('/chat', chatProxyInstance);
+  // THE V19 PREFIX FIX: Register proxy globally so the prefix is not stripped
+  // @ts-ignore - Internal proxy logic (ChatProxyMiddleware) handles the '/chat' filtering
+  app.use(chatProxyInstance);
 
   app.useBodyParser('json', { limit: settings.storage.maxFileSize });
   app.useBodyParser('urlencoded', {

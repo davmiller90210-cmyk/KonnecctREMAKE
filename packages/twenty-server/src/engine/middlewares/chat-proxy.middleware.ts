@@ -1,18 +1,16 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
 
-// V18: Bulletproof Gateway - Restoring the POST stream for Rocket.Chat
-export const chatProxyInstance = createProxyMiddleware({
-  target: 'http://rocketchat:3000',
+// V19: Prefix-Preserved Gateway - Seeding the filter INSIDE the proxy
+// This ensures that when we mount it at root in main.ts, the /chat prefix is NOT stripped.
+export const chatProxyInstance = createProxyMiddleware('/chat', {
+  target: 'http://rocketchat:3000', // NO trailing slash to avoid double-slash conflicts
   changeOrigin: true,
   ws: true,
   logger: console,
-  pathRewrite: {
-    '^/chat': '/chat', // Preserve the path
-  },
   on: {
     proxyReq: (proxyReq, req: any) => {
-      // THE CRITICAL FIX: Re-stream the body if it was already consumed by NestJS
+      // THE V18 FIX: Re-stream the body if it was already consumed by NestJS
       fixRequestBody(proxyReq, req);
       proxyReq.setHeader('X-Forwarded-Prefix', '/chat');
     },
@@ -28,6 +26,8 @@ export const chatProxyInstance = createProxyMiddleware({
 @Injectable()
 export class ChatProxyMiddleware implements NestMiddleware {
   use(req: any, res: any, next: () => void) {
+    // This is now redundant since main.ts handles the global mount, 
+    // but we keep it here for architectural consistency if needed.
     if (req.url.startsWith('/chat')) {
       // @ts-ignore - Direct execution of the proxy instance
       return chatProxyInstance(req, res, next);
