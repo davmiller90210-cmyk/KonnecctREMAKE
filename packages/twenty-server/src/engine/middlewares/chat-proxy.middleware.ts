@@ -1,23 +1,23 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
-import { createProxyMiddleware } from 'http-proxy-middleware';
+import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
 
-// V17: We export the instance so main.ts can access its .upgrade() method directly
+// V18: Bulletproof Gateway - Restoring the POST stream for Rocket.Chat
 export const chatProxyInstance = createProxyMiddleware({
   target: 'http://rocketchat:3000',
   changeOrigin: true,
-  ws: true, // Internal WebSocket support for proxy
+  ws: true,
   logger: console,
   pathRewrite: {
-    '^/chat$': '/chat/', // Force trailing slash INTERNALLY to avoid 301 -> 405 GET downgrade
-    '^/chat/': '/chat/',
+    '^/chat': '/chat', // Preserve the path
   },
   on: {
-    proxyReq: (proxyReq) => {
-      // Internal Rocket.Chat protocol handshake
+    proxyReq: (proxyReq, req: any) => {
+      // THE CRITICAL FIX: Re-stream the body if it was already consumed by NestJS
+      fixRequestBody(proxyReq, req);
       proxyReq.setHeader('X-Forwarded-Prefix', '/chat');
     },
     error: (err, req, res: any) => {
-      console.error('Chat Gateway Proxy Error:', err);
+      console.error('Chat Gateway Protocol Error:', err);
       if (res.status && !res.headersSent) {
         res.status(502).send('Chat Gateway Protocol Error');
       }
