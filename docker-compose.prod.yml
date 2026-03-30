@@ -83,6 +83,7 @@ services:
       - Accounts_iframe_body_field=accessToken
       - Accounts_iframe_helper_message=Authorizing with Konnecct...
       - OVERWRITE_SETTING_Site_Url=https://app.konnecct.com/chat/
+      - INSTANCE_IP=0.0.0.0
     restart: always
 
   chat-mongo:
