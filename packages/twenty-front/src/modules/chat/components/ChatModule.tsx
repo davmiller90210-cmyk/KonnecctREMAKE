@@ -30,6 +30,26 @@ export const ChatModule = () => {
   const rocketChatUrl = (window as any)._env_?.ROCKET_CHAT_URL || window.location.origin + '/chat';
   const chatUrl = `${rocketChatUrl}/home?layout=embedded`;
 
+  // Favicon Guard: Prevents the iframe from taking over the platform's favicon
+  useEffect(() => {
+    const favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+    if (!favicon) return;
+
+    const originalHref = favicon.href;
+    const observer = new MutationObserver((mutationsList) => {
+      for (const mutation of mutationsList) {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'href') {
+          if (favicon.href !== originalHref) {
+            favicon.href = originalHref;
+          }
+        }
+      }
+    });
+
+    observer.observe(favicon, { attributes: true });
+    return () => observer.disconnect();
+  }, []);
+
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       // Security: verify the origin matches our Rocket.Chat instance
