@@ -123,6 +123,7 @@
     "graphql-upload": "16.0.2",
     "graphql-yoga": "4.0.5",
     "html-to-text": "^9.0.5",
+    "http-proxy-middleware": "^3.0.3",
     "imapflow": "1.2.1",
     "ioredis": "5.6.0",
     "jsdom": "^26.1.0",

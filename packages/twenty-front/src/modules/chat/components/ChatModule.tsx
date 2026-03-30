@@ -31,7 +31,7 @@ export const ChatModule = () => {
   // Use atom value OR fallback to direct localStorage for reliability
   const currentToken = tokenPair?.accessToken || localStorage.getItem('token') || '';
   
-  const rocketChatUrl = (window as any)._env_?.VITE_ROCKET_CHAT_URL || window.location.origin + '/chat';
+  const rocketChatUrl = window.location.origin + '/chat';
   const chatUrl = `${rocketChatUrl}/home?layout=embedded`;
 
   useEffect(() => {

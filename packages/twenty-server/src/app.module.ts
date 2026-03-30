@@ -32,6 +32,7 @@ import { TwentyORMModule } from 'src/engine/twenty-orm/twenty-orm.module';
 import { WorkspaceCacheStorageModule } from 'src/engine/workspace-cache-storage/workspace-cache-storage.module';
 import { ModulesModule } from 'src/modules/modules.module';
 
+import { ChatProxyMiddleware } from 'src/engine/middlewares/chat-proxy.middleware';
 import { ClickHouseModule } from './database/clickHouse/clickHouse.module';
 import { CoreEngineModule } from './engine/core-modules/core-engine.module';
 import { I18nModule } from './engine/core-modules/i18n/i18n.module';
@@ -111,6 +112,10 @@ export class AppModule {
   }
 
   configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(ChatProxyMiddleware)
+      .forRoutes({ path: 'chat/*path', method: RequestMethod.ALL });
+
     consumer
       .apply(
         GraphQLHydrateRequestFromTokenMiddleware,
