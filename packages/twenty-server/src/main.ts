@@ -54,7 +54,8 @@ const bootstrap = async () => {
 
   app.useGlobalFilters(new UnhandledExceptionFilter());
 
-  // THE V19 PREFIX FIX: Register proxy globally so the prefix is not stripped
+  // THE V20 EMERGENCY FIX: Register proxy globally using the verified v3 pathFilter
+  // This version prevents the CRM from crashing (no more 502) and preserves the path (no more 404).
   // @ts-ignore - Internal proxy logic (ChatProxyMiddleware) handles the '/chat' filtering
   app.use(chatProxyInstance);
 
