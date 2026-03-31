@@ -1,0 +1,87 @@
+# ============================================================
+# Konnecct Matrix Homeserver Configuration
+# Managed by: KonnecctREMAKE infrastructure
+# DO NOT expose this file publicly. MATRIX_REGISTRATION_SHARED_SECRET is sensitive.
+# ============================================================
+
+server_name: "app.konnecct.com"
+pid_file: /data/homeserver.pid
+
+# ─── Listeners ───────────────────────────────────────────────────────────────
+listeners:
+  - port: 8008
+    tls: false
+    type: http
+    x_forwarded: true
+    resources:
+      - names: [client]
+        compress: false
+
+# ─── Database ────────────────────────────────────────────────────────────────
+database:
+  name: psycopg2
+  args:
+    user: synapse
+    password: ${SYNAPSE_DB_PASSWORD:-synapse-pass}
+    database: synapse
+    host: synapse-db
+    port: 5432
+    cp_min: 5
+    cp_max: 10
+
+# ─── Media Storage ───────────────────────────────────────────────────────────
+media_store_path: /data/media_store
+max_upload_size: "50M"
+
+# ─── Registration & Auth ─────────────────────────────────────────────────────
+# Public self-registration is DISABLED.
+# All accounts are provisioned server-side by the CRM backend
+# using the registration_shared_secret below.
+enable_registration: false
+
+# This secret is read from MATRIX_REGISTRATION_SHARED_SECRET env var
+# and injected only into the CRM backend. It never reaches the browser.
+registration_shared_secret: "${MATRIX_REGISTRATION_SHARED_SECRET}"
+
+# ─── Federation ──────────────────────────────────────────────────────────────
+# Phase 1: Closed-garden mode. No external Matrix federation.
+# Federation can be enabled in a future phase by removing this block
+# and adding federation listeners + a .well-known delegation.
+federation_domain_whitelist: []
+
+# ─── Password Config ─────────────────────────────────────────────────────────
+# Password login is disabled for end users - all auth flows go through
+# the CRM backend which manages Matrix tokens server-side.
+password_config:
+  enabled: false
+
+# ─── Security ────────────────────────────────────────────────────────────────
+# Unique secret used for signing Matrix access tokens.
+# Should be a long random string set in your .env file.
+macaroon_secret_key: "${MATRIX_MACAROON_SECRET}"
+form_secret: "${MATRIX_FORM_SECRET}"
+
+# ─── Logging ─────────────────────────────────────────────────────────────────
+log_config: "/data/log.config"
+
+# ─── Trusted Key Servers ─────────────────────────────────────────────────────
+# Required even in non-federated mode (for key verification of own events)
+trusted_key_servers:
+  - server_name: "matrix.org"
+
+suppress_key_server_warning: true
+
+# ─── Rate Limiting ───────────────────────────────────────────────────────────
+rc_message:
+  per_second: 10
+  burst_count: 20
+
+rc_registration:
+  per_second: 0.1
+  burst_count: 3
+
+# ─── Metrics ─────────────────────────────────────────────────────────────────
+enable_metrics: false
+
+# ─── Report Stats ────────────────────────────────────────────────────────────
+report_stats: false

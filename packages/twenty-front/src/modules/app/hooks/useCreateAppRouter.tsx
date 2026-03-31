@@ -46,9 +46,9 @@ const Authorize = lazy(() =>
   })),
 );
 
-const ChatView = lazy(() =>
-  import('@/chat/components/ChatView').then((module) => ({
-    default: module.ChatView,
+const CommunicationHub = lazy(() =>
+  import('@/chat/components/CommunicationHub').then((module) => ({
+    default: module.CommunicationHub,
   })),
 );
 
@@ -123,7 +123,7 @@ export const useCreateAppRouter = (
             path="/chat"
             element={
               <LazyRoute>
-                <ChatView />
+                <CommunicationHub />
               </LazyRoute>
             }
           />
@@ -131,7 +131,7 @@ export const useCreateAppRouter = (
             path="/chat/*"
             element={
               <LazyRoute>
-                <ChatView />
+                <CommunicationHub />
               </LazyRoute>
             }
           />

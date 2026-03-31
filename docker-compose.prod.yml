@@ -36,12 +36,9 @@ services:
       SERVER_URL: https://app.konnecct.com
       FRONT_URL: https://app.konnecct.com
       NODE_PORT: 3000
-      VITE_ROCKET_CHAT_URL: https://app.konnecct.com/rc-proxy
       APP_SECRET: ${APP_SECRET:-konnecct-secret-6789}
       STORAGE_TYPE: local
       APP_VERSION: 11.7.0
-      ROCKET_CHAT_ADMIN_TOKEN: ${ROCKET_CHAT_ADMIN_TOKEN}
-      ROCKET_CHAT_ADMIN_ID: ${ROCKET_CHAT_ADMIN_ID}
     restart: always
 
   crm-worker:
@@ -62,53 +59,40 @@ services:
       APP_SECRET: ${APP_SECRET:-konnecct-secret-6789}
       STORAGE_TYPE: local
       APP_VERSION: 11.7.0
-      ROCKET_CHAT_ADMIN_TOKEN: ${ROCKET_CHAT_ADMIN_TOKEN}
-      ROCKET_CHAT_ADMIN_ID: ${ROCKET_CHAT_ADMIN_ID}
     restart: always
 
-  # Rocket.Chat Services
-  rocketchat:
-    image: registry.rocket.chat/rocketchat/rocket.chat:latest
-    depends_on:
-      - chat-mongo
-      - nats
+  # ─── Matrix Communication Backend ───────────────────────────────────────────
+  synapse-db:
+    image: postgres:16
     environment:
-      - MONGO_URL=mongodb://chat-mongo:27017/rocketchat?replicaSet=rs0
-      - MONGO_OPLOG_URL=mongodb://chat-mongo:27017/local?replicaSet=rs0
-      - ROOT_URL=https://app.konnecct.com/rc-proxy
-      - PORT=3000
-      - TRANSPORTER=monolith+nats://nats:4222
-      - Accounts_iframe_enabled=true
-      - Accounts_iframe_url=https://app.konnecct.com/
-      - Accounts_iframe_body_field=accessToken
-      - Accounts_iframe_helper_message=Synchronizing Konnecct...
-      - Iframe_Restrict_Access_Iframe_Send_Cookie=false
-      - Iframe_Integration_receive_enabled=true
-      - Iframe_Integration_send_enabled=true
-      - OVERWRITE_SETTING_Site_Url=https://app.konnecct.com/rc-proxy
-      - OVERWRITE_SETTING_CORS_Origin=*
-      - OVERWRITE_SETTING_API_Enable_CORS=true
-      - INSTANCE_IP=0.0.0.0
-    restart: always
-
-  nats:
-    image: nats:2.10-alpine
-    restart: always
-
-  chat-mongo:
-    image: mongodb/mongodb-community-server:8.0-ubi9
-    container_name: chat-mongo
-    restart: always
+      POSTGRES_USER: synapse
+      POSTGRES_PASSWORD: ${SYNAPSE_DB_PASSWORD:-synapse-pass}
+      POSTGRES_DB: synapse
+      # Synapse requires C locale for its Postgres schema
+      POSTGRES_INITDB_ARGS: "--lc-collate=C --lc-ctype=C --encoding=UTF8"
     volumes:
-      - chat-mongo-data:/var/lib/mongodb
-    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+      - synapse-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: pg_isready -U synapse
+      interval: 5s
+    restart: always
 
-  chat-mongo-init:
-    image: mongodb/mongodb-community-server:8.0-ubi9
+  synapse:
+    image: matrixdotorg/synapse:latest
     depends_on:
-      - chat-mongo
-    restart: "no"
-    entrypoint: [ "/bin/sh", "-c", "sleep 5; mongosh --host chat-mongo:27017 --eval 'rs.initiate({_id: \"rs0\", members: [{_id: 0, host: \"chat-mongo:27017\"}]})' || true" ]
+      synapse-db:
+        condition: service_healthy
+    environment:
+      # Synapse reads from the mounted homeserver.yaml; these env vars
+      # allow the CRM backend to provision Matrix accounts server-side only.
+      SYNAPSE_SERVER_NAME: app.konnecct.com
+      SYNAPSE_REPORT_STATS: "no"
+      MATRIX_REGISTRATION_SHARED_SECRET: ${MATRIX_REGISTRATION_SHARED_SECRET}
+    volumes:
+      - ./synapse/homeserver.yaml:/data/homeserver.yaml:ro
+      - ./synapse/log.config:/data/log.config:ro
+      - synapse-media:/data/media_store
+    restart: always
 
   # Nginx Reverse Proxy
   nginx:
@@ -122,7 +106,7 @@ services:
       - ./nginx/certbot-www:/var/www/certbot:ro
     depends_on:
       - crm-server
-      - rocketchat
+      - synapse
     restart: always
 
   # Certbot (SSL Renewal)
@@ -137,4 +121,5 @@ services:
 volumes:
   crm-postgres-data:
   crm-redis-data:
-  chat-mongo-data:
+  synapse-postgres-data:
+  synapse-media:
