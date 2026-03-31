@@ -23,7 +23,7 @@ const StyledIframe = styled.iframe`
   visibility: visible;
 `;
 
-export const ChatModule = () => {
+export const ChatView = () => {
   const { t } = useLingui();
   const tokenPair = useAtomValue(tokenPairState.atom);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -36,7 +36,7 @@ export const ChatModule = () => {
   const chatUrl = `${rocketChatUrl}home?layout=embedded`;
 
   useEffect(() => {
-    console.log('Konnecct: V12 CHAT MODULE LIVE');
+    console.log('Konnecct: ChatView Mounted');
     console.log('Konnecct: Auth State:', { fromAtom: !!tokenPair?.accessToken, fromStorage: !!localStorage.getItem('token') });
   }, [tokenPair]);
 
@@ -62,7 +62,7 @@ export const ChatModule = () => {
       // Rocket.Chat says it's ready, or asks for user info
       if (event.data.event === 'get-logged-user-info' || event.data.event === 'iframe-ready') {
         if (currentToken) {
-          console.log('Konnecct: Sending V12 SSO Handshake...');
+          console.log('Konnecct: Sending SSO Handshake...');
           iframeRef.current?.contentWindow?.postMessage({
             event: 'login-with-token',
             loginToken: currentToken
