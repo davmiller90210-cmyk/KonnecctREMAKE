@@ -85,10 +85,11 @@ const bootstrap = async () => {
   // Inject the server url in the frontend page
   generateFrontConfig();
 
-  // THE CRITICAL PROTOCOL FIX: Bind the HTTP 'upgrade' event to the proxy
+  // THE V22 NUCLEAR FIX: Bind the HTTP 'upgrade' event to the proxy with robust pathing
   const server = app.getHttpServer();
   server.on('upgrade', (req: any, socket: any, head: any) => {
-    if (req.url?.startsWith('/chat')) {
+    // V22: Capture all variations of chat websocket traffic (SockJS, DDP)
+    if (req.url && req.url.includes('/chat')) {
       // @ts-ignore - Manual WebSocket upgrade binding for the One-App Gateway
       chatProxyInstance.upgrade(req, socket, head);
     }

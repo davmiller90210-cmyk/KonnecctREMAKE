@@ -6,8 +6,10 @@ import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
 export const chatProxyInstance = createProxyMiddleware({
   target: 'http://rocketchat:3000', // NO trailing slash
   changeOrigin: true,
-  pathFilter: '/chat', // V20: Proper V3 path filtering to preserve prefix
+  pathFilter: ['/chat', '/chat/**'], // V22: Expanded catch-all
+  pathRewrite: { '^/chat' : '/chat' }, // V22: Strict mapping hardening
   ws: true,
+  xfwd: true, // V22: Helping Meteor identify the proxy correcty
   logger: console,
   on: {
     proxyReq: (proxyReq, req: any) => {
@@ -16,7 +18,7 @@ export const chatProxyInstance = createProxyMiddleware({
       proxyReq.setHeader('X-Forwarded-Prefix', '/chat');
     },
     error: (err, req, res: any) => {
-      console.error('Chat Gateway Emergency Error:', err);
+      console.error('Chat Gateway Protocol Error:', err);
       if (res.status && !res.headersSent) {
         res.status(502).send('Chat Gateway Protocol Failure');
       }
