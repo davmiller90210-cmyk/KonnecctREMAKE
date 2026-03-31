@@ -60,11 +60,7 @@ RUN npx nx run twenty-front:lingui:extract && \
 # To skip the memory-intensive frontend build, pre-build on the host:
 #   npx nx build twenty-front
 # The check below will use packages/twenty-front/build/ if it already exists.
-RUN if [ -d /app/packages/twenty-front/build ]; then \
-      echo "Using pre-built frontend from host"; \
-    else \
-      NODE_OPTIONS="--max-old-space-size=8192" npx nx build twenty-front; \
-    fi
+RUN NODE_OPTIONS="--max-old-space-size=8192" npx nx build twenty-front
 
 
 # ===========================================================================
