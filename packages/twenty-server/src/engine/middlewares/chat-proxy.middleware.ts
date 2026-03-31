@@ -1,9 +1,10 @@
 import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
 
-// V32/V40: DECOUPLED PROXY - Moving to /rc-proxy to avoid SPA route collision
-export const chatProxyInstance = createProxyMiddleware('/rc-proxy', {
+// V40: DECOUPLED PROXY (v3.x API) - Moving path to pathFilter to resolve 502 crash
+export const chatProxyInstance = createProxyMiddleware({
   target: 'http://rocketchat:3000',
   changeOrigin: true,
+  pathFilter: '/rc-proxy',
   // Ensure the /rc-proxy prefix is preserved when talking to Rocket.Chat (as ROOT_URL includes it)
   pathRewrite: { '^/rc-proxy' : '/rc-proxy' },
   ws: true,
