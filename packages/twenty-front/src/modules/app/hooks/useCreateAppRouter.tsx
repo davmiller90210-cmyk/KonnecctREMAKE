@@ -120,7 +120,15 @@ export const useCreateAppRouter = (
       >
         <Route element={<DefaultLayout />}>
           <Route
-            path={AppPath.Chat + '/*'}
+            path="/chat"
+            element={
+              <LazyRoute>
+                <ChatView />
+              </LazyRoute>
+            }
+          />
+          <Route
+            path="/chat/*"
             element={
               <LazyRoute>
                 <ChatView />
