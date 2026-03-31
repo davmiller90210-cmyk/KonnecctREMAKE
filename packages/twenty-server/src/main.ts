@@ -42,9 +42,10 @@ const bootstrap = async () => {
       : {}),
   });
 
-  // THE V32 RECURSION BREAKER: THE ABSOLUTE FIRST MIDDLEWARE
-  // We must intercept '/chat/' before NestJS or our static server can touch it.
-  app.use(chatProxyInstance);
+  // THE V42 RECURSION BYPASS: Mount the proxy directly on the underlying Express instance.
+  // This ensures that NestJS's global body-parsers and routing do not intercept /rc-proxy traffic.
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.use('/rc-proxy', chatProxyInstance);
   const logger = app.get(LoggerService);
   const twentyConfigService = app.get(TwentyConfigService);
 
