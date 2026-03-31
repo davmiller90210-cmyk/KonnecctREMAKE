@@ -60,13 +60,13 @@ const StyledRoomAvatar = styled.div`
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: ${themeCssVariables.color.blue30};
+  background: ${themeCssVariables.color.blue3};
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: ${themeCssVariables.font.size.xs};
   font-weight: ${themeCssVariables.font.weight.semiBold};
-  color: ${themeCssVariables.color.blue50};
+  color: ${themeCssVariables.color.blue9};
   flex-shrink: 0;
   font-family: ${themeCssVariables.font.family};
 `;
@@ -100,7 +100,7 @@ const StyledUnreadBadge = styled.div`
   min-width: 18px;
   height: 18px;
   border-radius: 9px;
-  background: ${themeCssVariables.color.blue50};
+  background: ${themeCssVariables.color.blue9};
   color: #fff;
   font-size: 10px;
   font-weight: ${themeCssVariables.font.weight.semiBold};
