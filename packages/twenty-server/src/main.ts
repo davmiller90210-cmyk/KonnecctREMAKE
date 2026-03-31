@@ -19,7 +19,6 @@ import { UnhandledExceptionFilter } from 'src/filters/unhandled-exception.filter
 import { AppModule } from './app.module';
 import './instrument';
 
-import { chatProxyInstance } from './engine/middlewares/chat-proxy.middleware';
 import { settings } from './engine/constants/settings';
 import { generateFrontConfig } from './utils/generate-front-config';
 
@@ -42,10 +41,6 @@ const bootstrap = async () => {
       : {}),
   });
 
-  // THE V42 RECURSION BYPASS: Mount the proxy directly on the underlying Express instance.
-  // This ensures that NestJS's global body-parsers and routing do not intercept /rc-proxy traffic.
-  const expressApp = app.getHttpAdapter().getInstance();
-  expressApp.use('/rc-proxy', chatProxyInstance);
   const logger = app.get(LoggerService);
   const twentyConfigService = app.get(TwentyConfigService);
 
@@ -87,15 +82,6 @@ const bootstrap = async () => {
   generateFrontConfig();
 
   // THE V22 NUCLEAR FIX: Bind the HTTP 'upgrade' event to the proxy with robust pathing
-  const server = app.getHttpServer();
-  server.on('upgrade', (req: any, socket: any, head: any) => {
-    // V22: Capture all variations of chat websocket traffic (SockJS, DDP)
-    if (req.url && req.url.includes('/rc-proxy')) {
-      // @ts-ignore - Manual WebSocket upgrade binding for the One-App Gateway
-      chatProxyInstance.upgrade(req, socket, head);
-    }
-  });
-
   const port = twentyConfigService.get('NODE_PORT') || 3000;
   await app.listen(port, '0.0.0.0');
 };
