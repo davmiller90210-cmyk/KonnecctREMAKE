@@ -41,6 +41,10 @@ const bootstrap = async () => {
         }
       : {}),
   });
+
+  // THE V32 RECURSION BREAKER: THE ABSOLUTE FIRST MIDDLEWARE
+  // We must intercept '/chat/' before NestJS or our static server can touch it.
+  app.use(chatProxyInstance);
   const logger = app.get(LoggerService);
   const twentyConfigService = app.get(TwentyConfigService);
 
@@ -54,10 +58,6 @@ const bootstrap = async () => {
 
   app.useGlobalFilters(new UnhandledExceptionFilter());
 
-  // THE V20 EMERGENCY FIX: Register proxy globally using the verified v3 pathFilter
-  // This version prevents the CRM from crashing (no more 502) and preserves the path (no more 404).
-  // @ts-ignore - Internal proxy logic (ChatProxyMiddleware) handles the '/chat' filtering
-  app.use(chatProxyInstance);
 
   app.useBodyParser('json', { limit: settings.storage.maxFileSize });
   app.useBodyParser('urlencoded', {

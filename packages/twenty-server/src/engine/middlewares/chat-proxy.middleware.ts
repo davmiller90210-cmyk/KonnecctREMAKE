@@ -1,19 +1,17 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
 
-// V20: EMERGENCY RESCUE - V3-Strict Signature
-// The 502 was caused by the legacy positional argument. V3 requires pathFilter in the options object.
+// V20/V32: EMERGENCY RESCUE - Absolute Priority
 export const chatProxyInstance = createProxyMiddleware({
-  target: 'http://rocketchat:3000', // NO trailing slash
+  target: 'http://rocketchat:3000',
   changeOrigin: true,
-  pathFilter: ['/chat', '/chat/**'], // V22: Expanded catch-all
-  pathRewrite: { '^/chat' : '/chat' }, // V22: Strict mapping hardening
+  pathFilter: (path) => path.startsWith('/chat/'), // V32: Capturing the iframe content path specifically
+  pathRewrite: { '^/chat' : '/chat' },
   ws: true,
-  xfwd: true, // V22: Helping Meteor identify the proxy correcty
+  xfwd: true,
   logger: console,
   on: {
     proxyReq: (proxyReq, req: any) => {
-      // Body restoration for POST requests
       fixRequestBody(proxyReq, req);
       proxyReq.setHeader('X-Forwarded-Prefix', '/chat');
     },
@@ -25,14 +23,3 @@ export const chatProxyInstance = createProxyMiddleware({
     },
   },
 });
-
-@Injectable()
-export class ChatProxyMiddleware implements NestMiddleware {
-  use(req: any, res: any, next: () => void) {
-    if (req.url.startsWith('/chat')) {
-      // @ts-ignore - Direct execution of the proxy instance
-      return chatProxyInstance(req, res, next);
-    }
-    next();
-  }
-}
