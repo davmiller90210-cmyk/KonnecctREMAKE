@@ -219,7 +219,7 @@ export const useCreateAppRouter = (
             }
           />
           <Route
-            path={AppPath.Chat}
+            path={`${AppPath.Chat}/*`}
             element={
               <LazyRoute>
                 <ChatModule />

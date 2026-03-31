@@ -50,7 +50,7 @@ export const MainNavigationDrawerScrollableItems = () => {
         label={t`Chat`}
         to={AppPath.Chat}
         Icon={IconMessage}
-        active={location.pathname === AppPath.Chat}
+        active={location.pathname.startsWith(AppPath.Chat)}
       />
       <NavigationDrawerOtherSection />
     </StyledScrollableItemsContainer>
