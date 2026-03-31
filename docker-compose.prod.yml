@@ -77,7 +77,7 @@ services:
       - MONGO_OPLOG_URL=mongodb://chat-mongo:27017/local?replicaSet=rs0
       - ROOT_URL=https://app.konnecct.com/rc-proxy
       - PORT=3000
-      - TRANSPORTER=nats://nats:4222
+      - TRANSPORTER=monolith+nats://nats:4222
       - Accounts_iframe_enabled=true
       - Accounts_iframe_url=https://app.konnecct.com/
       - Accounts_iframe_body_field=accessToken
@@ -94,10 +94,6 @@ services:
   nats:
     image: nats:2.10-alpine
     restart: always
-    command: >
-      --max_payload 10MB
-      --max_pending 10MB
-      --max_connections 10000
 
   chat-mongo:
     image: mongodb/mongodb-community-server:8.0-ubi9
