@@ -31,7 +31,8 @@ export const ChatModule = () => {
   // Use atom value OR fallback to direct localStorage for reliability
   const currentToken = tokenPair?.accessToken || localStorage.getItem('token') || '';
   
-  const rocketChatUrl = window.location.origin + '/chat/';
+  // V40: Pointing to /rc-proxy/ to bypass the SPA router's /chat interception
+  const rocketChatUrl = window.location.origin + '/rc-proxy/';
   const chatUrl = `${rocketChatUrl}home?layout=embedded`;
 
   useEffect(() => {

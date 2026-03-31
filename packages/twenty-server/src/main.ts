@@ -89,7 +89,7 @@ const bootstrap = async () => {
   const server = app.getHttpServer();
   server.on('upgrade', (req: any, socket: any, head: any) => {
     // V22: Capture all variations of chat websocket traffic (SockJS, DDP)
-    if (req.url && req.url.includes('/chat')) {
+    if (req.url && req.url.includes('/rc-proxy')) {
       // @ts-ignore - Manual WebSocket upgrade binding for the One-App Gateway
       chatProxyInstance.upgrade(req, socket, head);
     }
