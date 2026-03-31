@@ -119,6 +119,14 @@ export const useCreateAppRouter = (
         loader={async () => Promise.resolve(null)}
       >
         <Route element={<DefaultLayout />}>
+          <Route
+            path={`${AppPath.Chat}/*`}
+            element={
+              <LazyRoute>
+                <ChatModule />
+              </LazyRoute>
+            }
+          />
           <Route path={AppPath.Verify} element={<VerifyLoginTokenEffect />} />
           <Route path={AppPath.VerifyEmail} element={<VerifyEmailEffect />} />
           <Route
@@ -215,14 +223,6 @@ export const useCreateAppRouter = (
             element={
               <LazyRoute>
                 <RecordIndexPage />
-              </LazyRoute>
-            }
-          />
-          <Route
-            path={`${AppPath.Chat}/*`}
-            element={
-              <LazyRoute>
-                <ChatModule />
               </LazyRoute>
             }
           />
