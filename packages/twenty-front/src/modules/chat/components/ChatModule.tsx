@@ -31,8 +31,8 @@ export const ChatModule = () => {
   // Use atom value OR fallback to direct localStorage for reliability
   const currentToken = tokenPair?.accessToken || localStorage.getItem('token') || '';
   
-  const rocketChatUrl = window.location.origin + '/chat';
-  const chatUrl = `${rocketChatUrl}/home?layout=embedded`;
+  const rocketChatUrl = window.location.origin + '/chat/';
+  const chatUrl = `${rocketChatUrl}home?layout=embedded`;
 
   useEffect(() => {
     console.log('Konnecct: V12 CHAT MODULE LIVE');
