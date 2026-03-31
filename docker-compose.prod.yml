@@ -87,6 +87,7 @@ services:
       - Iframe_Integration_send_enabled=true
       - OVERWRITE_SETTING_Site_Url=https://app.konnecct.com/rc-proxy
       - OVERWRITE_SETTING_CORS_Origin=*
+      - OVERWRITE_SETTING_API_Enable_CORS=true
       - INSTANCE_IP=0.0.0.0
     restart: always
 
