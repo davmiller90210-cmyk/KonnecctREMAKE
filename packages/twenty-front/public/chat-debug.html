@@ -3,72 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Konnecct Chat Diagnostic</title>
+    <title>Matrix Connection Debug</title>
     <style>
-        body { font-family: sans-serif; padding: 2rem; background: #111; color: #eee; }
-        .log { background: #222; border: 1px solid #444; padding: 1rem; border-radius: 8px; font-family: monospace; white-space: pre-wrap; margin-top: 1rem; }
-        .status { padding: 0.5rem 1rem; border-radius: 4px; display: inline-block; font-weight: bold; }
-        .success { background: #1fb31f; color: white; }
-        .error { background: #bc2031; color: white; }
-        .pending { background: #dc9b01; color: white; }
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; background: #111; color: #eee; }
+        .log-entry { margin-bottom: 10px; padding: 10px; border-radius: 4px; border-left: 4px solid #444; }
+        .SUCCESS { border-color: #4caf50; background: #1b2e1b; }
+        .ERROR { border-color: #f44336; background: #321c1c; }
+        .INFO { border-color: #2196f3; background: #1c2332; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #2196f3; color: white; border: none; border-radius: 4px; }
     </style>
 </head>
 <body>
-    <h1>🚀 Konnecct Chat Diagnostic (V14)</h1>
-    <p>Testing connection to <strong>https://app.konnecct.com/chat/</strong>...</p>
-    
-    <div id="info-status" class="status pending">TESTING API INFO...</div>
-    <div id="info-log" class="log">Waiting...</div>
-
-    <div id="settings-status" class="status pending" style="margin-top: 2rem;">TESTING PUBLIC SETTINGS...</div>
-    <div id="settings-log" class="log">Waiting...</div>
+    <h1>Matrix Connection Diagnostic</h1>
+    <p>This tool manually tests the steps required to connect to the Chat Hub.</p>
+    <button onclick="runDiagnostic()">Run Diagnostic</button>
+    <div id="logs" style="margin-top: 20px;"></div>
 
     <script>
-        const log = (id, msg) => { document.getElementById(id).innerText += '\n' + msg; };
-        const setStatus = (id, success, msg) => { 
-            const el = document.getElementById(id);
-            el.className = 'status ' + (success ? 'success' : 'error');
-            el.innerText = msg;
-        };
-
-        async function runDiagnostics() {
-            // Test 1: API Info
-            try {
-                log('info-log', 'Fetching https://app.konnecct.com/chat/api/v1/info...');
-                const res = await fetch('/chat/api/v1/info');
-                const data = await res.json();
-                if (res.ok) {
-                    setStatus('info-status', true, 'CONNECTED');
-                    log('info-log', 'Success! Version: ' + data.version);
-                } else {
-                    throw new Error('HTTP ' + res.status);
-                }
-            } catch (e) {
-                setStatus('info-status', false, 'FAILED');
-                log('info-log', 'Error: ' + e.message);
-            }
-
-            // Test 2: Public Settings Handshake
-            try {
-                log('settings-log', 'Fetching https://app.konnecct.com/chat/api/v1/method.callAnon/public-settings:get...');
-                // We test with GET first because that is what caused the 405 error
-                const res = await fetch('/chat/api/v1/method.callAnon/public-settings:get?params=' + encodeURIComponent(JSON.stringify([])));
-                const data = await res.json();
-                if (res.ok) {
-                    setStatus('settings-status', true, 'CONNECTED');
-                    log('settings-log', 'Success! Settings Handshake Received.');
-                } else {
-                    throw new Error('HTTP ' + res.status + ' - ' + (data.message || 'No message'));
-                }
-            } catch (e) {
-                setStatus('settings-status', false, 'FAILED');
-                log('settings-log', 'Error: ' + e.message);
-                log('settings-log', '\nTIP: If you see HTTP 405, the Engine Fix V14 was not built correctly.');
-                log('settings-log', 'TIP: If you see HTTP 404, Nginx subpath routing is broken.');
-            }
+        const logsDiv = document.getElementById('logs');
+        function log(message, type = 'INFO') {
+            const div = document.createElement('div');
+            div.className = `log-entry ${type}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsDiv.appendChild(div);
+            console.log(`[${type}] ${message}`);
         }
 
-        runDiagnostics();
+        async function runDiagnostic() {
+            logsDiv.innerHTML = '';
+            log('Starting diagnostic...', 'INFO');
+
+            // 1. Check CRM Session
+            const cookies = document.cookie;
+            if (!cookies.includes('accessToken')) {
+                log('WARNING: No accessToken found in cookies. This test might fail if you are not logged in to the CRM.', 'ERROR');
+            } else {
+                log('CRM session cookies detected.', 'SUCCESS');
+            }
+
+            // 2. Test Matrix Token Endpoint
+            log('Step 1: Fetching Matrix token from /matrix/token...', 'INFO');
+            try {
+                // Fetching the current token from cookies to pass as Bearer
+                // In production, the browser adds these automatically if configured, 
+                // but for this debug tool we'll try to find it.
+                const response = await fetch('/matrix/token');
+                
+                if (response.status === 401) {
+                    log('ERROR: /matrix/token returned 401 (Unauthorized). Your CRM session expired or the manual JWT fix failed.', 'ERROR');
+                    return;
+                }
+
+                if (!response.ok) {
+                    log(`ERROR: /matrix/token failed with status ${response.status}.`, 'ERROR');
+                    const text = await response.text();
+                    log(`Server response: ${text.substring(0, 200)}`, 'ERROR');
+                    return;
+                }
+
+                const data = await response.json();
+                log('SUCCESS: Matrix token received!', 'SUCCESS');
+                log(`User ID: ${data.userId}`, 'INFO');
+                log(`Homeserver: ${data.homeserverUrl}`, 'INFO');
+                
+                // 3. Test Synapse Connectivity
+                log('Step 2: Pinging Synapse homeserver at /_matrix/client/versions...', 'INFO');
+                const synapseResponse = await fetch('/_matrix/client/versions');
+                if (synapseResponse.ok) {
+                    const versions = await synapseResponse.json();
+                    log(`SUCCESS: Synapse responded! Supported versions: ${versions.versions.join(', ')}`, 'SUCCESS');
+                } else {
+                    log(`ERROR: Synapse did not respond correctly to /_matrix/client/versions (Status: ${synapseResponse.status})`, 'ERROR');
+                }
+
+                log('Step 3: Attempting light Matrix login check...', 'INFO');
+                const loginCheck = await fetch('/_matrix/client/v3/login', {
+                    method: 'GET'
+                });
+                if (loginCheck.ok) {
+                    log('SUCCESS: Matrix login flows are accessible.', 'SUCCESS');
+                } else {
+                   log('WARNING: Matrix login endpoint returned error, but this is sometimes normal for GET.', 'INFO');
+                }
+
+            } catch (err) {
+                log(`CRITICAL ERROR during diagnostic: ${err.message}`, 'ERROR');
+            }
+        }
     </script>
 </body>
 </html>
