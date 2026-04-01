@@ -115,7 +115,7 @@ export const useAgoraChat = () => {
 
     try {
       setConnectionState('connecting');
-      const response = await fetch('/api/v1/agora/token', {
+      const response = await fetch('/agora/token', {
         headers: { Authorization: `Bearer ${crmToken}` },
       });
 
