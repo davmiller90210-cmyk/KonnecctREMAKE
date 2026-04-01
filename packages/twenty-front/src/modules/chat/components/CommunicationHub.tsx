@@ -1,15 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useAtomValue } from 'jotai';
 import { styled } from '@linaria/react';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
-import { Room, RoomEvent, MatrixEvent } from 'matrix-js-sdk';
 
-import { matrixSyncedState } from '@/chat/states/matrixSessionState';
-import { useMatrixClient } from '@/chat/hooks/useMatrixClient';
+import {
+  agoraConnectionStateAtom,
+  agoraConnectionErrorAtom,
+  agoraConversationsAtom,
+} from '@/chat/states/agoraSessionState';
+import { useAgoraChat } from '@/chat/hooks/useAgoraChat';
 import { InboxSidebar } from '@/chat/components/InboxSidebar';
 import { ConversationView } from '@/chat/components/ConversationView';
-
-// ─── Layout shell — matches the CRM's own page layout conventions ─────────────
 
 const StyledShell = styled.div`
   display: flex;
@@ -42,69 +43,54 @@ const StyledLoadingState = styled.div`
   font-size: ${themeCssVariables.font.size.sm};
 `;
 
-/**
- * CommunicationHub
- *
- * The root page component for the /chat route.
- * Renders the native Matrix-powered communication interface.
- *
- * Structure:
- *  ┌──────────────────────────────────────────────────┐
- *  │ InboxSidebar (240px) │ ConversationView (flex: 1) │
- *  └──────────────────────────────────────────────────┘
- *
- * The SDK is initialized here via useMatrixClient, which watches the CRM auth
- * token and automatically provisions the user's Matrix account the first time.
- */
-export const CommunicationHub = () => {
-  const isSynced = useAtomValue(matrixSyncedState);
-  const clientRef = useMatrixClient();
-  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
-  const [rooms, setRooms] = useState<Room[]>([]);
+const StyledErrorState = styled(StyledLoadingState)`
+  color: ${themeCssVariables.color.red5};
+`;
 
-  // Refresh room list on any room event (new message, membership change, etc.)
-  const refreshRooms = useCallback(() => {
-    if (!clientRef.current) return;
-    setRooms(clientRef.current.getRooms());
-  }, [clientRef]);
+export const CommunicationHub = () => {
+  const connectionState = useAtomValue(agoraConnectionStateAtom);
+  const connectionError = useAtomValue(agoraConnectionErrorAtom);
+  const conversations = useAtomValue(agoraConversationsAtom);
+  const { connectToAgora, disconnectFromAgora, sendMessage, sendAttachment } = useAgoraChat();
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!clientRef.current || !isSynced) return;
+    connectToAgora();
+    return () => disconnectFromAgora();
+  }, [connectToAgora, disconnectFromAgora]);
 
-    // Initial room snapshot
-    refreshRooms();
+  if (connectionState === 'error') {
+    return (
+      <StyledErrorState>
+        <span>Error connecting to Agora SDK</span>
+        <span style={{ fontSize: '12px' }}>{connectionError}</span>
+      </StyledErrorState>
+    );
+  }
 
-    // Subscribe to room events that should update the sidebar
-    clientRef.current.on(RoomEvent.Timeline, refreshRooms);
-    clientRef.current.on(RoomEvent.Name, refreshRooms);
-    clientRef.current.on(RoomEvent.MyMembership, refreshRooms);
-
-    return () => {
-      clientRef.current?.off(RoomEvent.Timeline, refreshRooms);
-      clientRef.current?.off(RoomEvent.Name, refreshRooms);
-      clientRef.current?.off(RoomEvent.MyMembership, refreshRooms);
-    };
-  }, [isSynced, clientRef, refreshRooms]);
-
-  if (!isSynced) {
+  if (connectionState !== 'connected') {
     return (
       <StyledLoadingState>
-        <span>Connecting to hub…</span>
+        <span>Connecting to Agora Hub…</span>
       </StyledLoadingState>
     );
   }
 
-  const selectedRoom = rooms.find((r) => r.roomId === selectedRoomId) ?? null;
+  const selectedConversation = conversations.find((c) => c.id === selectedConversationId) ?? null;
 
   return (
     <StyledShell>
       <InboxSidebar
-        rooms={rooms}
-        selectedRoomId={selectedRoomId}
-        onSelectRoom={setSelectedRoomId}
+        conversations={conversations}
+        selectedId={selectedConversationId}
+        onSelect={setSelectedConversationId}
       />
-      {selectedRoom ? (
-        <ConversationView room={selectedRoom} client={clientRef.current!} />
+      {selectedConversation ? (
+        <ConversationView 
+          conversation={selectedConversation} 
+          onSendMessage={(text) => sendMessage(selectedConversation.id, text, selectedConversation.type)}
+          onSendAttachment={(file, type) => sendAttachment(selectedConversation.id, file, type, selectedConversation.type)}
+        />
       ) : (
         <StyledNoSelection>Select a conversation to start</StyledNoSelection>
       )}

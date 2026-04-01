@@ -61,41 +61,6 @@ services:
       APP_VERSION: 11.7.0
     restart: always
 
-  # ─── Matrix Communication Backend ───────────────────────────────────────────
-  synapse-db:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: synapse
-      POSTGRES_PASSWORD: ${SYNAPSE_DB_PASSWORD:-synapse-pass}
-      POSTGRES_DB: synapse
-      # Synapse requires C locale for its Postgres schema
-      POSTGRES_INITDB_ARGS: "--lc-collate=C --lc-ctype=C --encoding=UTF8"
-    volumes:
-      - synapse-postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: pg_isready -U synapse
-      interval: 5s
-    restart: always
-
-  synapse:
-    image: matrixdotorg/synapse:latest
-    depends_on:
-      synapse-db:
-        condition: service_healthy
-    environment:
-      # Synapse reads from the mounted homeserver.yaml; these env vars
-      # allow the CRM backend to provision Matrix accounts server-side only.
-      SYNAPSE_SERVER_NAME: app.konnecct.com
-      SYNAPSE_REPORT_STATS: "no"
-      MATRIX_REGISTRATION_SHARED_SECRET: ${MATRIX_REGISTRATION_SHARED_SECRET}
-      SYNAPSE_DB_PASSWORD: ${SYNAPSE_DB_PASSWORD:-synapse-pass}
-    volumes:
-      - synapse-data:/data
-      - ./synapse/homeserver.yaml:/data/homeserver.yaml:ro
-      - ./synapse/log.config:/data/log.config:ro
-      - synapse-media:/data/media_store
-    restart: always
-
   # Nginx Reverse Proxy
   nginx:
     image: nginx:1.25-alpine
@@ -108,7 +73,6 @@ services:
       - ./nginx/certbot-www:/var/www/certbot:ro
     depends_on:
       - crm-server
-      - synapse
     restart: always
 
   # Certbot (SSL Renewal)
@@ -123,6 +87,3 @@ services:
 volumes:
   crm-postgres-data:
   crm-redis-data:
-  synapse-postgres-data:
-  synapse-media:
-  synapse-data:

@@ -1,7 +1,12 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useAtomValue } from 'jotai';
 import { styled } from '@linaria/react';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
-import { Room, MatrixClient, RoomEvent, MatrixEvent, MsgType } from 'matrix-js-sdk';
+
+import { 
+  ChatConversation, 
+  currentMessagesAtom 
+} from '@/chat/states/agoraSessionState';
 
 // ─── Layout ───────────────────────────────────────────────────────────────────
 
@@ -46,7 +51,7 @@ interface StyledMessageBubbleProps {
 
 const StyledMessageRow = styled.div<StyledMessageBubbleProps>`
   display: flex;
-  flex-direction: ${({ isOwn }: StyledMessageBubbleProps) => (isOwn ? 'row-reverse' : 'row')};
+  flex-direction: ${({ isOwn }) => (isOwn ? 'row-reverse' : 'row')};
   align-items: flex-end;
   gap: ${themeCssVariables.spacing[2]};
 `;
@@ -69,15 +74,15 @@ const StyledAvatar = styled.div`
 const StyledBubble = styled.div<StyledMessageBubbleProps>`
   max-width: 60%;
   padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[3]};
-  border-radius: ${({ isOwn }: StyledMessageBubbleProps) =>
+  border-radius: ${({ isOwn }) =>
     isOwn
       ? `${themeCssVariables.border.radius.md} ${themeCssVariables.border.radius.sm} ${themeCssVariables.border.radius.sm} ${themeCssVariables.border.radius.md}`
       : `${themeCssVariables.border.radius.sm} ${themeCssVariables.border.radius.md} ${themeCssVariables.border.radius.md} ${themeCssVariables.border.radius.sm}`};
-  background: ${({ isOwn }: StyledMessageBubbleProps) =>
+  background: ${({ isOwn }) =>
     isOwn
       ? themeCssVariables.color.blue9
       : themeCssVariables.background.secondary};
-  color: ${({ isOwn }: StyledMessageBubbleProps) =>
+  color: ${({ isOwn }) =>
     isOwn ? '#ffffff' : themeCssVariables.font.color.primary};
 `;
 
@@ -88,6 +93,12 @@ const StyledBubbleText = styled.p`
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
+`;
+
+const StyledImageAttachment = styled.img`
+  max-width: 100%;
+  border-radius: ${themeCssVariables.border.radius.sm};
+  margin-top: ${themeCssVariables.spacing[1]};
 `;
 
 const StyledTimestamp = styled.span`
@@ -127,28 +138,40 @@ const StyledTextarea = styled.textarea`
   &:focus {
     border-color: ${themeCssVariables.color.blue8};
   }
-
-  &::placeholder {
-    color: ${themeCssVariables.font.color.light};
-  }
 `;
 
-const StyledSendButton = styled.button`
+const StyledActionArea = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${themeCssVariables.spacing[2]};
+`;
+
+const StyledButton = styled.button<{ primary?: boolean, recording?: boolean }>`
   height: 40px;
-  padding: 0 ${themeCssVariables.spacing[4]};
+  padding: 0 ${themeCssVariables.spacing[3]};
   border-radius: ${themeCssVariables.border.radius.md};
   border: none;
-  background: ${themeCssVariables.color.blue9};
-  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: ${({ primary, recording }) => {
+    if (recording) return themeCssVariables.color.red5;
+    if (primary) return themeCssVariables.color.blue9;
+    return themeCssVariables.background.transparent.medium;
+  }};
+  color: ${({ primary, recording }) => (primary || recording) ? '#ffffff' : themeCssVariables.font.color.primary};
   font-size: ${themeCssVariables.font.size.sm};
   font-weight: ${themeCssVariables.font.weight.medium};
   font-family: ${themeCssVariables.font.family};
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 80ms ease;
 
   &:hover {
-    background: ${themeCssVariables.color.blue10};
+    background: ${({ primary, recording }) => {
+      if (recording) return themeCssVariables.color.red6;
+      if (primary) return themeCssVariables.color.blue10;
+      return themeCssVariables.background.transparent.dark;
+    }};
   }
 
   &:disabled {
@@ -157,101 +180,144 @@ const StyledSendButton = styled.button`
   }
 `;
 
+const StyledHiddenInput = styled.input`
+  display: none;
+`;
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 type ConversationViewProps = {
-  room: Room;
-  client: MatrixClient;
+  conversation: ChatConversation;
+  onSendMessage: (text: string) => void;
+  onSendAttachment: (file: File, type: 'img' | 'file' | 'audio' | 'video') => void;
 };
 
-type MessageItem = {
-  eventId: string;
-  sender: string;
-  body: string;
-  timestamp: number;
-  isOwn: boolean;
-};
-
-export const ConversationView = ({ room, client }: ConversationViewProps) => {
-  const [messages, setMessages] = useState<MessageItem[]>([]);
+export const ConversationView = ({ conversation, onSendMessage, onSendAttachment }: ConversationViewProps) => {
   const [draft, setDraft] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  
+  const allMessagesMap = useAtomValue(currentMessagesAtom);
+  const messages = allMessagesMap[conversation.id] || [];
+  
   const timelineRef = useRef<HTMLDivElement>(null);
-  const myUserId = client.getUserId() ?? '';
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
-  const buildMessages = useCallback(() => {
-    const events = room.getLiveTimeline().getEvents();
-    return events
-      .filter((e: MatrixEvent) => e.getType() === 'm.room.message')
-      .map((e: MatrixEvent) => ({
-        eventId: e.getId() ?? '',
-        sender: e.getSender() ?? '',
-        body: (e.getContent().body as string) ?? '',
-        timestamp: e.getTs(),
-        isOwn: e.getSender() === myUserId,
-      }));
-  }, [room, myUserId]);
-
-  useEffect(() => {
-    setMessages(buildMessages());
-
-    const onTimeline = () => setMessages(buildMessages());
-    room.on(RoomEvent.Timeline, onTimeline);
-    return () => { room.off(RoomEvent.Timeline, onTimeline); };
-  }, [room, buildMessages]);
-
-  // Auto-scroll to bottom on new messages
+  // Auto-scroll to bottom
   useEffect(() => {
     if (timelineRef.current) {
       timelineRef.current.scrollTop = timelineRef.current.scrollHeight;
     }
   }, [messages]);
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSend = (e?: React.FormEvent) => {
+    e?.preventDefault();
     const body = draft.trim();
     if (!body || isSending) return;
 
     setIsSending(true);
     setDraft('');
-    try {
-      await client.sendMessage(room.roomId, {
-        msgtype: MsgType.Text,
-        body,
-      });
-    } catch (err) {
-      console.error('[Matrix] Failed to send message:', err);
-      setDraft(body); // Restore draft on failure
-    } finally {
-      setIsSending(false);
-    }
+    onSendMessage(body);
+    setIsSending(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSend(e as any);
+      handleSend();
+    }
+  };
+
+  // ─── Attachments ──────────────────────────────────────────────────
+  const triggerFileSelect = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Determine type by mime
+    const type = file.type.startsWith('image/') ? 'img' : 
+                 file.type.startsWith('video/') ? 'video' : 
+                 file.type.startsWith('audio/') ? 'audio' : 'file';
+    
+    onSendAttachment(file, type);
+    e.target.value = ''; // reset
+  };
+
+  // ─── Voice Notes ──────────────────────────────────────────────────
+  const toggleRecording = async () => {
+    if (isRecording) {
+      mediaRecorderRef.current?.stop();
+      setIsRecording(false);
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const file = new File([audioBlob], `Voice_Note_${Date.now()}.webm`, { type: 'audio/webm' });
+        
+        onSendAttachment(file, 'audio');
+        
+        // Stop all tracks to release mic
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Microphone access denied or unavailable", err);
+      alert("Microphone access is required for voice notes.");
     }
   };
 
   return (
     <StyledContainer>
       <StyledHeader>
-        <StyledHeaderName>{room.name || 'Conversation'}</StyledHeaderName>
+        <StyledHeaderName>{conversation.name || 'Conversation'}</StyledHeaderName>
       </StyledHeader>
 
       <StyledTimeline ref={timelineRef}>
         {messages.map((msg) => {
-          const initial = msg.sender.charAt(1).toUpperCase();
-          const time = new Date(msg.timestamp).toLocaleTimeString([], {
+          const isOwn = msg.direction === 'out';
+          const initial = msg.senderName ? msg.senderName.charAt(0).toUpperCase() : msg.senderId.charAt(0).toUpperCase();
+          const time = new Date(msg.createdAt).toLocaleTimeString([], {
             hour: '2-digit',
             minute: '2-digit',
           });
+
           return (
-            <StyledMessageRow key={msg.eventId} isOwn={msg.isOwn}>
-              {!msg.isOwn && <StyledAvatar>{initial}</StyledAvatar>}
-              <StyledBubble isOwn={msg.isOwn}>
-                <StyledBubbleText>{msg.body}</StyledBubbleText>
+            <StyledMessageRow key={msg.id} isOwn={isOwn}>
+              {!isOwn && <StyledAvatar>{initial}</StyledAvatar>}
+              
+              <StyledBubble isOwn={isOwn}>
+                {msg.type === 'txt' && <StyledBubbleText>{msg.text}</StyledBubbleText>}
+                {msg.type === 'img' && <StyledImageAttachment src={msg.url} alt="Attachment" />}
+                {msg.type === 'file' && <StyledBubbleText>📎 {msg.filename || 'File Attachment'}</StyledBubbleText>}
+                {msg.type === 'audio' && (
+                  <audio controls style={{ maxWidth: '200px', outline: 'none' }}>
+                    <source src={msg.url} />
+                  </audio>
+                )}
+                {msg.type === 'video' && (
+                  <video controls style={{ maxWidth: '100%', borderRadius: '4px' }}>
+                    <source src={msg.url} />
+                  </video>
+                )}
+                
                 <StyledTimestamp>{time}</StyledTimestamp>
               </StyledBubble>
             </StyledMessageRow>
@@ -260,16 +326,41 @@ export const ConversationView = ({ room, client }: ConversationViewProps) => {
       </StyledTimeline>
 
       <StyledComposer onSubmit={handleSend}>
-        <StyledTextarea
-          placeholder="Write a message… (Enter to send, Shift+Enter for new line)"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={handleKeyDown}
-          rows={1}
-        />
-        <StyledSendButton type="submit" disabled={!draft.trim() || isSending}>
+        <StyledActionArea>
+           <StyledHiddenInput 
+             type="file" 
+             ref={fileInputRef} 
+             onChange={handleFileChange} 
+             accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+           />
+           <StyledButton type="button" onClick={triggerFileSelect}>📎</StyledButton>
+           <StyledButton 
+             type="button" 
+             onClick={toggleRecording} 
+             recording={isRecording}
+             title={isRecording ? "Stop & Send" : "Record Voice Note"}
+           >
+             {isRecording ? '⏹' : '🎤'}
+           </StyledButton>
+        </StyledActionArea>
+
+        {!isRecording ? (
+          <StyledTextarea
+            placeholder="Write a message… (Enter to send, Shift+Enter for new line)"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={handleKeyDown}
+            rows={1}
+          />
+        ) : (
+          <div style={{ flex: '1 1 auto', display: 'flex', alignItems: 'center', paddingLeft: '12px', color: themeCssVariables.color.red6 }}>
+            Recording voice note...
+          </div>
+        )}
+        
+        <StyledButton primary type="submit" disabled={isRecording || (!draft.trim() && !isSending)}>
           Send
-        </StyledSendButton>
+        </StyledButton>
       </StyledComposer>
     </StyledContainer>
   );

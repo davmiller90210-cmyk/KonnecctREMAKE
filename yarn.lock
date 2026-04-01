@@ -29190,6 +29190,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"agora-chat@npm:^1.3.1":
+  version: 1.3.1
+  resolution: "agora-chat@npm:1.3.1"
+  checksum: 10c0/42d6c51c457a65a07f124fe64b57c00eb727dd34dc0f44da27b8739c02c1b5f86e0e7aee9b3477e4b72757756223229ef5b8bf86066adb5ad09122228e4d6cd5
+  languageName: node
+  linkType: hard
+
 "ai@npm:6.0.97":
   version: 6.0.97
   resolution: "ai@npm:6.0.97"
@@ -59736,6 +59743,7 @@ __metadata:
     "@types/marked": "npm:^6.0.0"
     "@types/react-grid-layout": "npm:^1"
     "@xyflow/react": "npm:^12.4.2"
+    agora-chat: "npm:^1.3.1"
     ai: "npm:6.0.97"
     apollo-link-rest: "npm:^0.10.0-rc.2"
     apollo-upload-client: "npm:^19.0.0"

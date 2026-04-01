@@ -1,6 +1,6 @@
 import { styled } from '@linaria/react';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
-import { Room } from 'matrix-js-sdk';
+import { ChatConversation } from '@/chat/states/agoraSessionState';
 
 // ─── Layout ───────────────────────────────────────────────────────────────────
 
@@ -115,41 +115,37 @@ const StyledUnreadBadge = styled.div`
 // ─── Component ────────────────────────────────────────────────────────────────
 
 type InboxSidebarProps = {
-  rooms: Room[];
-  selectedRoomId: string | null;
-  onSelectRoom: (roomId: string) => void;
+  conversations: ChatConversation[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
 };
 
 export const InboxSidebar = ({
-  rooms,
-  selectedRoomId,
-  onSelectRoom,
+  conversations,
+  selectedId,
+  onSelect,
 }: InboxSidebarProps) => {
   return (
     <StyledSidebar>
       <StyledSidebarHeader>Inbox</StyledSidebarHeader>
       <StyledRoomList>
-        {rooms.map((room) => {
-          const unreadCount = room.getUnreadNotificationCount();
-          const lastEvent = room.timeline?.at(-1);
-          const lastMessage =
-            lastEvent?.getType() === 'm.room.message'
-              ? (lastEvent.getContent().body as string) ?? ''
-              : '';
-          const displayName = room.name || 'Unnamed conversation';
+        {conversations.map((conv) => {
+          const unreadCount = conv.unreadCount || 0;
+          const lastMessageText = conv.lastMessage?.text || conv.lastMessage?.type === 'img' ? 'Sent an image' : '';
+          const displayName = conv.name || conv.id;
           const avatarInitial = displayName.charAt(0).toUpperCase();
 
           return (
             <StyledRoomItem
-              key={room.roomId}
-              isSelected={room.roomId === selectedRoomId}
-              onClick={() => onSelectRoom(room.roomId)}
+              key={conv.id}
+              isSelected={conv.id === selectedId}
+              onClick={() => onSelect(conv.id)}
             >
               <StyledRoomAvatar>{avatarInitial}</StyledRoomAvatar>
               <StyledRoomMeta>
                 <StyledRoomName>{displayName}</StyledRoomName>
-                {lastMessage && (
-                  <StyledRoomLastMessage>{lastMessage}</StyledRoomLastMessage>
+                {lastMessageText && (
+                  <StyledRoomLastMessage>{lastMessageText}</StyledRoomLastMessage>
                 )}
               </StyledRoomMeta>
               {unreadCount > 0 && (
@@ -158,7 +154,7 @@ export const InboxSidebar = ({
             </StyledRoomItem>
           );
         })}
-        {rooms.length === 0 && (
+        {conversations.length === 0 && (
           <StyledRoomItem isSelected={false}>
             <StyledRoomMeta>
               <StyledRoomLastMessage>No conversations yet</StyledRoomLastMessage>
