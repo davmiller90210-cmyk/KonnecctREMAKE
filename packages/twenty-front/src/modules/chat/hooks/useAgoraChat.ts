@@ -19,7 +19,7 @@ export const useAgoraChat = () => {
   const setConnectionError = useSetAtom(agoraConnectionErrorAtom);
   const setConversations = useSetAtom(agoraConversationsAtom);
   const setMessages = useSetAtom(currentMessagesAtom);
-  const tokenPair = useAtomValue(tokenPairState);
+  const tokenPair = useAtomValue(tokenPairState.atom);
   const crmToken = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
   const initRef = useRef(false);
 
