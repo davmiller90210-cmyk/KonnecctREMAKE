@@ -89,6 +89,7 @@ services:
       SYNAPSE_REPORT_STATS: "no"
       MATRIX_REGISTRATION_SHARED_SECRET: ${MATRIX_REGISTRATION_SHARED_SECRET}
     volumes:
+      - synapse-data:/data
       - ./synapse/homeserver.yaml:/data/homeserver.yaml:ro
       - ./synapse/log.config:/data/log.config:ro
       - synapse-media:/data/media_store
@@ -123,3 +124,4 @@ volumes:
   crm-redis-data:
   synapse-postgres-data:
   synapse-media:
+  synapse-data:
