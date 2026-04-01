@@ -9,11 +9,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
-import * as jwt from 'jsonwebtoken';
 import { createHash } from 'crypto';
 
-import { MatrixAuthService } from 'src/modules/matrix/matrix-auth.service';
+import { MatrixAuthService } from './matrix-auth.service';
 
 /**
  * MatrixAuthController
@@ -21,8 +21,8 @@ import { MatrixAuthService } from 'src/modules/matrix/matrix-auth.service';
  * Exposes a single authenticated endpoint that the CRM frontend calls
  * immediately after a successful CRM login to obtain a Matrix access token.
  *
- * This version uses MANUAL JWT verification to avoid dependency conflicts 
- * (UnknownDependenciesException) with the main AuthModule in the server.
+ * Uses manual JWT verification with NestJS JwtService to identify the user
+ * without requiring the conflicting AuthModule dependencies.
  */
 @Controller('matrix')
 export class MatrixAuthController {
@@ -31,15 +31,18 @@ export class MatrixAuthController {
   constructor(
     private readonly matrixAuthService: MatrixAuthService,
     private readonly configService: ConfigService,
+    private readonly jwtService: JwtService,
   ) {}
 
   @Get('token')
   @HttpCode(HttpStatus.OK)
   async getMatrixToken(@Req() req: Request) {
-    this.logger.log('Received Matrix token request');
+    this.logger.log('Processing Matrix token request');
+
     // 1. Extract the token from the Authorization header
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      this.logger.warn('Missing or invalid Authorization header');
       throw new UnauthorizedException('Missing or invalid Authorization header');
     }
 
@@ -47,15 +50,13 @@ export class MatrixAuthController {
 
     try {
       // 2. Decode the token (without verification) to get the workspaceId
-      const decodedUnverified = jwt.decode(token) as any;
+      const decodedUnverified = this.jwtService.decode(token) as any;
       if (!decodedUnverified || !decodedUnverified.workspaceId) {
-        this.logger.error('Token missing workspaceId');
+        this.logger.error('Token payload missing workspaceId');
         throw new UnauthorizedException('Invalid token payload: missing workspaceId');
       }
 
       const workspaceId = decodedUnverified.workspaceId;
-      this.logger.log(`Verifying token for workspace: ${workspaceId}`);
-      
       const appSecret = this.configService.get<string>('APP_SECRET');
 
       if (!appSecret) {
@@ -69,14 +70,17 @@ export class MatrixAuthController {
         .digest('hex');
 
       // 4. Verify the token with the calculated secret
-      const verifiedPayload = jwt.verify(token, secret) as any;
+      const verifiedPayload = await this.jwtService.verifyAsync(token, { secret });
       const workspaceMemberId = verifiedPayload.workspaceMemberId;
 
       if (!workspaceMemberId) {
+        this.logger.error(`No workspaceMemberId found for user in workspace ${workspaceId}`);
         throw new NotFoundException(
           'No workspace member ID found in token. Cannot provision Matrix token.',
         );
       }
+
+      this.logger.log(`Provisioning Matrix token for workspaceMember: ${workspaceMemberId}`);
 
       // 5. Ensure the Matrix account exists (idempotent — safe to call every login)
       await this.matrixAuthService.provisionMatrixUser(workspaceMemberId);
@@ -87,10 +91,8 @@ export class MatrixAuthController {
 
       return tokenPayload;
     } catch (error) {
-      if (error instanceof jwt.JsonWebTokenError) {
-        throw new UnauthorizedException('Invalid or expired CRM session token');
-      }
-      throw error;
+      this.logger.error(`Matrix token provisioning failed: ${error.message}`);
+      throw new UnauthorizedException('Invalid or expired CRM session token');
     }
   }
 }
