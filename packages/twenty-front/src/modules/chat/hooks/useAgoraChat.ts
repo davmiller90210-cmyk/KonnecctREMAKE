@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { useSetAtom } from 'jotai';
+import { useSetAtom, useAtomValue } from 'jotai';
 import AC from 'agora-chat';
 
 import {
@@ -9,9 +9,7 @@ import {
   currentMessagesAtom,
   ChatMessage,
 } from '../states/agoraSessionState';
-import { useAuthToken } from '@/ui/utilities/auth/hooks/useAuthToken';
-
-
+import { tokenPairState } from '@/auth/states/tokenPairState';
 const AGORA_APP_KEY = '7110032205#200010602';
 
 let _agoraClient: AC.Connection | null = null;
@@ -21,7 +19,8 @@ export const useAgoraChat = () => {
   const setConnectionError = useSetAtom(agoraConnectionErrorAtom);
   const setConversations = useSetAtom(agoraConversationsAtom);
   const setMessages = useSetAtom(currentMessagesAtom);
-  const { token: crmToken } = useAuthToken();
+  const tokenPair = useAtomValue(tokenPairState);
+  const crmToken = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
   const initRef = useRef(false);
 
   // 1. Initialize Client
