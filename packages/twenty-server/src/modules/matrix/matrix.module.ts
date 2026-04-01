@@ -4,8 +4,6 @@ import { ConfigModule } from '@nestjs/config';
 
 import { MatrixAuthService } from 'src/modules/matrix/matrix-auth.service';
 import { MatrixAuthController } from 'src/modules/matrix/matrix-auth.controller';
-import { TokenModule } from 'src/engine/core-modules/auth/token/token.module';
-import { WorkspaceCacheStorageModule } from 'src/engine/workspace-cache-storage/workspace-cache-storage.module';
 
 /**
  * MatrixModule
@@ -26,8 +24,6 @@ import { WorkspaceCacheStorageModule } from 'src/engine/workspace-cache-storage/
   imports: [
     HttpModule,
     ConfigModule,
-    TokenModule,
-    WorkspaceCacheStorageModule,
   ],
   providers: [MatrixAuthService],
   controllers: [MatrixAuthController],

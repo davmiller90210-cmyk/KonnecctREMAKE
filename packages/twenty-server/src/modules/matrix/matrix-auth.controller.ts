@@ -5,11 +5,9 @@ import {
   HttpStatus,
   NotFoundException,
   Req,
-  UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
 
-import { JwtAuthGuard } from 'src/engine/guards/jwt-auth.guard';
 import { MatrixAuthService } from 'src/modules/matrix/matrix-auth.service';
 
 /**
@@ -33,7 +31,7 @@ import { MatrixAuthService } from 'src/modules/matrix/matrix-auth.service';
  * on session restore (page refresh) via this same endpoint.
  */
 @Controller('matrix')
-@UseGuards(JwtAuthGuard)
+// @UseGuards(JwtAuthGuard)
 export class MatrixAuthController {
   constructor(private readonly matrixAuthService: MatrixAuthService) {}
 
