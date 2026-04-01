@@ -88,6 +88,7 @@ services:
       SYNAPSE_SERVER_NAME: app.konnecct.com
       SYNAPSE_REPORT_STATS: "no"
       MATRIX_REGISTRATION_SHARED_SECRET: ${MATRIX_REGISTRATION_SHARED_SECRET}
+      SYNAPSE_DB_PASSWORD: ${SYNAPSE_DB_PASSWORD:-synapse-pass}
     volumes:
       - synapse-data:/data
       - ./synapse/homeserver.yaml:/data/homeserver.yaml:ro
