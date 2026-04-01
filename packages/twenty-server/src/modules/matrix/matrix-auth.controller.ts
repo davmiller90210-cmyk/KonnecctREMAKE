@@ -49,10 +49,13 @@ export class MatrixAuthController {
       // 2. Decode the token (without verification) to get the workspaceId
       const decodedUnverified = jwt.decode(token) as any;
       if (!decodedUnverified || !decodedUnverified.workspaceId) {
+        this.logger.error('Token missing workspaceId');
         throw new UnauthorizedException('Invalid token payload: missing workspaceId');
       }
 
       const workspaceId = decodedUnverified.workspaceId;
+      this.logger.log(`Verifying token for workspace: ${workspaceId}`);
+      
       const appSecret = this.configService.get<string>('APP_SECRET');
 
       if (!appSecret) {
