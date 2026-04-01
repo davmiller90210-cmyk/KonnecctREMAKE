@@ -13,21 +13,8 @@ const MATRIX_TOKEN_ENDPOINT = '/matrix/token';
 /**
  * useMatrixClient
  *
- * The single hook responsible for bootstrapping the matrix-js-sdk connection.
- * It should be mounted once at the application root (inside AppRouterProviders
- * or a MatrixProvider wrapper) after the user is authenticated.
- *
- * Lifecycle:
- * 1. Watches the CRM auth token (tokenPairState). When the user logs in, it fires.
- * 2. Calls the CRM backend /api/matrix/token endpoint (authenticated with CRM JWT).
- * 3. Creates a MatrixClient from the returned session data.
- * 4. Calls client.startClient({ initialSyncLimit: 20 }) to begin background sync.
- * 5. Sets matrixSyncedState to true once the first sync completes.
- * 6. On CRM logout (tokenPair becomes null), stops the client and clears state.
- *
- * The MatrixClient reference is stored in a useRef so it persists across renders
- * without triggering re-renders. Components that need to use the client directly
- * should import this hook and call client.current?.
+ * Bootstraps the Matrix client connection.
+ * Resolves infinite loading by adding visibility into every step.
  */
 export const useMatrixClient = (): React.MutableRefObject<MatrixClient | null> => {
   const tokenPair = useAtomValue(tokenPairState.atom);
@@ -36,9 +23,11 @@ export const useMatrixClient = (): React.MutableRefObject<MatrixClient | null> =
   const clientRef = useRef<MatrixClient | null>(null);
 
   useEffect(() => {
+    console.log('[KONNECCT-MATRIX] Hook effect triggered. Token exists:', !!tokenPair?.accessToken);
+    
     if (!tokenPair?.accessToken) {
-      // User has logged out - stop and clean up the Matrix client
       if (clientRef.current) {
+        console.log('[KONNECCT-MATRIX] Cleaning up client due to missing token');
         clientRef.current.stopClient();
         clientRef.current = null;
       }
@@ -47,14 +36,17 @@ export const useMatrixClient = (): React.MutableRefObject<MatrixClient | null> =
       return;
     }
 
-    // Don't re-initialize if we already have a running client
-    if (clientRef.current) return;
+    if (clientRef.current) {
+      console.log('[KONNECCT-MATRIX] Client already initialized, skipping...');
+      return;
+    }
 
     let cancelled = false;
 
     const initializeMatrix = async () => {
+      console.log('[KONNECCT-MATRIX] 🏁 Starting initialization sequence...');
       try {
-        // Step 1: Fetch Matrix session from CRM backend (server provisions account if needed)
+        console.log('[KONNECCT-MATRIX] 🔑 Step 1: Fetching session from', MATRIX_TOKEN_ENDPOINT);
         const response = await fetch(MATRIX_TOKEN_ENDPOINT, {
           method: 'GET',
           headers: {
@@ -63,45 +55,50 @@ export const useMatrixClient = (): React.MutableRefObject<MatrixClient | null> =
           },
         });
 
-        if (!response.ok || cancelled) return;
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`[KONNECCT-MATRIX] ❌ Server returned error ${response.status}:`, errorText);
+          return;
+        }
 
-        const session = await response.json();
         if (cancelled) return;
 
+        const session = await response.json();
+        console.log('[KONNECCT-MATRIX] ✅ Session obtained:', session);
         setMatrixSession(session);
 
-        // Step 2: Create the MatrixClient with the server-issued access token
+        console.log('[KONNECCT-MATRIX] 🏗️ Step 2: Instantiating client for', session.homeserverUrl);
         const client = createClient({
           baseUrl: session.homeserverUrl,
           accessToken: session.accessToken,
           userId: session.userId,
           deviceId: session.deviceId,
-          // No store — keeps the client stateless across refreshes
-          // which forces a clean re-sync from the homeserver each session.
-          // A future phase can add IndexedDB storage for offline support.
         });
 
         clientRef.current = client;
 
-        // Step 3: Listen for the first sync to mark the client as ready
+        console.log('[KONNECCT-MATRIX] 👂 Step 3: Waiting for PREPARED sync state...');
         client.once(ClientEvent.Sync, (state) => {
+          console.log('[KONNECCT-MATRIX] 🔄 Initial sync state update:', state);
           if (state === 'PREPARED' && !cancelled) {
+            console.log('[KONNECCT-MATRIX] ✨ Client is SYNCED and Ready');
             setMatrixSynced(true);
           }
         });
 
-        // Step 4: Start the background sync loop
+        console.log('[KONNECCT-MATRIX] 🚀 Step 4: Starting background sync loop...');
         await client.startClient({ initialSyncLimit: 20 });
+        console.log('[KONNECCT-MATRIX] ✅ startClient() promise resolved successfully');
+
       } catch (error) {
-        // Silently fail — the CRM remains usable even if Matrix is unavailable.
-        // The CommunicationHub will show a reconnecting state instead of crashing.
-        console.warn('[Matrix] Failed to initialize Matrix client:', error);
+        console.error('[KONNECCT-MATRIX] 💥 CRITICAL ERROR:', error);
       }
     };
 
     initializeMatrix();
 
     return () => {
+      console.log('[KONNECCT-MATRIX] Hook cleanup called');
       cancelled = true;
       if (clientRef.current) {
         clientRef.current.stopClient();
