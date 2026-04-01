@@ -4,6 +4,8 @@ import { ConfigModule } from '@nestjs/config';
 
 import { MatrixAuthService } from 'src/modules/matrix/matrix-auth.service';
 import { MatrixAuthController } from 'src/modules/matrix/matrix-auth.controller';
+import { AuthModule } from 'src/engine/core-modules/auth/auth.module';
+import { WorkspaceCacheStorageModule } from 'src/engine/workspace-cache-storage/workspace-cache-storage.module';
 
 /**
  * MatrixModule
@@ -21,7 +23,12 @@ import { MatrixAuthController } from 'src/modules/matrix/matrix-auth.controller'
  * formatted as @crm_<workspaceMemberId>:app.konnecct.com
  */
 @Module({
-  imports: [HttpModule, ConfigModule],
+  imports: [
+    HttpModule,
+    ConfigModule,
+    AuthModule,
+    WorkspaceCacheStorageModule,
+  ],
   providers: [MatrixAuthService],
   controllers: [MatrixAuthController],
   exports: [MatrixAuthService],
