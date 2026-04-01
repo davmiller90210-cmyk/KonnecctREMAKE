@@ -57,8 +57,20 @@ echo "  ✓ homeserver.yaml updated with real secrets."
 # Restart Synapse to pick up the new homeserver.yaml values
 echo "  → Restarting Synapse to apply config..."
 docker compose -f $COMPOSE_FILE restart synapse
-echo "  → Waiting 10 seconds for Synapse to come back online..."
-sleep 10
+
+echo "  → Waiting for Synapse to initialize database (this can take up to 30s)..."
+MAX_RETRIES=20
+COUNT=0
+until docker compose -f $COMPOSE_FILE exec -T synapse curl -s http://localhost:8008/_matrix/client/versions > /dev/null; do
+  COUNT=$((COUNT + 1))
+  if [ $COUNT -ge $MAX_RETRIES ]; then
+    echo "  ✗ Synapse failed to come online in time. Check logs: docker compose logs synapse"
+    exit 1
+  fi
+  echo "    ... still waiting ($COUNT/$MAX_RETRIES)"
+  sleep 3
+done
+echo "  ✓ Synapse is ONLINE."
 
 # ─── Step 3: Create the admin account via shared-secret registration ──────────
 echo ""
