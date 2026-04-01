@@ -75,7 +75,7 @@ const StyledBubble = styled.div<StyledMessageBubbleProps>`
       : `${themeCssVariables.border.radius.sm} ${themeCssVariables.border.radius.md} ${themeCssVariables.border.radius.md} ${themeCssVariables.border.radius.sm}`};
   background: ${({ isOwn }: StyledMessageBubbleProps) =>
     isOwn
-      ? themeCssVariables.color.blue50
+      ? themeCssVariables.color.blue9
       : themeCssVariables.background.secondary};
   color: ${({ isOwn }: StyledMessageBubbleProps) =>
     isOwn ? '#ffffff' : themeCssVariables.font.color.primary};
@@ -125,7 +125,7 @@ const StyledTextarea = styled.textarea`
   outline: none;
 
   &:focus {
-    border-color: ${themeCssVariables.color.blue40};
+    border-color: ${themeCssVariables.color.blue8};
   }
 
   &::placeholder {
@@ -138,7 +138,7 @@ const StyledSendButton = styled.button`
   padding: 0 ${themeCssVariables.spacing[4]};
   border-radius: ${themeCssVariables.border.radius.md};
   border: none;
-  background: ${themeCssVariables.color.blue50};
+  background: ${themeCssVariables.color.blue9};
   color: #ffffff;
   font-size: ${themeCssVariables.font.size.sm};
   font-weight: ${themeCssVariables.font.weight.medium};
@@ -148,7 +148,7 @@ const StyledSendButton = styled.button`
   transition: background 80ms ease;
 
   &:hover {
-    background: ${themeCssVariables.color.blue60};
+    background: ${themeCssVariables.color.blue10};
   }
 
   &:disabled {
