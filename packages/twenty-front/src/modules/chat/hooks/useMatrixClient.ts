@@ -8,7 +8,7 @@ import {
   matrixSyncedState,
 } from '@/chat/states/matrixSessionState';
 
-const MATRIX_TOKEN_ENDPOINT = '/api/matrix/token';
+const MATRIX_TOKEN_ENDPOINT = '/matrix/token';
 
 /**
  * useMatrixClient
