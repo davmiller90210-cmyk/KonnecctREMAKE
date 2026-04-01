@@ -39,6 +39,12 @@ export class MatrixAuthController {
   @HttpCode(HttpStatus.OK)
   async getMatrixToken(@Req() req: Request) {
     // The JWT guard populates req.user with the authenticated CRM user context
+    // When disabled for debugging, we handle the undefined case gracefully
+    if (!req.user) {
+      throw new NotFoundException(
+        'Authentication context not found. Please log in first.',
+      );
+    }
     const user = req.user as { workspaceMemberId?: string; sub?: string };
     const workspaceMemberId = user?.workspaceMemberId || user?.sub;
 
