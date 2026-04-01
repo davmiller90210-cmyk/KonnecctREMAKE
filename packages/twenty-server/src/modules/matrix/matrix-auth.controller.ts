@@ -3,6 +3,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Logger,
   NotFoundException,
   Req,
   UnauthorizedException,
@@ -25,6 +26,8 @@ import { MatrixAuthService } from 'src/modules/matrix/matrix-auth.service';
  */
 @Controller('matrix')
 export class MatrixAuthController {
+  private readonly logger = new Logger(MatrixAuthController.name);
+
   constructor(
     private readonly matrixAuthService: MatrixAuthService,
     private readonly configService: ConfigService,
@@ -33,6 +36,7 @@ export class MatrixAuthController {
   @Get('token')
   @HttpCode(HttpStatus.OK)
   async getMatrixToken(@Req() req: Request) {
+    this.logger.log('Received Matrix token request');
     // 1. Extract the token from the Authorization header
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
