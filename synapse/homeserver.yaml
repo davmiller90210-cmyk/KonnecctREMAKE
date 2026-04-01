@@ -22,7 +22,7 @@ database:
   name: psycopg2
   args:
     user: synapse
-    password: ${SYNAPSE_DB_PASSWORD:-synapse-pass}
+    password: ${SYNAPSE_DB_PASSWORD}
     database: synapse
     host: synapse-db
     port: 5432
