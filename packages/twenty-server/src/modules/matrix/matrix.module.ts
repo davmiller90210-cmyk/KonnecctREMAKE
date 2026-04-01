@@ -11,9 +11,6 @@ import { MatrixAuthController } from './matrix-auth.controller';
  *
  * Provides the server-side bridge between the Konnecct CRM identity layer
  * and the Matrix (Synapse) homeserver.
- *
- * Uses JwtModule for manual token verification and extraction to avoid
- * circular dependency or resolver conflicts with the main AuthModule.
  */
 @Module({
   imports: [
