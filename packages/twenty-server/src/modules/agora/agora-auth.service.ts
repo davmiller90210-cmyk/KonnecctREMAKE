@@ -1,12 +1,17 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { HttpService } from '@nestjs/axios';
 import { ChatTokenBuilder } from 'agora-token';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class AgoraAuthService {
   private readonly logger = new Logger(AgoraAuthService.name);
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly httpService: HttpService,
+  ) {}
 
   private async registerUserIfNotFound(userIdentifier: string, appId: string, appCertificate: string) {
     const orgName = this.configService.get<string>('AGORA_CHAT_ORG_NAME');
@@ -28,32 +33,29 @@ export class AgoraAuthService {
     try {
       this.logger.log(`[KONNECCT-AGORA] Attempting to register user: ${agoraUsername}`);
       
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${appToken}`,
-        },
-        body: JSON.stringify({
+      const response = await firstValueFrom(
+        this.httpService.post(url, {
           username: agoraUsername,
-          password: agoraUsername, 
-        }),
-      });
+          password: agoraUsername,
+        }, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${appToken}`,
+          },
+        })
+      );
 
-      const data = await response.json() as any;
-
-      if (response.ok) {
+      if (response.status === 200 || response.status === 201) {
         this.logger.log(`[KONNECCT-AGORA] User registered successfully: ${agoraUsername}`);
-      } else {
-        // Ignore "duplicate_unique_property_exists" error (user already exists)
-        if (data?.error === 'duplicate_unique_property_exists' || data?.error_description?.includes('already exists')) {
-          this.logger.log(`[KONNECCT-AGORA] User already exists: ${agoraUsername}`);
-        } else {
-          this.logger.warn(`[KONNECCT-AGORA] Registration failed for ${agoraUsername}. Status: ${response.status}. Error: ${JSON.stringify(data)}`);
-        }
       }
     } catch (error) {
-      this.logger.error(`[KONNECCT-AGORA] Unexpected registrar error: ${error.message}`);
+      const data = error.response?.data;
+      // Ignore "duplicate_unique_property_exists" error (user already exists)
+      if (data?.error === 'duplicate_unique_property_exists' || data?.error_description?.includes('already exists')) {
+        this.logger.log(`[KONNECCT-AGORA] User already exists: ${agoraUsername}`);
+      } else {
+        this.logger.warn(`[KONNECCT-AGORA] Registration failed for ${agoraUsername}. Error: ${JSON.stringify(data || error.message)}`);
+      }
     }
   }
 
