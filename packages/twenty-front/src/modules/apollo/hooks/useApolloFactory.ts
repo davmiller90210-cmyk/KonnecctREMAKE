@@ -42,6 +42,20 @@ export const useApolloFactory = (options: Partial<Options> = {}) => {
 
   const { enqueueErrorSnackBar } = useSnackBar();
 
+  const isClerkSessionActive = () => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    const clerk = (
+      window as Window & {
+        Clerk?: { session?: { id?: string | null }; user?: { id?: string | null } };
+      }
+    ).Clerk;
+
+    return Boolean(clerk?.session?.id || clerk?.user?.id);
+  };
+
   const apolloClient = useMemo(() => {
     apolloRef.current = new ApolloFactory({
       uri: `${REACT_APP_SERVER_BASE_URL}/graphql`,
@@ -71,6 +85,12 @@ export const useApolloFactory = (options: Partial<Options> = {}) => {
         setCurrentWorkspaceMember(null);
         setCurrentWorkspace(null);
         setCurrentUserWorkspace(null);
+
+        // Avoid redirect ping-pong while Clerk session is active during migration.
+        if (isClerkSessionActive()) {
+          return;
+        }
+
         if (
           !isMatchingLocation(location, AppPath.Verify) &&
           !isMatchingLocation(location, AppPath.SignInUp) &&
