@@ -39,7 +39,12 @@ export const MainNavigationDrawerScrollableItems = () => {
         <WorkspaceSectionDispatcher />
       </Suspense>
       
-      <MainNavigationDrawerRecentChats />
+      <NavigationDrawerItem
+        label={t`Chat`}
+        to="/chat"
+        Icon={IconMessage}
+        active={location.pathname.startsWith('/chat')}
+      />
 
       <NavigationDrawerOtherSection />
     </StyledScrollableItemsContainer>

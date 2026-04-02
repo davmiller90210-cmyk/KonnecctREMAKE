@@ -18,7 +18,7 @@ import { WorkspaceMemberModule } from 'src/modules/workspace-member/workspace-me
     FavoriteFolderModule,
     FavoriteModule,
     WorkspaceMemberModule,
-    AgoraModule,
+    // AgoraModule,
   ],
   providers: [],
   exports: [],
