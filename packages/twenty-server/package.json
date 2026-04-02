@@ -82,7 +82,6 @@
     "@sentry/profiling-node": "^10.27.0",
     "@sniptt/guards": "0.2.0",
     "addressparser": "1.0.1",
-    "agora-token": "^2.0.5",
     "ai": "6.0.97",
     "apollo-server-core": "3.13.0",
     "archiver": "7.0.1",

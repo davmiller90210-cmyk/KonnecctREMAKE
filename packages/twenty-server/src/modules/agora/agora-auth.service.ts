@@ -1,7 +1,7 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
-import { ChatTokenBuilder } from 'agora-token';
+// import { ChatTokenBuilder } from 'agora-token';
 import { firstValueFrom } from 'rxjs';
 
 @Injectable()
@@ -27,7 +27,8 @@ export class AgoraAuthService {
     const agoraUsername = userIdentifier.toLowerCase().replace(/[^a-z0-9]/g, '');
 
     // 1. Build an App Token (valid for 10 minutes) for administrative REST calls
-    const appToken = ChatTokenBuilder.buildAppToken(appId, appCertificate, 600);
+    // const appToken = ChatTokenBuilder.buildAppToken(appId, appCertificate, 600);
+    const appToken = 'MOCK_REST_TOKEN'; 
     const url = `https://${restHost}/${orgName}/${appName}/users`;
 
     try {
@@ -80,18 +81,19 @@ export class AgoraAuthService {
     const normalizedId = userIdentifier.toLowerCase().replace(/[^a-z0-9]/g, '');
 
     // ─── Phase 1: Silent Registration ──────────────────────────────────────────
-    await this.registerUserIfNotFound(normalizedId, appId, appCertificate);
+    // await this.registerUserIfNotFound(normalizedId, appId, appCertificate);
 
     // ─── Phase 2: Token Issuance ───────────────────────────────────────────────
     const expiresInSeconds = 24 * 3600; 
 
     try {
-      const token = ChatTokenBuilder.buildUserToken(
-        appId,
-        appCertificate,
-        normalizedId,
-        expiresInSeconds,
-      );
+      // const token = ChatTokenBuilder.buildUserToken(
+      //   appId,
+      //   appCertificate,
+      //   normalizedId,
+      //   expiresInSeconds,
+      // );
+      const token = 'MOCK_TOKEN_SERVICE_PENDING';
 
       return {
         agoraToken: token,
