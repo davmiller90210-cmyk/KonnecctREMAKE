@@ -60066,6 +60066,7 @@ __metadata:
     "@azure/msal-node": "npm:^3.8.4"
     "@babel/preset-env": "npm:7.26.9"
     "@blocknote/server-util": "npm:^0.47.1"
+    "@clerk/backend": "npm:^3.2.4"
     "@clickhouse/client": "npm:^1.18.1"
     "@dagrejs/dagre": "npm:^1.1.2"
     "@e2b/code-interpreter": "npm:^1.0.4"

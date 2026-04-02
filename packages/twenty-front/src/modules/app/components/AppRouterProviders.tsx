@@ -6,6 +6,7 @@ import { IsMinimalMetadataReadyEffect } from '@/metadata-store/effect-components
 
 import { GotoHotkeysEffectsProvider } from '@/app/effect-components/GotoHotkeysEffectsProvider';
 import { PageChangeEffect } from '@/app/effect-components/PageChangeEffect';
+import { ClerkSessionExchangeEffect } from '@/auth/effect-components/ClerkSessionExchangeEffect';
 import { SignOutOnOtherTabSignOutEffect } from '@/auth/effect-components/SignOutOnOtherTabSignOutEffect';
 import { AuthProvider } from '@/auth/components/AuthProvider';
 import { CaptchaProvider } from '@/captcha/components/CaptchaProvider';
@@ -79,6 +80,7 @@ export const AppRouterProviders = () => {
                       <MainContextStoreProvider />
                       <SupportChatEffect />
                       <PageChangeEffect />
+                      <ClerkSessionExchangeEffect />
                       <SignOutOnOtherTabSignOutEffect />
                     </PreComputedChipGeneratorsProvider>
                   </SSEProvider>
