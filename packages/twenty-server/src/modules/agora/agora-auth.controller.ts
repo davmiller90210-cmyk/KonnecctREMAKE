@@ -1,4 +1,14 @@
-import { Controller, Get, HttpCode, HttpStatus, Logger, NotFoundException, Req, UnauthorizedException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpCode,
+  HttpException,
+  HttpStatus,
+  Logger,
+  NotFoundException,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
@@ -69,11 +79,16 @@ export class AgoraAuthController {
         decodedUnverified.sub ??
         decodedUnverified.userId ??
         decodedUnverified.user_id;
+      const orgHeader = req.headers['x-clerk-org-id'];
+      const orgFromHeader = Array.isArray(orgHeader)
+        ? orgHeader[0]
+        : orgHeader;
+
       const clerkOrgId =
         decodedUnverified.org_id ??
         decodedUnverified.orgId ??
         decodedUnverified.organization_id ??
-        req.headers['x-clerk-org-id'];
+        orgFromHeader;
 
       if (!clerkUserId || !clerkOrgId) {
         throw new UnauthorizedException(
@@ -89,8 +104,20 @@ export class AgoraAuthController {
       this.logger.log(`[KONNECCT-AGORA] Token issued for ${clerkUserId} (clerk JWT)`);
       return tokenPayload;
     } catch (error) {
-      this.logger.error(`[KONNECCT-AGORA] Verification failed: ${error.message}`);
-      throw new UnauthorizedException('Invalid CRM session token');
+      const message =
+        error instanceof Error ? error.message : String(error);
+
+      this.logger.error(`[KONNECCT-AGORA] Verification failed: ${message}`);
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new UnauthorizedException(
+        message.includes('Missing Agora') || message.includes('AGORA_APP')
+          ? 'Agora is not configured on the server (check AGORA_APP_ID / AGORA_APP_CERTIFICATE).'
+          : 'Invalid CRM session token',
+      );
     }
   }
 }

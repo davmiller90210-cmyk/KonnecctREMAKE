@@ -22,7 +22,12 @@ export const useAgoraChat = () => {
   const setMessages = useSetAtom(currentMessagesAtom);
   const tokenPair = useAtomValue(tokenPairState.atom);
   const crmToken = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
-  const { getToken: getClerkToken } = useClerkAuth();
+  const {
+    getToken: getClerkToken,
+    orgId: clerkOrgId,
+    isLoaded: isClerkLoaded,
+    isSignedIn: isClerkSignedIn,
+  } = useClerkAuth();
   const initRef = useRef(false);
 
   // 1. Initialize Client
@@ -146,13 +151,50 @@ export const useAgoraChat = () => {
         return;
       }
 
+      // Wait for Clerk to hydrate before deciding org context (Clerk-only path).
+      if (!crmToken && !isClerkLoaded) {
+        setConnectionState('idle');
+        setConnectionError(null);
+        return;
+      }
+
+      // Clerk JWTs usually omit org_id; backend accepts X-Clerk-Org-Id. After
+      // /auth/clerk/exchange, prefer CRM JWT (legacy path) which always has workspace context.
+      if (
+        isClerkLoaded &&
+        isClerkSignedIn &&
+        !crmToken &&
+        !clerkOrgId
+      ) {
+        setConnectionState('idle');
+        setConnectionError(null);
+        return;
+      }
+
       setConnectionState('connecting');
       const response = await fetch('/agora/token', {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          ...(clerkOrgId ? { 'X-Clerk-Org-Id': clerkOrgId } : {}),
+        },
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch Agora token');
+        const raw = await response.text();
+        let detail = `HTTP ${response.status}`;
+
+        try {
+          const parsed = JSON.parse(raw) as { message?: string | string[] };
+          const msg = parsed.message;
+
+          detail = Array.isArray(msg) ? msg.join(', ') : msg ?? detail;
+        } catch {
+          if (raw && !raw.trimStart().startsWith('<')) {
+            detail = raw.slice(0, 200);
+          }
+        }
+
+        throw new Error(detail || 'Failed to fetch Agora token');
       }
 
       const { agoraToken, userIdentifier } = await response.json();
@@ -166,7 +208,15 @@ export const useAgoraChat = () => {
       setConnectionError(error.message);
       setConnectionState('error');
     }
-  }, [crmToken, getClerkToken, setConnectionState, setConnectionError]);
+  }, [
+    clerkOrgId,
+    crmToken,
+    getClerkToken,
+    isClerkLoaded,
+    isClerkSignedIn,
+    setConnectionState,
+    setConnectionError,
+  ]);
 
   const disconnectFromAgora = useCallback(() => {
     _agoraClient?.close();
