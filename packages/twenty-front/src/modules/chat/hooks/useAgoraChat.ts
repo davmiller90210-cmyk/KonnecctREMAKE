@@ -14,6 +14,14 @@ const AGORA_APP_KEY = '7110032205#200010602';
 
 let _agoraClient: AC.Connection | null = null;
 
+type ClerkSession = {
+  getToken?: () => Promise<string | null>;
+};
+
+type ClerkGlobal = {
+  session?: ClerkSession;
+};
+
 export const useAgoraChat = () => {
   const setConnectionState = useSetAtom(agoraConnectionStateAtom);
   const setConnectionError = useSetAtom(agoraConnectionErrorAtom);
@@ -126,12 +134,33 @@ export const useAgoraChat = () => {
 
   // 2. Connect
   const connectToAgora = useCallback(async () => {
-    if (!crmToken) return;
+    const resolveAuthToken = async () => {
+      if (crmToken) {
+        return crmToken;
+      }
+
+      if (typeof window !== 'undefined') {
+        const clerk = (window as Window & { Clerk?: ClerkGlobal }).Clerk;
+        if (clerk?.session?.getToken) {
+          return await clerk.session.getToken();
+        }
+      }
+
+      return null;
+    };
 
     try {
+      const authToken = await resolveAuthToken();
+
+      if (!authToken) {
+        setConnectionError('Missing CRM/Clerk auth token');
+        setConnectionState('error');
+        return;
+      }
+
       setConnectionState('connecting');
       const response = await fetch('/agora/token', {
-        headers: { Authorization: `Bearer ${crmToken}` },
+        headers: { Authorization: `Bearer ${authToken}` },
       });
 
       if (!response.ok) {

@@ -30,35 +30,63 @@ export class AgoraAuthController {
     const token = authHeader.split(' ')[1];
 
     try {
-      // 2. Decode JWT
+      // 2. Decode auth token (legacy Twenty JWT or Clerk JWT)
       const decodedUnverified = this.jwtService.decode(token) as any;
-      if (!decodedUnverified || !decodedUnverified.workspaceId) {
+      if (!decodedUnverified) {
         throw new UnauthorizedException('Invalid payload');
       }
 
-      const workspaceId = decodedUnverified.workspaceId;
-      const appSecret = this.configService.get<string>('APP_SECRET');
+      // Legacy Twenty session token path
+      if (decodedUnverified.workspaceId) {
+        const workspaceId = decodedUnverified.workspaceId;
+        const appSecret = this.configService.get<string>('APP_SECRET');
 
-      if (!appSecret) {
-        throw new Error('APP_SECRET is not set');
+        if (!appSecret) {
+          throw new Error('APP_SECRET is not set');
+        }
+
+        // 3. Verify CRM Identity securely
+        const secret = createHash('sha256')
+          .update(`${appSecret}${workspaceId}ACCESS`)
+          .digest('hex');
+
+        const verifiedPayload = await this.jwtService.verifyAsync(token, { secret });
+        const workspaceMemberId = verifiedPayload.workspaceMemberId;
+
+        if (!workspaceMemberId) {
+          throw new NotFoundException('No workspace member ID found');
+        }
+
+        // 4. Issue Agora token natively. (workspaceMemberId becomes the Agora User ID)
+        const tokenPayload = await this.agoraAuthService.getChatUserToken(workspaceMemberId, workspaceId);
+
+        this.logger.log(`[KONNECCT-AGORA] Token issued for ${workspaceMemberId} (legacy JWT)`);
+        return tokenPayload;
       }
 
-      // 3. Verify CRM Identity securely
-      const secret = createHash('sha256')
-        .update(`${appSecret}${workspaceId}ACCESS`)
-        .digest('hex');
+      // Clerk JWT path
+      const clerkUserId =
+        decodedUnverified.sub ??
+        decodedUnverified.userId ??
+        decodedUnverified.user_id;
+      const clerkOrgId =
+        decodedUnverified.org_id ??
+        decodedUnverified.orgId ??
+        decodedUnverified.organization_id ??
+        req.headers['x-clerk-org-id'];
 
-      const verifiedPayload = await this.jwtService.verifyAsync(token, { secret });
-      const workspaceMemberId = verifiedPayload.workspaceMemberId;
-
-      if (!workspaceMemberId) {
-        throw new NotFoundException('No workspace member ID found');
+      if (!clerkUserId || !clerkOrgId) {
+        throw new UnauthorizedException(
+          'Missing Clerk sub/org_id claims for Agora scoping',
+        );
       }
 
-      // 4. Issue Agora token natively. (workspaceMemberId becomes the Agora User ID)
-      const tokenPayload = await this.agoraAuthService.getChatUserToken(workspaceMemberId, workspaceId);
+      const tokenPayload = await this.agoraAuthService.getChatUserToken(
+        String(clerkUserId),
+        String(clerkOrgId),
+      );
 
-      this.logger.log(`[KONNECCT-AGORA] Token issued for ${workspaceMemberId}`);
+      this.logger.log(`[KONNECCT-AGORA] Token issued for ${clerkUserId} (clerk JWT)`);
       return tokenPayload;
     } catch (error) {
       this.logger.error(`[KONNECCT-AGORA] Verification failed: ${error.message}`);
