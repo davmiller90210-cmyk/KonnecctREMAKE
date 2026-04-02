@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 
-import { AgoraModule } from './agora/agora.module';
 import { CalendarModule } from 'src/modules/calendar/calendar.module';
 import { ConnectedAccountModule } from 'src/modules/connected-account/connected-account.module';
 import { FavoriteFolderModule } from 'src/modules/favorite-folder/favorite-folder.module';
