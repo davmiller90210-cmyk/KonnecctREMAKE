@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { useSetAtom, useAtomValue } from 'jotai';
 import AC from 'agora-chat';
+import { useAuth as useClerkAuth } from '@clerk/clerk-react';
 
 import {
   agoraConnectionStateAtom,
@@ -14,14 +15,6 @@ const AGORA_APP_KEY = '7110032205#200010602';
 
 let _agoraClient: AC.Connection | null = null;
 
-type ClerkSession = {
-  getToken?: () => Promise<string | null>;
-};
-
-type ClerkGlobal = {
-  session?: ClerkSession;
-};
-
 export const useAgoraChat = () => {
   const setConnectionState = useSetAtom(agoraConnectionStateAtom);
   const setConnectionError = useSetAtom(agoraConnectionErrorAtom);
@@ -29,6 +22,7 @@ export const useAgoraChat = () => {
   const setMessages = useSetAtom(currentMessagesAtom);
   const tokenPair = useAtomValue(tokenPairState.atom);
   const crmToken = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
+  const { getToken: getClerkToken } = useClerkAuth();
   const initRef = useRef(false);
 
   // 1. Initialize Client
@@ -139,14 +133,8 @@ export const useAgoraChat = () => {
         return crmToken;
       }
 
-      if (typeof window !== 'undefined') {
-        const clerk = (window as Window & { Clerk?: ClerkGlobal }).Clerk;
-        if (clerk?.session?.getToken) {
-          return await clerk.session.getToken();
-        }
-      }
+      return await getClerkToken();
 
-      return null;
     };
 
     try {
@@ -178,7 +166,7 @@ export const useAgoraChat = () => {
       setConnectionError(error.message);
       setConnectionState('error');
     }
-  }, [crmToken, setConnectionState, setConnectionError]);
+  }, [crmToken, getClerkToken, setConnectionState, setConnectionError]);
 
   const disconnectFromAgora = useCallback(() => {
     _agoraClient?.close();

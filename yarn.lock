@@ -3847,6 +3847,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@clerk/clerk-react@npm:^5.61.3":
+  version: 5.61.4
+  resolution: "@clerk/clerk-react@npm:5.61.4"
+  dependencies:
+    "@clerk/shared": "npm:^3.47.3"
+    tslib: "npm:2.8.1"
+  peerDependencies:
+    react: ^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0
+    react-dom: ^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0
+  checksum: 10c0/71b4908fdd3c2fea2fc2471d9bc8f3afba09ea51790060af3ff4a5596206539133c932934555224a3ff3bc58df56293e7902a615d4349b6bdbccff05a04268bf
+  languageName: node
+  linkType: hard
+
 "@clerk/nextjs@npm:^7.0.8":
   version: 7.0.8
   resolution: "@clerk/nextjs@npm:7.0.8"
@@ -3874,6 +3887,28 @@ __metadata:
     react: ^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0
     react-dom: ^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0
   checksum: 10c0/60380e273de4097b3d18c2214bb824e2247628db04f96aa31056de44c42525e00de7e25c78bad25e591bd747b849b9d123136466e9c05b03e76108fcc0ac3b42
+  languageName: node
+  linkType: hard
+
+"@clerk/shared@npm:^3.47.3":
+  version: 3.47.3
+  resolution: "@clerk/shared@npm:3.47.3"
+  dependencies:
+    csstype: "npm:3.1.3"
+    dequal: "npm:2.0.3"
+    glob-to-regexp: "npm:0.4.1"
+    js-cookie: "npm:3.0.5"
+    std-env: "npm:^3.9.0"
+    swr: "npm:2.3.4"
+  peerDependencies:
+    react: ^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0
+    react-dom: ^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0
+  peerDependenciesMeta:
+    react:
+      optional: true
+    react-dom:
+      optional: true
+  checksum: 10c0/2207249992d09764d550df6ce86a3069402645510ba90ae5b78834adb0bb6ac7908b910945f8fa3673a98a3c5d356eaa2bac607278cc299a1249037eeb477b8c
   languageName: node
   linkType: hard
 
@@ -58503,6 +58538,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"swr@npm:2.3.4":
+  version: 2.3.4
+  resolution: "swr@npm:2.3.4"
+  dependencies:
+    dequal: "npm:^2.0.3"
+    use-sync-external-store: "npm:^1.4.0"
+  peerDependencies:
+    react: ^16.11.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+  checksum: 10c0/c5cf536c2652fc6b64d64d3ce232f8bbe25dcaffc688f852fb81cf06e28b59280ebebde752429d9801c3af8e7a956ee7242376a6386a599cedc0000b862a712d
+  languageName: node
+  linkType: hard
+
 "swr@npm:^2.2.5":
   version: 2.3.6
   resolution: "swr@npm:2.3.6"
@@ -59830,6 +59877,7 @@ __metadata:
     "@blocknote/xl-docx-exporter": "npm:^0.47.1"
     "@blocknote/xl-pdf-exporter": "npm:^0.47.1"
     "@calcom/embed-react": "npm:^1.5.3"
+    "@clerk/clerk-react": "npm:^5.61.3"
     "@cyntler/react-doc-viewer": "npm:^1.17.0"
     "@dagrejs/dagre": "npm:^1.1.8"
     "@dnd-kit/react": "npm:^0.3.2"

@@ -21,3 +21,10 @@ export const REACT_APP_SERVER_BASE_URL =
   window._env_?.REACT_APP_SERVER_BASE_URL ||
   process.env.REACT_APP_SERVER_BASE_URL ||
   getDefaultUrl();
+
+export const CLERK_PUBLISHABLE_KEY =
+  window._env_?.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
+  window._env_?.REACT_APP_CLERK_PUBLISHABLE_KEY ||
+  process.env.REACT_APP_CLERK_PUBLISHABLE_KEY ||
+  '';

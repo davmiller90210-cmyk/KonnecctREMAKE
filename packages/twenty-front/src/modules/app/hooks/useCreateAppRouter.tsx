@@ -28,15 +28,15 @@ const RecordShowPage = lazy(() =>
   })),
 );
 
-const SignInUp = lazy(() =>
-  import('~/pages/auth/SignInUp').then((module) => ({
-    default: module.SignInUp,
+const ClerkSignInUp = lazy(() =>
+  import('~/pages/auth/ClerkSignInUp').then((module) => ({
+    default: module.ClerkSignInUp,
   })),
 );
 
 const PasswordReset = lazy(() =>
-  import('~/pages/auth/PasswordReset').then((module) => ({
-    default: module.PasswordReset,
+  import('~/pages/auth/ClerkSignInUp').then((module) => ({
+    default: module.ClerkSignInUp,
   })),
 );
 
@@ -141,7 +141,7 @@ export const useCreateAppRouter = (
             path={AppPath.SignInUp}
             element={
               <LazyRoute>
-                <SignInUp />
+                <ClerkSignInUp />
               </LazyRoute>
             }
           />
@@ -149,7 +149,7 @@ export const useCreateAppRouter = (
             path={AppPath.Invite}
             element={
               <LazyRoute>
-                <SignInUp />
+                <ClerkSignInUp />
               </LazyRoute>
             }
           />

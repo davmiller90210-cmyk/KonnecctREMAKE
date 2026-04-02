@@ -7,16 +7,18 @@ import { SnackBarComponentInstanceContext } from '@/ui/feedback/snack-bar-manage
 import { ClickOutsideListenerContext } from '@/ui/utilities/pointer-event/contexts/ClickOutsideListenerContext';
 import { i18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
+import { ClerkProvider } from '@clerk/clerk-react';
 import { jotaiStore } from '@/ui/utilities/state/jotai/jotaiStore';
 import { Provider as JotaiProvider } from 'jotai';
 import { HelmetProvider } from 'react-helmet-async';
 import { IconsProvider } from 'twenty-ui/display';
+import { CLERK_PUBLISHABLE_KEY } from '~/config';
 import { initialI18nActivate } from '~/utils/i18n/initialI18nActivate';
 
 initialI18nActivate();
 
 export const App = () => {
-  return (
+  const appTree = (
     <JotaiProvider store={jotaiStore}>
       <AppErrorBoundary
         resetOnLocationChange={false}
@@ -42,5 +44,15 @@ export const App = () => {
         </I18nProvider>
       </AppErrorBoundary>
     </JotaiProvider>
+  );
+
+  if (!CLERK_PUBLISHABLE_KEY) {
+    return appTree;
+  }
+
+  return (
+    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY}>
+      {appTree}
+    </ClerkProvider>
   );
 };
