@@ -12,6 +12,10 @@ export function generateFrontConfig(): void {
     window: {
       _env_: {
         REACT_APP_SERVER_BASE_URL: process.env.SERVER_URL,
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
+          process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '',
+        REACT_APP_CLERK_PUBLISHABLE_KEY:
+          process.env.REACT_APP_CLERK_PUBLISHABLE_KEY ?? '',
       },
     },
   };
