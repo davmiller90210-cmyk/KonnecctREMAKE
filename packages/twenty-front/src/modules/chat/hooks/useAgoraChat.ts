@@ -35,18 +35,26 @@ export const useAgoraChat = () => {
     }
 
     if (_agoraClient) {
-      _agoraClient.addEventHandler('connection_events', {
+      _agoraClient.addEventHandler('connection', {
         onOpened: () => {
-          console.log('[KONNECCT-AGORA] Connected successfully');
+          console.log('[KONNECCT-AGORA] Connection opened');
+          setConnectionState('connected');
+        },
+        onConnected: () => {
+          console.log('[KONNECCT-AGORA] Connection established');
           setConnectionState('connected');
         },
         onClosed: () => {
-          console.log('[KONNECCT-AGORA] Disconnected');
+          console.log('[KONNECCT-AGORA] Connection closed');
+          setConnectionState('disconnected');
+        },
+        onDisconnected: () => {
+          console.log('[KONNECCT-AGORA] Connection interrupted');
           setConnectionState('disconnected');
         },
         onError: (err) => {
           console.error('[KONNECCT-AGORA] Connection error:', err);
-          setConnectionError(err.message);
+          setConnectionError(err.message || 'Unknown Agora error');
           setConnectionState('error');
         },
       });
