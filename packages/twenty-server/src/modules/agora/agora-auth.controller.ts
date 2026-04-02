@@ -56,7 +56,7 @@ export class AgoraAuthController {
       }
 
       // 4. Issue Agora token natively. (workspaceMemberId becomes the Agora User ID)
-      const tokenPayload = await this.agoraAuthService.getChatUserToken(workspaceMemberId);
+      const tokenPayload = await this.agoraAuthService.getChatUserToken(workspaceMemberId, workspaceId);
 
       this.logger.log(`[KONNECCT-AGORA] Token issued for ${workspaceMemberId}`);
       return tokenPayload;

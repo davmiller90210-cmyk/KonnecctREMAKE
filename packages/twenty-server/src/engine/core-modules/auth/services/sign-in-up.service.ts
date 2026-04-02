@@ -119,15 +119,7 @@ export class SignInUpService {
       };
     }
 
-    if (params.workspace) {
-      const updatedUser = await this.signInUpOnExistingWorkspace({
-        workspace: params.workspace,
-        userData: params.userData,
-      });
-
-      return { user: updatedUser, workspace: params.workspace };
-    }
-
+    // [MULTI-TENANT PIVOT]: Enforce new workspace for every signup without invitation.
     return await this.signUpOnNewWorkspace(params.userData);
   }
 
