@@ -46,7 +46,7 @@ export default function PartnerPage() {
       </TrustedBy.Root>
 
       <ThreeCards.Root backgroundColor={theme.colors.secondary.background[5]}>
-        <ThreeCards.Intro align="left">
+        <ThreeCards.Intro align="left" page={Pages.Partner}>
           <Eyebrow
             colorScheme="primary"
             heading={THREE_CARDS_ILLUSTRATION_DATA.eyebrow.heading}

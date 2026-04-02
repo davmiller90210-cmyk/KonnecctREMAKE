@@ -7,6 +7,9 @@ import { styled } from '@linaria/react';
 import type { Metadata } from 'next';
 import { Aleo, Azeret_Mono, Host_Grotesk } from 'next/font/google';
 
+import { ClerkProvider, SignInButton, SignUpButton, Show, UserButton } from "@clerk/nextjs";
+import "./globals.css";
+
 const hostGrotesk = Host_Grotesk({
   subsets: ['latin'],
   weight: ['300', '400', '500', '600'],
@@ -50,6 +53,13 @@ css`
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
+  header {
+    display: flex;
+    justify-content: flex-end;
+    padding: 1rem;
+    gap: 1rem;
+  }
 `;
 
 const StyledMain = styled.main`
@@ -69,20 +79,31 @@ export default function RootLayout({
       <body
         className={`${cssVariables} ${hostGrotesk.variable} ${aleo.variable} ${azeretMono.variable}`}
       >
-        <Menu.Root>
-          <Menu.Logo />
-          <Menu.Nav />
-          <Menu.Social />
-          <Menu.Cta />
-        </Menu.Root>
-        <StyledMain>{children}</StyledMain>
-        <Footer.Root>
-          <Footer.Logo />
-          <Footer.Nav />
-          <Footer.Bottom>
-            <Footer.Social />
-          </Footer.Bottom>
-        </Footer.Root>
+        <ClerkProvider>
+          <header>
+            <Show when="signed-out">
+              <SignInButton />
+              <SignUpButton />
+            </Show>
+            <Show when="signed-in">
+              <UserButton />
+            </Show>
+          </header>
+          <Menu.Root>
+            <Menu.Logo />
+            <Menu.Nav />
+            <Menu.Social />
+            {/* Removed native CRM CTA in favor of Clerk */}
+          </Menu.Root>
+          <StyledMain>{children}</StyledMain>
+          <Footer.Root>
+            <Footer.Logo />
+            <Footer.Nav />
+            <Footer.Bottom>
+              <Footer.Social />
+            </Footer.Bottom>
+          </Footer.Root>
+        </ClerkProvider>
       </body>
     </html>
   );
