@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useAtomValue } from 'jotai';
 import { styled } from '@linaria/react';
+import { useParams } from 'react-router-dom';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 import {
@@ -9,7 +10,6 @@ import {
   agoraConversationsAtom,
 } from '@/chat/states/agoraSessionState';
 import { useAgoraChat } from '@/chat/hooks/useAgoraChat';
-import { InboxSidebar } from '@/chat/components/InboxSidebar';
 import { ConversationView } from '@/chat/components/ConversationView';
 
 const StyledShell = styled.div`
@@ -48,11 +48,11 @@ const StyledErrorState = styled(StyledLoadingState)`
 `;
 
 export const CommunicationHub = () => {
+  const { '*' : conversationId } = useParams();
   const connectionState = useAtomValue(agoraConnectionStateAtom);
   const connectionError = useAtomValue(agoraConnectionErrorAtom);
   const conversations = useAtomValue(agoraConversationsAtom);
   const { connectToAgora, disconnectFromAgora, sendMessage, sendAttachment } = useAgoraChat();
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
 
   useEffect(() => {
     connectToAgora();
@@ -76,15 +76,10 @@ export const CommunicationHub = () => {
     );
   }
 
-  const selectedConversation = conversations.find((c) => c.id === selectedConversationId) ?? null;
+  const selectedConversation = conversations.find((c) => c.id === conversationId) ?? null;
 
   return (
     <StyledShell>
-      <InboxSidebar
-        conversations={conversations}
-        selectedId={selectedConversationId}
-        onSelect={setSelectedConversationId}
-      />
       {selectedConversation ? (
         <ConversationView 
           conversation={selectedConversation} 
@@ -92,7 +87,7 @@ export const CommunicationHub = () => {
           onSendAttachment={(file, type) => sendAttachment(selectedConversation.id, file, type, selectedConversation.type)}
         />
       ) : (
-        <StyledNoSelection>Select a conversation to start</StyledNoSelection>
+        <StyledNoSelection>Select a conversation from the sidebar to start chatting</StyledNoSelection>
       )}
     </StyledShell>
   );

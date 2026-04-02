@@ -36,9 +36,16 @@ export const useAgoraChat = () => {
 
     if (_agoraClient) {
       _agoraClient.addEventHandler('connection_events', {
-        onConnected: () => setConnectionState('connected'),
-        onDisconnected: () => setConnectionState('disconnected'),
+        onOpened: () => {
+          console.log('[KONNECCT-AGORA] Connected successfully');
+          setConnectionState('connected');
+        },
+        onClosed: () => {
+          console.log('[KONNECCT-AGORA] Disconnected');
+          setConnectionState('disconnected');
+        },
         onError: (err) => {
+          console.error('[KONNECCT-AGORA] Connection error:', err);
           setConnectionError(err.message);
           setConnectionState('error');
         },

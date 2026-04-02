@@ -1,6 +1,7 @@
 import { NavigationDrawerOpenedSection } from '@/navigation-menu-item/display/sections/components/NavigationDrawerOpenedSection';
 import { NavigationDrawerWorkspaceSectionSkeletonLoader } from '@/object-metadata/components/NavigationDrawerWorkspaceSectionSkeletonLoader';
 
+import { MainNavigationDrawerRecentChats } from './MainNavigationDrawerRecentChats';
 import { NavigationDrawerOtherSection } from '@/navigation/components/NavigationDrawerOtherSection';
 import { styled } from '@linaria/react';
 import { lazy, Suspense } from 'react';
@@ -23,12 +24,6 @@ const WorkspaceSectionDispatcher = lazy(() =>
   })),
 );
 
-import { AppPath } from 'twenty-shared/types';
-import { IconMessage } from 'twenty-ui/display';
-import { NavigationDrawerItem } from '@/ui/navigation/navigation-drawer/components/NavigationDrawerItem';
-import { useLingui } from '@lingui/react/macro';
-import { useLocation } from 'react-router-dom';
-
 const StyledScrollableItemsContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -36,9 +31,6 @@ const StyledScrollableItemsContainer = styled.div`
 `;
 
 export const MainNavigationDrawerScrollableItems = () => {
-  const { t } = useLingui();
-  const location = useLocation();
-
   return (
     <StyledScrollableItemsContainer>
       <NavigationDrawerOpenedSection />
@@ -46,12 +38,9 @@ export const MainNavigationDrawerScrollableItems = () => {
         <FavoritesSectionDispatcher />
         <WorkspaceSectionDispatcher />
       </Suspense>
-      <NavigationDrawerItem
-        label={t`Chat`}
-        to="/chat"
-        Icon={IconMessage}
-        active={location.pathname.startsWith('/chat')}
-      />
+      
+      <MainNavigationDrawerRecentChats />
+
       <NavigationDrawerOtherSection />
     </StyledScrollableItemsContainer>
   );

@@ -18,12 +18,15 @@ export class AgoraAuthService {
       return;
     }
 
+    // Agora usernames must be lowercase alphanumeric
+    const agoraUsername = userIdentifier.toLowerCase().replace(/[^a-z0-9]/g, '');
+
     // 1. Build an App Token (valid for 10 minutes) for administrative REST calls
     const appToken = ChatTokenBuilder.buildAppToken(appId, appCertificate, 600);
     const url = `https://${restHost}/${orgName}/${appName}/users`;
 
     try {
-      this.logger.log(`[KONNECCT-AGORA] Attempting to register user: ${userIdentifier}`);
+      this.logger.log(`[KONNECCT-AGORA] Attempting to register user: ${agoraUsername}`);
       
       const response = await fetch(url, {
         method: 'POST',
@@ -32,20 +35,21 @@ export class AgoraAuthService {
           'Authorization': `Bearer ${appToken}`,
         },
         body: JSON.stringify({
-          username: userIdentifier,
-          password: userIdentifier, // Default password (not used by Token007 login)
+          username: agoraUsername,
+          password: agoraUsername, 
         }),
       });
 
+      const data = await response.json() as any;
+
       if (response.ok) {
-        this.logger.log(`[KONNECCT-AGORA] User registered successfully: ${userIdentifier}`);
+        this.logger.log(`[KONNECCT-AGORA] User registered successfully: ${agoraUsername}`);
       } else {
-        const data = await response.json() as any;
         // Ignore "duplicate_unique_property_exists" error (user already exists)
-        if (data?.error === 'duplicate_unique_property_exists') {
-          this.logger.log(`[KONNECCT-AGORA] User already exists: ${userIdentifier}`);
+        if (data?.error === 'duplicate_unique_property_exists' || data?.error_description?.includes('already exists')) {
+          this.logger.log(`[KONNECCT-AGORA] User already exists: ${agoraUsername}`);
         } else {
-          this.logger.warn(`[KONNECCT-AGORA] Registration failed for ${userIdentifier}: ${JSON.stringify(data)}`);
+          this.logger.warn(`[KONNECCT-AGORA] Registration failed for ${agoraUsername}. Status: ${response.status}. Error: ${JSON.stringify(data)}`);
         }
       }
     } catch (error) {
@@ -70,9 +74,11 @@ export class AgoraAuthService {
       throw new Error('Server configuration error. Missing Agora credentials.');
     }
 
+    // Ensure we use the same normalized ID for registration and token issuance
+    const normalizedId = userIdentifier.toLowerCase().replace(/[^a-z0-9]/g, '');
+
     // ─── Phase 1: Silent Registration ──────────────────────────────────────────
-    // Ensures the user exists on Agora Chat before issuing the token.
-    await this.registerUserIfNotFound(userIdentifier, appId, appCertificate);
+    await this.registerUserIfNotFound(normalizedId, appId, appCertificate);
 
     // ─── Phase 2: Token Issuance ───────────────────────────────────────────────
     const expiresInSeconds = 24 * 3600; 
@@ -81,14 +87,14 @@ export class AgoraAuthService {
       const token = ChatTokenBuilder.buildUserToken(
         appId,
         appCertificate,
-        userIdentifier,
+        normalizedId,
         expiresInSeconds,
       );
 
       return {
         agoraToken: token,
         expiresIn: expiresInSeconds,
-        userIdentifier,
+        userIdentifier: normalizedId,
       };
     } catch (error) {
       this.logger.error(`Failed to generate Agora token: ${error.message}`);
