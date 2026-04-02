@@ -16,6 +16,10 @@ export function generateFrontConfig(): void {
           process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '',
         REACT_APP_CLERK_PUBLISHABLE_KEY:
           process.env.REACT_APP_CLERK_PUBLISHABLE_KEY ?? '',
+        AGORA_CHAT_APP_KEY:
+          process.env.AGORA_CHAT_APP_KEY ?? '7110032205#200010602',
+        AGORA_CHAT_REST_HOST:
+          process.env.AGORA_CHAT_REST_HOST ?? 'a71.chat.agora.io',
       },
     },
   };

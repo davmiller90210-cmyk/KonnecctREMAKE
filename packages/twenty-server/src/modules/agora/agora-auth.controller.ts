@@ -113,11 +113,14 @@ export class AgoraAuthController {
         throw error;
       }
 
-      throw new UnauthorizedException(
-        message.includes('Missing Agora') || message.includes('AGORA_APP')
+      // Ensure we always return JSON error instead of letting NestJS/Nginx fall back to HTML
+      throw new UnauthorizedException({
+        statusCode: HttpStatus.UNAUTHORIZED,
+        message: message.includes('Missing Agora') || message.includes('AGORA_APP')
           ? 'Agora is not configured on the server (check AGORA_APP_ID / AGORA_APP_CERTIFICATE).'
           : 'Invalid CRM session token',
-      );
+        error: 'Unauthorized'
+      });
     }
   }
 }

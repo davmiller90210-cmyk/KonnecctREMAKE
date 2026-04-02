@@ -86,10 +86,9 @@ export class AgoraAuthService {
       throw new Error('Server configuration error. Missing Agora credentials.');
     }
 
-    // [MULTI-TENANT ISOLATION]: Scoped UserID format: ws_{workspaceId}_{userId}
-    const normalizedUserId = userIdentifier.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const normalizedWorkspaceId = workspaceId.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const scopedUserId = `ws${normalizedWorkspaceId}u${normalizedUserId}`;
+    // [MULTI-TENANT ISOLATION]: Scoped UserID format: {workspaceId}-{userId}
+    // We keep the IDs as provided to allow direct Clerk/CRM ID matching.
+    const scopedUserId = `${workspaceId}-${userIdentifier}`;
 
     // ─── Phase 1: Silent Scoped Registration ───────────────────────────────────
     await this.registerUserIfNotFound(scopedUserId, appId, appCertificate);
