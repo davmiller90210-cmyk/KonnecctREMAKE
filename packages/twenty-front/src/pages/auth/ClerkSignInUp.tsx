@@ -1,11 +1,23 @@
-import { SignIn, SignUp, SignedIn, SignedOut } from '@clerk/clerk-react';
+import {
+  SignIn,
+  SignUp,
+  SignedIn,
+  SignedOut,
+  useAuth,
+  UserButton,
+} from '@clerk/clerk-react';
 import { useMemo } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { AppPath } from 'twenty-shared/types';
+
+import { tokenPairState } from '@/auth/states/tokenPairState';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { CLERK_PUBLISHABLE_KEY } from '~/config';
 
 export const ClerkSignInUp = () => {
   const location = useLocation();
+  const tokenPair = useAtomStateValue(tokenPairState);
+  const { isLoaded: isClerkLoaded, orgId } = useAuth();
 
   const shouldUseSignUp = useMemo(() => {
     const params = new URLSearchParams(location.search);
@@ -26,7 +38,36 @@ export const ClerkSignInUp = () => {
   return (
     <>
       <SignedIn>
-        <Navigate to="/chat" replace />
+        {!isClerkLoaded ? (
+          <div style={{ padding: 24 }}>Loading…</div>
+        ) : tokenPair ? (
+          <Navigate to="/chat" replace />
+        ) : (
+          <div
+            style={{
+              padding: 24,
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 16,
+              alignItems: 'center',
+            }}
+          >
+            {!orgId ? (
+              <>
+                <p style={{ margin: 0 }}>
+                  Select a Clerk organization to open Konnecct (tenant required).
+                </p>
+                <p style={{ margin: 0, fontSize: 14, color: '#666' }}>
+                  Use your profile menu to create or join an org.
+                </p>
+                <UserButton />
+              </>
+            ) : (
+              <p style={{ margin: 0 }}>Completing sign-in…</p>
+            )}
+          </div>
+        )}
       </SignedIn>
       <SignedOut>
         {shouldUseSignUp ? (
