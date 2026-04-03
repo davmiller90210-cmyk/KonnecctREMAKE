@@ -1,6 +1,7 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
+import { createHash } from 'crypto';
 import { firstValueFrom } from 'rxjs';
 import { ChatTokenBuilder } from 'agora-token';
 
@@ -9,6 +10,21 @@ export class AgoraAuthService {
   private readonly logger = new Logger(AgoraAuthService.name);
 
   private static readonly APP_TOKEN_EXPIRE_SECONDS = 3600;
+
+  /**
+   * Agora Chat rejects long usernames (e.g. ws{32hex}u{32hex} > limit). Use a short,
+   * deterministic id per (workspace, user) so registration + Chat user token stay aligned.
+   */
+  private buildScopedChatUsername(
+    normalizedWorkspaceId: string,
+    normalizedUserId: string,
+  ): string {
+    const digest = createHash('sha256')
+      .update(`${normalizedWorkspaceId}\x1e${normalizedUserId}`, 'utf8')
+      .digest('hex');
+    // Leading letter — some stacks are picky; 32 chars total, well under Agora limits.
+    return `k${digest.slice(0, 31)}`;
+  }
 
   constructor(
     private readonly configService: ConfigService,
@@ -91,7 +107,10 @@ export class AgoraAuthService {
 
     const normalizedUserId = userIdentifier.toLowerCase().replace(/[^a-z0-9]/g, '');
     const normalizedWorkspaceId = workspaceId.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const scopedUserId = `ws${normalizedWorkspaceId}u${normalizedUserId}`;
+    const scopedUserId = this.buildScopedChatUsername(
+      normalizedWorkspaceId,
+      normalizedUserId,
+    );
 
     await this.registerUserIfNotFound(scopedUserId, appId, appCertificate);
 

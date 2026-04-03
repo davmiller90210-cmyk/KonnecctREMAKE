@@ -199,11 +199,58 @@ export const useAgoraChat = () => {
 
       const { agoraToken, userIdentifier } = await response.json();
 
-      _agoraClient?.open({
-        user: userIdentifier,
-        agoraToken: agoraToken,
+      if (!_agoraClient) {
+        throw new Error('Agora client not initialized');
+      }
+
+      console.log('[KONNECCT-AGORA] Logging in as', userIdentifier);
+
+      // SDK deprecates `agoraToken`; use `accessToken`. Combine callbacks + promise so we always settle.
+      await new Promise<void>((resolve, reject) => {
+        let settled = false;
+        const safeResolve = () => {
+          if (!settled) {
+            settled = true;
+            resolve();
+          }
+        };
+        const safeReject = (err: Error) => {
+          if (!settled) {
+            settled = true;
+            reject(err);
+          }
+        };
+
+        void _agoraClient
+          .open({
+            user: userIdentifier,
+            accessToken: agoraToken,
+            success: () => {
+              console.log('[KONNECCT-AGORA] open() success callback');
+              safeResolve();
+            },
+            error: (res: { message?: string; type?: number } | string) => {
+              const detail =
+                typeof res === 'string'
+                  ? res
+                  : res?.message ?? JSON.stringify(res);
+              console.error('[KONNECCT-AGORA] open() error callback:', res);
+              safeReject(new Error(detail || 'Agora login failed'));
+            },
+          })
+          .then(() => {
+            console.log('[KONNECCT-AGORA] open() promise resolved');
+            safeResolve();
+          })
+          .catch((err: unknown) => {
+            console.error('[KONNECCT-AGORA] open() promise rejected:', err);
+            safeReject(
+              err instanceof Error ? err : new Error(String(err)),
+            );
+          });
       });
 
+      setConnectionState('connected');
     } catch (error: any) {
       setConnectionError(error.message);
       setConnectionState('error');
