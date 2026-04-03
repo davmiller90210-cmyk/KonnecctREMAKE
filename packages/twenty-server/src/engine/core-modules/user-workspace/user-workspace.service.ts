@@ -121,6 +121,22 @@ export class UserWorkspaceService extends TypeOrmQueryService<UserWorkspaceEntit
         },
       });
 
+      const existingForUser = await workspaceMemberRepository.find({
+        where: {
+          userId: user.id,
+        },
+      });
+
+      if (existingForUser.length > 0) {
+        if (existingForUser.length > 1) {
+          this.logger.warn(
+            `Multiple workspaceMember records for userId=${user.id} in workspace ${workspaceId} (${existingForUser.length}); skipping insert.`,
+          );
+        }
+
+        return;
+      }
+
       await workspaceMemberRepository.insert({
         name: {
           firstName: user.firstName,

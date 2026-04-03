@@ -264,7 +264,10 @@ describe('UserWorkspaceService', () => {
       ];
       const workspaceMemberRepository = {
         insert: jest.fn(),
-        find: jest.fn().mockResolvedValue(workspaceMember),
+        find: jest
+          .fn()
+          .mockResolvedValueOnce([])
+          .mockResolvedValueOnce(workspaceMember),
       };
 
       jest
@@ -292,6 +295,33 @@ describe('UserWorkspaceService', () => {
         locale: 'en',
         avatarUrl: 'userWorkspace-avatar-url',
       });
+    });
+
+    it('should not insert when a workspace member already exists for the user', async () => {
+      const workspaceId = 'workspace-id';
+      const user = {
+        id: 'user-id',
+        email: 'test@example.com',
+        firstName: 'John',
+        lastName: 'Doe',
+        locale: 'en',
+      } as UserEntity;
+      const workspaceMemberRepository = {
+        insert: jest.fn(),
+        find: jest.fn().mockResolvedValue([{ id: 'existing', userId: user.id }]),
+      };
+
+      jest
+        .spyOn(globalWorkspaceOrmManager, 'getRepository')
+        .mockResolvedValue(workspaceMemberRepository as any);
+
+      jest.spyOn(userWorkspaceRepository, 'findOneOrFail').mockResolvedValue({
+        defaultAvatarUrl: 'avatar',
+      } as UserWorkspaceEntity);
+
+      await service.createWorkspaceMember(workspaceId, user);
+
+      expect(workspaceMemberRepository.insert).not.toHaveBeenCalled();
     });
   });
 

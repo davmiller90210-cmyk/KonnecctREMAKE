@@ -309,31 +309,44 @@ export class WorkspaceService extends TypeOrmQueryService<WorkspaceEntity> {
       throw new BadRequestException("'displayName' not provided");
     }
 
+    let resumeAfterPartialInit = false;
+
     if (
       workspace.activationStatus === WorkspaceActivationStatus.ONGOING_CREATION
     ) {
-      throw new Error('Workspace is already being created');
-    }
+      resumeAfterPartialInit =
+        await this.workspaceDataSourceService.checkSchemaExists(workspace.id);
 
-    if (
+      if (!resumeAfterPartialInit) {
+        throw new Error('Workspace is already being created');
+      }
+
+      this.logger.warn(
+        `Resuming workspace activation for ${workspace.id} (schema exists while status is ONGOING_CREATION)`,
+      );
+    } else if (
       workspace.activationStatus !== WorkspaceActivationStatus.PENDING_CREATION
     ) {
       throw new Error('Workspace is not pending creation');
     }
 
-    await this.workspaceRepository.update(workspace.id, {
-      activationStatus: WorkspaceActivationStatus.ONGOING_CREATION,
-    });
+    if (!resumeAfterPartialInit) {
+      await this.workspaceRepository.update(workspace.id, {
+        activationStatus: WorkspaceActivationStatus.ONGOING_CREATION,
+      });
+    }
 
     await this.featureFlagService.enableFeatureFlags(
       DEFAULT_FEATURE_FLAGS,
       workspace.id,
     );
 
-    await this.workspaceManagerService.init({
-      workspace,
-      userId: user.id,
-    });
+    if (!resumeAfterPartialInit) {
+      await this.workspaceManagerService.init({
+        workspace,
+        userId: user.id,
+      });
+    }
 
     await this.userWorkspaceService.createWorkspaceMember(workspace.id, user);
 
