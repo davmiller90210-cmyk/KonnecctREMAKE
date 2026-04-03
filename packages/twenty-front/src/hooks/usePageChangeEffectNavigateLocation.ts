@@ -3,7 +3,12 @@ import { ONBOARDING_PATHS } from '@/auth/constants/OnboardingPaths';
 import { ONGOING_USER_CREATION_PATHS } from '@/auth/constants/OngoingUserCreationPaths';
 import { useHasAccessTokenPair } from '@/auth/hooks/useHasAccessTokenPair';
 import { returnToPathState } from '@/auth/states/returnToPathState';
+import {
+  currentWorkspaceState,
+  type CurrentWorkspace,
+} from '@/auth/states/currentWorkspaceState';
 import { calendarBookingPageIdState } from '@/client-config/states/calendarBookingPageIdState';
+import { isMultiWorkspaceEnabledState } from '@/client-config/states/isMultiWorkspaceEnabledState';
 import { useIsCurrentLocationOnAWorkspace } from '@/domain-manager/hooks/useIsCurrentLocationOnAWorkspace';
 import { useDefaultHomePagePath } from '@/navigation/hooks/useDefaultHomePagePath';
 import { objectMetadataItemsSelector } from '@/object-metadata/states/objectMetadataItemsSelector';
@@ -17,7 +22,26 @@ import { AppPath, SettingsPath } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
 import { WorkspaceActivationStatus } from 'twenty-shared/workspace';
 import { OnboardingStatus } from '~/generated-metadata/graphql';
+import { getWorkspaceUrl } from '~/utils/getWorkspaceUrl';
 import { isMatchingLocation } from '~/utils/isMatchingLocation';
+
+const isBrowserHostnameMatchingWorkspaceUrl = (
+  workspace: CurrentWorkspace | null,
+): boolean => {
+  if (!isDefined(workspace?.workspaceUrls)) {
+    return false;
+  }
+
+  try {
+    const workspaceHostname = new URL(
+      getWorkspaceUrl(workspace.workspaceUrls),
+    ).hostname;
+
+    return workspaceHostname === window.location.hostname;
+  } catch {
+    return false;
+  }
+};
 
 const readReturnToPathFromUrlSearchParams = (): string | null => {
   const value = new URLSearchParams(window.location.search).get('returnToPath');
@@ -28,6 +52,8 @@ const readReturnToPathFromUrlSearchParams = (): string | null => {
 export const usePageChangeEffectNavigateLocation = () => {
   const hasAccessTokenPair = useHasAccessTokenPair();
   const { isOnAWorkspace } = useIsCurrentLocationOnAWorkspace();
+  const isMultiWorkspaceEnabled = useAtomStateValue(isMultiWorkspaceEnabledState);
+  const currentWorkspace = useAtomStateValue(currentWorkspaceState);
   const onboardingStatus = useOnboardingStatus();
   const isWorkspaceSuspended = useIsWorkspaceActivationStatusEqualsTo(
     WorkspaceActivationStatus.SUSPENDED,
@@ -35,6 +61,21 @@ export const usePageChangeEffectNavigateLocation = () => {
   const { defaultHomePagePath } = useDefaultHomePagePath();
   const location = useLocation();
   const calendarBookingPageId = useAtomStateValue(calendarBookingPageIdState);
+
+  // Default-domain hosts still serve workspaces whose custom/subdomain URL uses
+  // the same hostname (Clerk single-URL + org mapping). Without this, having a
+  // token but isOnAWorkspace=false bounces /welcome ↔ CRM forever.
+  const isSessionAllowedOnThisHostname =
+    !isMultiWorkspaceEnabled ||
+    isOnAWorkspace ||
+    !isDefined(currentWorkspace) ||
+    isBrowserHostnameMatchingWorkspaceUrl(currentWorkspace);
+
+  const canNavigateIntoAppFromAuthFlow =
+    !isMultiWorkspaceEnabled ||
+    isOnAWorkspace ||
+    (isDefined(currentWorkspace) &&
+      isBrowserHostnameMatchingWorkspaceUrl(currentWorkspace));
 
   const someMatchingLocationOf = (appPaths: AppPath[]): boolean =>
     appPaths.some((appPath) => isMatchingLocation(location, appPath));
@@ -54,7 +95,8 @@ export const usePageChangeEffectNavigateLocation = () => {
     : readReturnToPathFromUrlSearchParams();
 
   if (
-    (!hasAccessTokenPair || (hasAccessTokenPair && !isOnAWorkspace)) &&
+    (!hasAccessTokenPair ||
+      (hasAccessTokenPair && !isSessionAllowedOnThisHostname)) &&
     !someMatchingLocationOf([
       ...ONGOING_USER_CREATION_PATHS,
       AppPath.ResetPassword,
@@ -141,7 +183,7 @@ export const usePageChangeEffectNavigateLocation = () => {
     ]) &&
     !isMatchingLocation(location, AppPath.ResetPassword) &&
     hasAccessTokenPair &&
-    isOnAWorkspace
+    canNavigateIntoAppFromAuthFlow
   ) {
     return resolvedReturnToPath ?? defaultHomePagePath;
   }

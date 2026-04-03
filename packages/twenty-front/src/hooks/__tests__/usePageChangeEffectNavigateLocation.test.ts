@@ -74,6 +74,8 @@ const setupMockState = (
 ) => {
   jest
     .mocked(useAtomStateValue)
+    .mockReturnValueOnce(true)
+    .mockReturnValueOnce(null)
     .mockReturnValueOnce(calendarBookingPageId ?? 'mock-calendar-id')
     .mockReturnValueOnce([{ namePlural: objectNamePlural ?? '' }])
     .mockReturnValueOnce(verifyEmailRedirectPath)
