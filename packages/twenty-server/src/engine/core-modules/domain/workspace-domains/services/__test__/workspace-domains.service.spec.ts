@@ -104,6 +104,52 @@ describe('WorkspaceDomainsService', () => {
         subdomainUrl: 'https://subdomain.example.com/',
       });
     });
+
+    it('should not double the first hostname label when it equals the workspace subdomain', () => {
+      jest
+        .spyOn(twentyConfigService, 'get')
+        .mockImplementation((key: string) => {
+          const env = {
+            FRONTEND_URL: 'https://app.example.com',
+            IS_MULTIWORKSPACE_ENABLED: true,
+            IS_MULTIWORKSPACE_PUBLIC_URL_SHARED: false,
+          };
+
+          // @ts-expect-error legacy noImplicitAny
+          return env[key];
+        });
+
+      const result = workspaceDomainsService.getWorkspaceUrls({
+        subdomain: 'app',
+        customDomain: null,
+        isCustomDomainEnabled: false,
+      });
+
+      expect(result.subdomainUrl).toBe('https://app.example.com/');
+    });
+
+    it('should omit workspace subdomain from URL when IS_MULTIWORKSPACE_PUBLIC_URL_SHARED is true', () => {
+      jest
+        .spyOn(twentyConfigService, 'get')
+        .mockImplementation((key: string) => {
+          const env = {
+            FRONTEND_URL: 'https://app.example.com',
+            IS_MULTIWORKSPACE_ENABLED: true,
+            IS_MULTIWORKSPACE_PUBLIC_URL_SHARED: true,
+          };
+
+          // @ts-expect-error legacy noImplicitAny
+          return env[key];
+        });
+
+      const result = workspaceDomainsService.getWorkspaceUrls({
+        subdomain: 'acme',
+        customDomain: null,
+        isCustomDomainEnabled: false,
+      });
+
+      expect(result.subdomainUrl).toBe('https://app.example.com/');
+    });
   });
 
   describe('buildWorkspaceURL', () => {

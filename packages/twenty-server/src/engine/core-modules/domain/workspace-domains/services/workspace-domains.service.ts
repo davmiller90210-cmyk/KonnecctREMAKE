@@ -128,9 +128,24 @@ export class WorkspaceDomainsService {
   private getTwentyWorkspaceUrl(subdomain: string) {
     const url = this.domainServerConfigService.getFrontUrl();
 
-    url.hostname = this.twentyConfigService.get('IS_MULTIWORKSPACE_ENABLED')
-      ? `${subdomain}.${url.hostname}`
-      : url.hostname;
+    if (!this.twentyConfigService.get('IS_MULTIWORKSPACE_ENABLED')) {
+      return url.toString();
+    }
+
+    if (this.twentyConfigService.get('IS_MULTIWORKSPACE_PUBLIC_URL_SHARED')) {
+      return url.toString();
+    }
+
+    const host = url.hostname;
+    const firstLabel = host.split('.')[0] ?? '';
+
+    // Avoid app.app.example.com when FRONT_URL is already app.example.com and
+    // workspace subdomain is "app" (Twenty's DEFAULT_SUBDOMAIN).
+    if (firstLabel === subdomain) {
+      return url.toString();
+    }
+
+    url.hostname = `${subdomain}.${host}`;
 
     return url.toString();
   }

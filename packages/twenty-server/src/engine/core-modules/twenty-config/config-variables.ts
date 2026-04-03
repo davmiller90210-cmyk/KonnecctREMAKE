@@ -1327,6 +1327,15 @@ export class ConfigVariables {
   IS_MULTIWORKSPACE_ENABLED = false;
 
   @ConfigVariablesMetadata({
+    group: ConfigVariablesGroup.SERVER_CONFIG,
+    description:
+      'When multi-workspace is enabled, use the same FRONT_URL host for every workspace (no {workspace}. prefix). Enable for single-host deployments without wildcard DNS (e.g. app.example.com for all tenants).',
+    type: ConfigVariableType.BOOLEAN,
+  })
+  @IsOptional()
+  IS_MULTIWORKSPACE_PUBLIC_URL_SHARED = false;
+
+  @ConfigVariablesMetadata({
     group: ConfigVariablesGroup.ADVANCED_SETTINGS,
     description:
       'Number of inactive days before sending a deletion warning for workspaces. Used in the workspace deletion cron job to determine when to send warning emails.',

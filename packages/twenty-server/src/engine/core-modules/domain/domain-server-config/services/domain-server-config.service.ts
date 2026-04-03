@@ -18,11 +18,24 @@ export class DomainServerConfigService {
     const baseUrl = this.getFrontUrl();
 
     if (
-      this.twentyConfigService.get('IS_MULTIWORKSPACE_ENABLED') &&
-      this.twentyConfigService.get('DEFAULT_SUBDOMAIN')
+      !this.twentyConfigService.get('IS_MULTIWORKSPACE_ENABLED') ||
+      !this.twentyConfigService.get('DEFAULT_SUBDOMAIN')
     ) {
-      baseUrl.hostname = `${this.twentyConfigService.get('DEFAULT_SUBDOMAIN')}.${baseUrl.hostname}`;
+      return baseUrl;
     }
+
+    if (this.twentyConfigService.get('IS_MULTIWORKSPACE_PUBLIC_URL_SHARED')) {
+      return baseUrl;
+    }
+
+    const defaultSubdomain = this.twentyConfigService.get('DEFAULT_SUBDOMAIN');
+    const firstLabel = baseUrl.hostname.split('.')[0] ?? '';
+
+    if (firstLabel === defaultSubdomain) {
+      return baseUrl;
+    }
+
+    baseUrl.hostname = `${defaultSubdomain}.${baseUrl.hostname}`;
 
     return baseUrl;
   }

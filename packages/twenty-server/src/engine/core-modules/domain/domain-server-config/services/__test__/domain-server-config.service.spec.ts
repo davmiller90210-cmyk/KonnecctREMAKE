@@ -78,5 +78,45 @@ describe('SubdomainManagerService', () => {
 
       expect(result.toString()).toBe('https://test.example.com/');
     });
+
+    it('should not prepend default subdomain when the host already uses it', () => {
+      jest
+        .spyOn(twentyConfigService, 'get')
+        .mockImplementation((key: string) => {
+          const env = {
+            FRONTEND_URL: 'https://app.example.com',
+            IS_MULTIWORKSPACE_ENABLED: true,
+            DEFAULT_SUBDOMAIN: 'app',
+            IS_MULTIWORKSPACE_PUBLIC_URL_SHARED: false,
+          };
+
+          // @ts-expect-error legacy noImplicitAny
+          return env[key];
+        });
+
+      expect(domainServerConfigService.getBaseUrl().toString()).toBe(
+        'https://app.example.com/',
+      );
+    });
+
+    it('should not prepend default subdomain when IS_MULTIWORKSPACE_PUBLIC_URL_SHARED is true', () => {
+      jest
+        .spyOn(twentyConfigService, 'get')
+        .mockImplementation((key: string) => {
+          const env = {
+            FRONTEND_URL: 'https://app.example.com',
+            IS_MULTIWORKSPACE_ENABLED: true,
+            DEFAULT_SUBDOMAIN: 'app',
+            IS_MULTIWORKSPACE_PUBLIC_URL_SHARED: true,
+          };
+
+          // @ts-expect-error legacy noImplicitAny
+          return env[key];
+        });
+
+      expect(domainServerConfigService.getBaseUrl().toString()).toBe(
+        'https://app.example.com/',
+      );
+    });
   });
 });
