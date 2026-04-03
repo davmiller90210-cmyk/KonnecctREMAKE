@@ -17,15 +17,19 @@ import {
   KeyValuePairEntity,
   KeyValuePairType,
 } from 'src/engine/core-modules/key-value-pair/key-value-pair.entity';
-import { UserService } from 'src/engine/core-modules/user/services/user.service';
-import { WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
+import { type AuthContextUser } from 'src/engine/core-modules/auth/types/auth-context.type';
 import { AuthService } from 'src/engine/core-modules/auth/services/auth.service';
 import { SignInUpService } from 'src/engine/core-modules/auth/services/sign-in-up.service';
+import { UserService } from 'src/engine/core-modules/user/services/user.service';
 import { AuthProviderEnum } from 'src/engine/core-modules/workspace/types/workspace.type';
+import { WorkspaceService } from 'src/engine/core-modules/workspace/services/workspace.service';
+import { WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
+import { WorkspaceActivationStatus } from 'twenty-shared/workspace';
 
 type ClerkTokenClaims = {
   sub?: string;
   org_id?: string;
+  orgId?: string;
   email?: string;
   email_address?: string;
   given_name?: string;
@@ -41,6 +45,7 @@ export class ClerkAuthController {
     private readonly authService: AuthService,
     private readonly signInUpService: SignInUpService,
     private readonly userService: UserService,
+    private readonly workspaceService: WorkspaceService,
     @InjectRepository(KeyValuePairEntity)
     private readonly keyValuePairRepository: Repository<KeyValuePairEntity>,
     @InjectRepository(WorkspaceEntity)
@@ -73,10 +78,15 @@ export class ClerkAuthController {
     }
 
     const clerkUserId = claims.sub;
-    const clerkOrgId = claims.org_id;
+    const orgHeader = req.headers['x-clerk-org-id'];
+    const orgFromHeader = Array.isArray(orgHeader) ? orgHeader[0] : orgHeader;
+    const clerkOrgId =
+      claims.org_id ?? claims.orgId ?? orgFromHeader?.toString().trim();
 
     if (!clerkUserId || !clerkOrgId) {
-      throw new UnauthorizedException('Konnecct requires a Clerk org_id');
+      throw new UnauthorizedException(
+        'Konnecct requires a Clerk organization. Send X-Clerk-Org-Id or include org_id in the session JWT.',
+      );
     }
 
     const clerkClient = createClerkClient({ secretKey });
@@ -149,6 +159,38 @@ export class ClerkAuthController {
         workspace,
         userData,
       });
+    }
+
+    const workspaceForActivation =
+      (await this.workspaceRepository.findOne({
+        where: { id: workspace.id },
+      })) ?? workspace;
+
+    if (
+      workspaceForActivation.activationStatus ===
+      WorkspaceActivationStatus.PENDING_CREATION
+    ) {
+      let displayName = 'Konnecct';
+
+      try {
+        const org = await clerkClient.organizations.getOrganization({
+          organizationId: clerkOrgId,
+        });
+
+        if (org?.name) {
+          displayName = org.name;
+        }
+      } catch {
+        this.logger.warn(
+          `[KONNECCT-CLERK] Could not resolve Clerk org name for ${clerkOrgId}`,
+        );
+      }
+
+      await this.workspaceService.activateWorkspace(
+        user as AuthContextUser,
+        workspaceForActivation,
+        { displayName },
+      );
     }
 
     if (!user.isEmailVerified) {

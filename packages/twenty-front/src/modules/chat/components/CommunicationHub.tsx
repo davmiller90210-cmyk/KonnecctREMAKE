@@ -68,6 +68,22 @@ export const CommunicationHub = () => {
     );
   }
 
+  if (
+    connectionState === 'waiting_session' ||
+    connectionState === 'idle'
+  ) {
+    return (
+      <StyledLoadingState>
+        <span>Preparing workspace & chat…</span>
+        <span style={{ fontSize: '12px', textAlign: 'center', maxWidth: 360 }}>
+          {connectionState === 'waiting_session'
+            ? 'Choose a Clerk organization (or create one). Konnecct needs an org to load your CRM and issue a session.'
+            : 'Starting…'}
+        </span>
+      </StyledLoadingState>
+    );
+  }
+
   if (connectionState !== 'connected') {
     return (
       <StyledLoadingState>

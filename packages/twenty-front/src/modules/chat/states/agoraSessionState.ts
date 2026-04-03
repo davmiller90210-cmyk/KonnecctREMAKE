@@ -4,6 +4,7 @@ import { atom } from 'jotai';
 
 export type ChatConnectionState =
   | 'idle'
+  | 'waiting_session'
   | 'connecting'
   | 'connected'
   | 'reconnecting'

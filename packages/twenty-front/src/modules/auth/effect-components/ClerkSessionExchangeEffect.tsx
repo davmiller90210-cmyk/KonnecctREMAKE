@@ -38,6 +38,7 @@ export const ClerkSessionExchangeEffect = () => {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${clerkToken}`,
+            ...(orgId ? { 'X-Clerk-Org-Id': orgId } : {}),
           },
         });
 

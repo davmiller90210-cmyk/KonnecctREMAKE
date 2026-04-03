@@ -153,7 +153,7 @@ export const useAgoraChat = () => {
 
       // Wait for Clerk to hydrate before deciding org context (Clerk-only path).
       if (!crmToken && !isClerkLoaded) {
-        setConnectionState('idle');
+        setConnectionState('waiting_session');
         setConnectionError(null);
         return;
       }
@@ -166,7 +166,7 @@ export const useAgoraChat = () => {
         !crmToken &&
         !clerkOrgId
       ) {
-        setConnectionState('idle');
+        setConnectionState('waiting_session');
         setConnectionError(null);
         return;
       }
