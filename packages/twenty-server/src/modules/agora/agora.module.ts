@@ -3,6 +3,7 @@ import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
+import { AgoraChatGroupService } from './agora-chat-group.service';
 import { AgoraAuthService } from './agora-auth.service';
 import { AgoraAuthController } from './agora-auth.controller';
 
@@ -17,8 +18,8 @@ import { AgoraAuthController } from './agora-auth.controller';
     ConfigModule,
     JwtModule.register({}),
   ],
-  providers: [AgoraAuthService],
+  providers: [AgoraAuthService, AgoraChatGroupService],
   controllers: [AgoraAuthController],
-  exports: [AgoraAuthService],
+  exports: [AgoraAuthService, AgoraChatGroupService],
 })
 export class AgoraModule {}

@@ -26,6 +26,28 @@ export class AgoraAuthService {
     return `k${digest.slice(0, 31)}`;
   }
 
+  /** Deterministic Agora Chat username for a CRM user in a workspace (matches token + REST). */
+  scopedUserIdFor(userIdentifier: string, workspaceId: string): string {
+    const normalizedUserId = userIdentifier.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const normalizedWorkspaceId = workspaceId
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '');
+
+    return this.buildScopedChatUsername(normalizedWorkspaceId, normalizedUserId);
+  }
+
+  /** Ensures the user exists in Agora Chat (REST registration) before group ops. */
+  async ensureChatUserRegistered(scopedUserId: string): Promise<void> {
+    const appId = this.configService.get<string>('AGORA_APP_ID');
+    const appCertificate = this.configService.get<string>('AGORA_APP_CERTIFICATE');
+
+    if (!appId || !appCertificate) {
+      return;
+    }
+
+    await this.registerUserIfNotFound(scopedUserId, appId, appCertificate);
+  }
+
   constructor(
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,

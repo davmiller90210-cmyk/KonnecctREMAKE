@@ -1,16 +1,19 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useAtomValue } from 'jotai';
 import { styled } from '@linaria/react';
+import { t } from '@lingui/core/macro';
 import { useParams } from 'react-router-dom';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 
+import { ChatWorkspaceSidebar } from '@/chat/components/ChatWorkspaceSidebar';
+import { ConversationView } from '@/chat/components/ConversationView';
+import { useAgoraChat } from '@/chat/hooks/useAgoraChat';
+import { useChatWorkspaceLayout } from '@/chat/hooks/useChatWorkspaceLayout';
 import {
   agoraConnectionStateAtom,
   agoraConnectionErrorAtom,
-  agoraConversationsAtom,
 } from '@/chat/states/agoraSessionState';
-import { useAgoraChat } from '@/chat/hooks/useAgoraChat';
-import { ConversationView } from '@/chat/components/ConversationView';
+import { tokenPairState } from '@/auth/states/tokenPairState';
 
 const StyledShell = styled.div`
   display: flex;
@@ -47,38 +50,103 @@ const StyledErrorState = styled(StyledLoadingState)`
   color: ${themeCssVariables.color.red5};
 `;
 
+const StyledLayoutHint = styled.div`
+  padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[4]};
+  font-size: ${themeCssVariables.font.size.xs};
+  color: ${themeCssVariables.color.red5};
+  font-family: ${themeCssVariables.font.family};
+  border-bottom: 1px solid ${themeCssVariables.border.color.medium};
+`;
+
 export const CommunicationHub = () => {
-  const { '*' : conversationId } = useParams();
+  const { channelId, dmThreadId } = useParams<{
+    channelId?: string;
+    dmThreadId?: string;
+  }>();
   const connectionState = useAtomValue(agoraConnectionStateAtom);
   const connectionError = useAtomValue(agoraConnectionErrorAtom);
-  const conversations = useAtomValue(agoraConversationsAtom);
-  const { connectToAgora, disconnectFromAgora, sendMessage, sendAttachment } = useAgoraChat();
+  const tokenPair = useAtomValue(tokenPairState.atom);
+  const authToken = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
+  const {
+    layout,
+    isLoading: layoutLoading,
+    error: layoutError,
+    reload: reloadChatLayout,
+  } = useChatWorkspaceLayout();
+  const { connectToAgora, disconnectFromAgora, sendMessage, sendAttachment } =
+    useAgoraChat();
 
   useEffect(() => {
     connectToAgora();
     return () => disconnectFromAgora();
   }, [connectToAgora, disconnectFromAgora]);
 
+  const selectedConversation = useMemo(() => {
+    if (!layout) {
+      return null;
+    }
+
+    if (channelId) {
+      const channel = layout.categories
+        .flatMap((category) => category.channels)
+        .find((item) => item.id === channelId);
+
+      if (!channel) {
+        return null;
+      }
+
+      const agoraTargetId = channel.agoraGroupId ?? channel.id;
+
+      return {
+        id: agoraTargetId,
+        type: 'groupChat' as const,
+        name: channel.name.startsWith('#') ? channel.name : `#${channel.name}`,
+        unreadCount: 0,
+      };
+    }
+
+    if (dmThreadId) {
+      const thread = layout.directThreads.find(
+        (item) => item.id === dmThreadId,
+      );
+
+      if (!thread) {
+        return null;
+      }
+
+      const isGroup = thread.kind === 'group';
+      const agoraTargetId = isGroup
+        ? (thread.agoraGroupId ?? thread.id)
+        : (thread.peerAgoraUserId ?? thread.id);
+
+      return {
+        id: agoraTargetId,
+        type: isGroup ? ('groupChat' as const) : ('singleChat' as const),
+        name: thread.title ?? t`Direct message`,
+        unreadCount: 0,
+      };
+    }
+
+    return null;
+  }, [layout, channelId, dmThreadId]);
+
   if (connectionState === 'error') {
     return (
       <StyledErrorState>
-        <span>Error connecting to Agora SDK</span>
+        <span>{t`Error connecting to Agora`}</span>
         <span style={{ fontSize: '12px' }}>{connectionError}</span>
       </StyledErrorState>
     );
   }
 
-  if (
-    connectionState === 'waiting_session' ||
-    connectionState === 'idle'
-  ) {
+  if (connectionState === 'waiting_session' || connectionState === 'idle') {
     return (
       <StyledLoadingState>
-        <span>Preparing workspace & chat…</span>
+        <span>{t`Preparing workspace and chat…`}</span>
         <span style={{ fontSize: '12px', textAlign: 'center', maxWidth: 360 }}>
           {connectionState === 'waiting_session'
-            ? 'Choose a Clerk organization (or create one). Konnecct needs an org to load your CRM and issue a session.'
-            : 'Starting…'}
+            ? t`Choose a Clerk organization (or create one). Konnecct needs an org to load your CRM and issue a session.`
+            : t`Starting…`}
         </span>
       </StyledLoadingState>
     );
@@ -87,24 +155,67 @@ export const CommunicationHub = () => {
   if (connectionState !== 'connected') {
     return (
       <StyledLoadingState>
-        <span>Connecting to Agora Hub…</span>
+        <span>{t`Connecting to Agora Hub…`}</span>
       </StyledLoadingState>
     );
   }
 
-  const selectedConversation = conversations.find((c) => c.id === conversationId) ?? null;
-
   return (
     <StyledShell>
-      {selectedConversation ? (
-        <ConversationView 
-          conversation={selectedConversation} 
-          onSendMessage={(text) => sendMessage(selectedConversation.id, text, selectedConversation.type)}
-          onSendAttachment={(file, type) => sendAttachment(selectedConversation.id, file, type, selectedConversation.type)}
-        />
-      ) : (
-        <StyledNoSelection>Select a conversation from the sidebar to start chatting</StyledNoSelection>
-      )}
+      <ChatWorkspaceSidebar
+        layout={layout}
+        selectedChannelId={channelId ?? null}
+        selectedDmThreadId={dmThreadId ?? null}
+        authToken={authToken}
+        onLayoutRefresh={reloadChatLayout}
+      />
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          flex: '1 1 auto',
+          minWidth: 0,
+        }}
+      >
+        {layoutError && (
+          <StyledLayoutHint>
+            {t`Could not load channel list`}: {layoutError}
+          </StyledLayoutHint>
+        )}
+        {layoutLoading && !layout && (
+          <StyledLoadingState style={{ flex: '0 0 auto', padding: 16 }}>
+            <span>{t`Loading channels…`}</span>
+          </StyledLoadingState>
+        )}
+        {selectedConversation ? (
+          <ConversationView
+            conversation={selectedConversation}
+            onSendMessage={(text) =>
+              sendMessage(
+                selectedConversation.id,
+                text,
+                selectedConversation.type === 'groupChat'
+                  ? 'groupChat'
+                  : 'singleChat',
+              )
+            }
+            onSendAttachment={(file, type) =>
+              sendAttachment(
+                selectedConversation.id,
+                file,
+                type,
+                selectedConversation.type === 'groupChat'
+                  ? 'groupChat'
+                  : 'singleChat',
+              )
+            }
+          />
+        ) : (
+          <StyledNoSelection>
+            {t`Select a channel or direct message from the sidebar to start chatting`}
+          </StyledNoSelection>
+        )}
+      </div>
     </StyledShell>
   );
 };

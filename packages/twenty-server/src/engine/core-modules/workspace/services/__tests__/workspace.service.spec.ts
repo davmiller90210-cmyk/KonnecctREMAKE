@@ -20,6 +20,7 @@ import { getQueueToken } from 'src/engine/core-modules/message-queue/utils/get-q
 import { OnboardingService } from 'src/engine/core-modules/onboarding/onboarding.service';
 import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twenty-config.service';
 import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user-workspace.entity';
+import { ChatWorkspaceBootstrapService } from 'src/engine/core-modules/chat/services/chat-workspace-bootstrap.service';
 import { UserWorkspaceService } from 'src/engine/core-modules/user-workspace/user-workspace.service';
 import { UserService } from 'src/engine/core-modules/user/services/user.service';
 import { UserEntity } from 'src/engine/core-modules/user/user.entity';
@@ -171,6 +172,12 @@ describe('WorkspaceService', () => {
                 delete: jest.fn().mockResolvedValue({ affected: 0 }),
               },
             }),
+          },
+        },
+        {
+          provide: ChatWorkspaceBootstrapService,
+          useValue: {
+            ensureDefaultForActivatedWorkspace: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],

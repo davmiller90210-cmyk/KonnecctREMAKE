@@ -125,7 +125,15 @@ export const useCreateAppRouter = (
             }
           />
           <Route
-            path="/chat/*"
+            path="/chat/c/:channelId"
+            element={
+              <LazyRoute>
+                <CommunicationHub />
+              </LazyRoute>
+            }
+          />
+          <Route
+            path="/chat/dm/:dmThreadId"
             element={
               <LazyRoute>
                 <CommunicationHub />

@@ -14,6 +14,7 @@ import { FileCorePictureService } from 'src/engine/core-modules/file/file-core-p
 import { FileService } from 'src/engine/core-modules/file/services/file.service';
 import { OnboardingService } from 'src/engine/core-modules/onboarding/onboarding.service';
 import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user-workspace.entity';
+import { ChatWorkspaceBootstrapService } from 'src/engine/core-modules/chat/services/chat-workspace-bootstrap.service';
 import { UserWorkspaceService } from 'src/engine/core-modules/user-workspace/user-workspace.service';
 import { UserEntity } from 'src/engine/core-modules/user/user.entity';
 import { WorkspaceInvitationService } from 'src/engine/core-modules/workspace-invitation/services/workspace-invitation.service';
@@ -148,6 +149,12 @@ describe('UserWorkspaceService', () => {
           provide: FeatureFlagService,
           useValue: {
             isFeatureEnabled: jest.fn(),
+          },
+        },
+        {
+          provide: ChatWorkspaceBootstrapService,
+          useValue: {
+            addUserWorkspaceToPublicChannels: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],

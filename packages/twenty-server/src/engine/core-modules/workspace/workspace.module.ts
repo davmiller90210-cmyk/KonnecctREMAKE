@@ -8,6 +8,7 @@ import { TypeORMModule } from 'src/database/typeorm/typeorm.module';
 import { ApplicationModule } from 'src/engine/core-modules/application/application.module';
 import { AuditModule } from 'src/engine/core-modules/audit/audit.module';
 import { TokenModule } from 'src/engine/core-modules/auth/token/token.module';
+import { ChatModule } from 'src/engine/core-modules/chat/chat.module';
 import { BillingModule } from 'src/engine/core-modules/billing/billing.module';
 import { BillingSubscriptionEntity } from 'src/engine/core-modules/billing/entities/billing-subscription.entity';
 import { DnsManagerModule } from 'src/engine/core-modules/dns-manager/dns-manager.module';
@@ -82,6 +83,7 @@ import { StandardObjectsPrefillModule } from 'src/engine/workspace-manager/stand
         ApplicationModule,
         EnterpriseModule,
         StandardObjectsPrefillModule,
+        ChatModule,
       ],
       services: [WorkspaceService],
       resolvers: workspaceAutoResolverOpts,

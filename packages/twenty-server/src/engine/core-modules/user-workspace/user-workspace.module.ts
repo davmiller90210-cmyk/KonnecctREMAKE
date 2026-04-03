@@ -8,6 +8,7 @@ import { ApprovedAccessDomainModule } from 'src/engine/core-modules/approved-acc
 import { TokenModule } from 'src/engine/core-modules/auth/token/token.module';
 import { WorkspaceDomainsModule } from 'src/engine/core-modules/domain/workspace-domains/workspace-domains.module';
 import { EnterpriseModule } from 'src/engine/core-modules/enterprise/enterprise.module';
+import { ChatModule } from 'src/engine/core-modules/chat/chat.module';
 import { FeatureFlagModule } from 'src/engine/core-modules/feature-flag/feature-flag.module';
 import { FileModule } from 'src/engine/core-modules/file/file.module';
 import { OnboardingModule } from 'src/engine/core-modules/onboarding/onboarding.module';
@@ -52,6 +53,7 @@ import { WorkspaceDataSourceModule } from 'src/engine/workspace-datasource/works
         OnboardingModule,
         EnterpriseModule,
         FeatureFlagModule,
+        ChatModule,
       ],
       services: [UserWorkspaceService],
     }),

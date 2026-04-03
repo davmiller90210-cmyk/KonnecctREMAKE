@@ -52,6 +52,7 @@ import {
 import { PermissionsService } from 'src/engine/metadata-modules/permissions/permissions.service';
 import { WorkspaceCacheStorageService } from 'src/engine/workspace-cache-storage/workspace-cache-storage.service';
 import { getWorkspaceSchemaName } from 'src/engine/workspace-datasource/utils/get-workspace-schema-name.util';
+import { ChatWorkspaceBootstrapService } from 'src/engine/core-modules/chat/services/chat-workspace-bootstrap.service';
 import { WorkspaceDataSourceService } from 'src/engine/workspace-datasource/workspace-datasource.service';
 import { prefillCompanies } from 'src/engine/workspace-manager/standard-objects-prefill-data/utils/prefill-companies.util';
 import { prefillDashboards } from 'src/engine/workspace-manager/standard-objects-prefill-data/utils/prefill-dashboards.util';
@@ -118,6 +119,7 @@ export class WorkspaceService extends TypeOrmQueryService<WorkspaceEntity> {
     private readonly subdomainManagerService: SubdomainManagerService,
     private readonly workspaceDataSourceService: WorkspaceDataSourceService,
     private readonly customDomainManagerService: CustomDomainManagerService,
+    private readonly chatWorkspaceBootstrapService: ChatWorkspaceBootstrapService,
     private readonly fileCorePictureService: FileCorePictureService,
     private readonly aiModelRegistryService: AiModelRegistryService,
     @InjectMessageQueue(MessageQueue.deleteCascadeQueue)
@@ -349,6 +351,11 @@ export class WorkspaceService extends TypeOrmQueryService<WorkspaceEntity> {
     }
 
     await this.userWorkspaceService.createWorkspaceMember(workspace.id, user);
+
+    await this.chatWorkspaceBootstrapService.ensureDefaultForActivatedWorkspace(
+      workspace.id,
+      user.id,
+    );
 
     await this.prefillCreatedWorkspaceRecords({
       workspaceId: workspace.id,
