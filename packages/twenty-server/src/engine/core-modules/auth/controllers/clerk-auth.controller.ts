@@ -1,7 +1,9 @@
 import {
+  BadRequestException,
   Controller,
   HttpCode,
   HttpStatus,
+  InternalServerErrorException,
   Logger,
   Post,
   Req,
@@ -21,6 +23,10 @@ import {
   KeyValuePairEntity,
   KeyValuePairType,
 } from 'src/engine/core-modules/key-value-pair/key-value-pair.entity';
+import {
+  AuthException,
+  AuthExceptionCode,
+} from 'src/engine/core-modules/auth/auth.exception';
 import { type AuthContextUser } from 'src/engine/core-modules/auth/types/auth-context.type';
 import { AuthService } from 'src/engine/core-modules/auth/services/auth.service';
 import { SignInUpService } from 'src/engine/core-modules/auth/services/sign-in-up.service';
@@ -29,6 +35,7 @@ import { UserService } from 'src/engine/core-modules/user/services/user.service'
 import { AuthProviderEnum } from 'src/engine/core-modules/workspace/types/workspace.type';
 import { WorkspaceService } from 'src/engine/core-modules/workspace/services/workspace.service';
 import { WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
+import { PermissionsException } from 'src/engine/metadata-modules/permissions/permissions.exception';
 
 type ClerkTokenClaims = {
   sub?: string;
@@ -94,7 +101,62 @@ export class ClerkAuthController {
     }
 
     const clerkClient = createClerkClient({ secretKey });
-    const clerkUser = await clerkClient.users.getUser(clerkUserId);
+
+    try {
+      return await this.performClerkExchange({
+        clerkClient,
+        clerkUserId,
+        clerkOrgId,
+        claims,
+      });
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      if (error instanceof AuthException) {
+        throw error;
+      }
+      if (error instanceof PermissionsException) {
+        throw new BadRequestException({
+          message: error.message,
+          code: error.code,
+        });
+      }
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      this.logger.error(
+        `[KONNECCT-CLERK] exchange failed: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+
+      throw new InternalServerErrorException(
+        error instanceof Error ? error.message : 'Clerk exchange failed',
+      );
+    }
+  }
+
+  private async performClerkExchange({
+    clerkClient,
+    clerkUserId,
+    clerkOrgId,
+    claims,
+  }: {
+    clerkClient: ReturnType<typeof createClerkClient>;
+    clerkUserId: string;
+    clerkOrgId: string;
+    claims: ClerkTokenClaims;
+  }) {
+    let clerkUser;
+
+    try {
+      clerkUser = await clerkClient.users.getUser(clerkUserId);
+    } catch (error) {
+      this.logger.warn(
+        `[KONNECCT-CLERK] Clerk users.getUser failed: ${String(error)}`,
+      );
+      throw new UnauthorizedException('Could not load user from Clerk');
+    }
     const primaryEmail = clerkUser.emailAddresses.find(
       (email) => email.id === clerkUser.primaryEmailAddressId,
     )?.emailAddress;
@@ -207,21 +269,53 @@ export class ClerkAuthController {
         );
       }
 
-      await this.workspaceService.activateWorkspace(
-        user as AuthContextUser,
-        workspaceForActivation,
-        { displayName },
-      );
+      try {
+        await this.workspaceService.activateWorkspace(
+          user as AuthContextUser,
+          workspaceForActivation,
+          { displayName },
+        );
+      } catch (activationError) {
+        const msg =
+          activationError instanceof Error ? activationError.message : '';
+
+        if (
+          msg.includes('not pending creation') ||
+          msg.includes('already being created')
+        ) {
+          this.logger.warn(
+            `[KONNECCT-CLERK] activateWorkspace skipped (concurrent or already active): ${msg}`,
+          );
+        } else {
+          throw activationError;
+        }
+      }
     }
 
     if (!user.isEmailVerified) {
       await this.userService.markEmailAsVerified(user.id);
     }
 
+    const userForVerify = await this.userService.findUserByEmail(
+      email.toLowerCase(),
+    );
+
+    if (!isDefined(userForVerify)) {
+      throw new AuthException(
+        'User not found after Clerk provisioning',
+        AuthExceptionCode.USER_NOT_FOUND,
+      );
+    }
+
+    const workspaceForTokens =
+      (await this.workspaceRepository.findOne({
+        where: { id: workspace.id },
+      })) ?? workspace;
+
     const authTokens = await this.authService.verify(
-      user.email,
-      workspace.id,
-      AuthProviderEnum.SSO,
+      userForVerify.email,
+      workspaceForTokens.id,
+      AuthProviderEnum.Password,
     );
 
     return authTokens;
