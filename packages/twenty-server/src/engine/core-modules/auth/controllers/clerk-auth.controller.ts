@@ -10,8 +10,12 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { type Request } from 'express';
 import { createClerkClient, verifyToken } from '@clerk/backend';
-import { Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { isDefined } from 'twenty-shared/utils';
+import {
+  isWorkspaceActiveOrSuspended,
+  WorkspaceActivationStatus,
+} from 'twenty-shared/workspace';
 
 import {
   KeyValuePairEntity,
@@ -20,11 +24,11 @@ import {
 import { type AuthContextUser } from 'src/engine/core-modules/auth/types/auth-context.type';
 import { AuthService } from 'src/engine/core-modules/auth/services/auth.service';
 import { SignInUpService } from 'src/engine/core-modules/auth/services/sign-in-up.service';
+import { type UserEntity } from 'src/engine/core-modules/user/user.entity';
 import { UserService } from 'src/engine/core-modules/user/services/user.service';
 import { AuthProviderEnum } from 'src/engine/core-modules/workspace/types/workspace.type';
 import { WorkspaceService } from 'src/engine/core-modules/workspace/services/workspace.service';
 import { WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
-import { WorkspaceActivationStatus } from 'twenty-shared/workspace';
 
 type ClerkTokenClaims = {
   sub?: string;
@@ -114,16 +118,27 @@ export class ClerkAuthController {
       where: {
         key: orgKey,
         type: KeyValuePairType.CONFIG_VARIABLE,
+        userId: IsNull(),
       },
     });
 
     let workspace: WorkspaceEntity | null = null;
     let user = existingUser;
 
-    if (isDefined(orgMapping?.workspaceId)) {
+    const hadStoredOrgMapping = isDefined(orgMapping?.workspaceId);
+
+    if (hadStoredOrgMapping) {
       workspace = await this.workspaceRepository.findOne({
         where: { id: orgMapping.workspaceId },
       });
+    }
+
+    // Legacy password/SSO users already have workspace memberships. Without this,
+    // Clerk's first org would always call signUpOnNewWorkspace and strand them
+    // on a second empty workspace instead of their real CRM.
+    if (!workspace && isDefined(existingUser)) {
+      workspace =
+        await this.resolveWorkspaceFromLegacyUserMemberships(existingUser);
     }
 
     const userData = user
@@ -140,24 +155,30 @@ export class ClerkAuthController {
           },
         };
 
+    let createdNewWorkspace = false;
+
     if (!workspace) {
       const created = await this.signInUpService.signUpOnNewWorkspace(userData);
       user = created.user;
       workspace = created.workspace;
-
-      await this.keyValuePairRepository.save(
-        this.keyValuePairRepository.create({
-          key: orgKey,
-          value: { workspaceId: workspace.id, clerkOrgId },
-          userId: null,
-          workspaceId: workspace.id,
-          type: KeyValuePairType.CONFIG_VARIABLE,
-        }),
-      );
+      createdNewWorkspace = true;
     } else {
       user = await this.signInUpService.signInUpOnExistingWorkspace({
         workspace,
         userData,
+      });
+    }
+
+    const shouldPersistOrgMapping =
+      createdNewWorkspace ||
+      !hadStoredOrgMapping ||
+      orgMapping?.workspaceId !== workspace.id;
+
+    if (shouldPersistOrgMapping) {
+      await this.persistClerkOrgWorkspaceMapping({
+        orgKey,
+        clerkOrgId,
+        workspace,
       });
     }
 
@@ -204,5 +225,95 @@ export class ClerkAuthController {
     );
 
     return authTokens;
+  }
+
+  private pickPreferredWorkspaceForClerkLink(
+    workspaces: WorkspaceEntity[],
+  ): WorkspaceEntity | null {
+    if (workspaces.length === 0) {
+      return null;
+    }
+
+    const rank = (status: WorkspaceActivationStatus) => {
+      if (status === WorkspaceActivationStatus.ACTIVE) return 0;
+      if (status === WorkspaceActivationStatus.SUSPENDED) return 1;
+
+      return 2;
+    };
+
+    return [...workspaces].sort((a, b) => {
+      const byStatus = rank(a.activationStatus) - rank(b.activationStatus);
+
+      if (byStatus !== 0) return byStatus;
+
+      return a.createdAt.getTime() - b.createdAt.getTime();
+    })[0];
+  }
+
+  private async resolveWorkspaceFromLegacyUserMemberships(
+    userWithWorkspaces: UserEntity,
+  ): Promise<WorkspaceEntity | null> {
+    const workspaceIds = [
+      ...new Set(
+        (userWithWorkspaces.userWorkspaces ?? []).map((uw) => uw.workspaceId),
+      ),
+    ];
+
+    if (workspaceIds.length === 0) {
+      return null;
+    }
+
+    const workspaces = await this.workspaceRepository.find({
+      where: { id: In(workspaceIds) },
+    });
+
+    const activeOrSuspended = workspaces.filter((w) =>
+      isWorkspaceActiveOrSuspended(w),
+    );
+
+    const candidates =
+      activeOrSuspended.length > 0 ? activeOrSuspended : workspaces;
+
+    return this.pickPreferredWorkspaceForClerkLink(candidates);
+  }
+
+  private async persistClerkOrgWorkspaceMapping({
+    orgKey,
+    clerkOrgId,
+    workspace,
+  }: {
+    orgKey: string;
+    clerkOrgId: string;
+    workspace: WorkspaceEntity;
+  }) {
+    const row = await this.keyValuePairRepository.findOne({
+      where: {
+        key: orgKey,
+        type: KeyValuePairType.CONFIG_VARIABLE,
+        userId: IsNull(),
+      },
+    });
+
+    if (row) {
+      row.workspaceId = workspace.id;
+      row.value = {
+        workspaceId: workspace.id,
+        clerkOrgId,
+      } as object;
+
+      await this.keyValuePairRepository.save(row);
+
+      return;
+    }
+
+    await this.keyValuePairRepository.save(
+      this.keyValuePairRepository.create({
+        key: orgKey,
+        value: { workspaceId: workspace.id, clerkOrgId },
+        userId: null,
+        workspaceId: workspace.id,
+        type: KeyValuePairType.CONFIG_VARIABLE,
+      }),
+    );
   }
 }
