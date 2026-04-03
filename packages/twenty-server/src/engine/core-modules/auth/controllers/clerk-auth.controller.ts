@@ -8,6 +8,7 @@ import {
   Post,
   Req,
   UnauthorizedException,
+  UseFilters,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type Request } from 'express';
@@ -27,6 +28,7 @@ import {
   AuthException,
   AuthExceptionCode,
 } from 'src/engine/core-modules/auth/auth.exception';
+import { AuthRestApiExceptionFilter } from 'src/engine/core-modules/auth/filters/auth-rest-api-exception.filter';
 import { type AuthContextUser } from 'src/engine/core-modules/auth/types/auth-context.type';
 import { AuthService } from 'src/engine/core-modules/auth/services/auth.service';
 import { SignInUpService } from 'src/engine/core-modules/auth/services/sign-in-up.service';
@@ -49,6 +51,7 @@ type ClerkTokenClaims = {
 };
 
 @Controller('auth/clerk')
+@UseFilters(AuthRestApiExceptionFilter)
 export class ClerkAuthController {
   private readonly logger = new Logger(ClerkAuthController.name);
 
@@ -251,7 +254,9 @@ export class ClerkAuthController {
 
     if (
       workspaceForActivation.activationStatus ===
-      WorkspaceActivationStatus.PENDING_CREATION
+        WorkspaceActivationStatus.PENDING_CREATION ||
+      workspaceForActivation.activationStatus ===
+        WorkspaceActivationStatus.ONGOING_CREATION
     ) {
       let displayName = 'Konnecct';
 
