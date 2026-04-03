@@ -171,6 +171,8 @@ export const useClientConfig = (): UseClientConfigResult => {
       setDomainConfiguration({
         defaultSubdomain: clientConfig?.defaultSubdomain,
         frontDomain: clientConfig?.frontDomain,
+        isMultiWorkspacePublicUrlShared:
+          clientConfig?.isMultiWorkspacePublicUrlShared === true,
       });
       setCanManageFeatureFlags(clientConfig?.canManageFeatureFlags);
       setLabPublicFeatureFlags(clientConfig?.publicFeatureFlags);
