@@ -135,19 +135,36 @@ export const ClerkSignInUp = () => {
         )}
       </SignedIn>
       <SignedOut>
-        {shouldUseSignUp ? (
-          <SignUp
-            forceRedirectUrl="/chat"
-            signInUrl={AppPath.SignInUp}
-            fallbackRedirectUrl="/chat"
-          />
-        ) : (
-          <SignIn
-            forceRedirectUrl="/chat"
-            signUpUrl={`${AppPath.SignInUp}?mode=sign-up`}
-            fallbackRedirectUrl="/chat"
-          />
-        )}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 16,
+            width: '100%',
+            maxWidth: 420,
+            marginInline: 'auto',
+          }}
+        >
+          {shouldUseSignUp ? (
+            <SignUp
+              forceRedirectUrl="/chat"
+              signInUrl={AppPath.SignInUp}
+              fallbackRedirectUrl="/chat"
+            />
+          ) : (
+            <SignIn
+              forceRedirectUrl="/chat"
+              signUpUrl={`${AppPath.SignInUp}?mode=sign-up`}
+              fallbackRedirectUrl="/chat"
+            />
+          )}
+          <p style={{ margin: 0, fontSize: 13, color: '#888', textAlign: 'center' }}>
+            Password reset, email verification, and workspace invites are handled
+            in Clerk. Old invitation or reset links from this app are no longer
+            used.
+          </p>
+        </div>
       </SignedOut>
     </>
   );

@@ -14,7 +14,6 @@ import { themeCssVariables } from 'twenty-ui/theme-constants';
 type MemberInfosTabProps = {
   member: WorkspaceMember;
   onNameChange: (firstName: string, lastName: string) => void;
-  onImpersonate?: () => void;
   onDelete: () => void;
 };
 
@@ -32,7 +31,6 @@ const StyledActionRow = styled.div`
 export const MemberInfosTab = ({
   member,
   onNameChange,
-  onImpersonate,
   onDelete,
 }: MemberInfosTabProps) => {
   const [firstName, setFirstName] = useState(member.name.firstName);
@@ -89,14 +87,6 @@ export const MemberInfosTab = ({
           description={t`Perform administrative actions or permanently delete this user`}
         />
         <StyledActionRow>
-          {onImpersonate && (
-            <Button
-              title={t`Impersonate`}
-              variant="secondary"
-              size="small"
-              onClick={onImpersonate}
-            />
-          )}
           <Button
             accent="danger"
             title={t`Delete account`}

@@ -10,8 +10,7 @@ export const AppRouter = () => {
   const currentUser = useAtomStateValue(currentUserState);
 
   const isAdminPageEnabled =
-    (currentUser?.canImpersonate || currentUser?.canAccessFullAdminPanel) ??
-    false;
+    currentUser?.canAccessFullAdminPanel === true;
 
   return (
     <RouterProvider

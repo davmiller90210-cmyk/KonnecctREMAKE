@@ -1,10 +1,6 @@
-import { currentUserState } from '@/auth/states/currentUserState';
-import { currentWorkspaceState } from '@/auth/states/currentWorkspaceState';
 import { canManageFeatureFlagsState } from '@/client-config/states/canManageFeatureFlagsState';
 import { SettingsAdminTableCard } from '@/settings/admin-panel/components/SettingsAdminTableCard';
 import { useFeatureFlagState } from '@/settings/admin-panel/hooks/useFeatureFlagState';
-import { useImpersonationAuth } from '@/settings/admin-panel/hooks/useImpersonationAuth';
-import { useImpersonationRedirect } from '@/settings/admin-panel/hooks/useImpersonationRedirect';
 import { userLookupResultState } from '@/settings/admin-panel/states/userLookupResultState';
 import { type WorkspaceInfo } from '@/settings/admin-panel/types/WorkspaceInfo';
 import { getWorkspaceSchemaName } from '@/settings/admin-panel/utils/getWorkspaceSchemaName';
@@ -19,26 +15,22 @@ import { styled } from '@linaria/react';
 import { useLingui } from '@lingui/react/macro';
 import { isNonEmptyString } from '@sniptt/guards';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
-import { useState } from 'react';
 import { getImageAbsoluteURI, isDefined } from 'twenty-shared/utils';
-import { useAtomState } from '@/ui/utilities/state/jotai/hooks/useAtomState';
 import { AvatarOrIcon, Chip } from 'twenty-ui/components';
 import {
   H2Title,
-  IconEyeShare,
   IconHome,
   IconId,
   IconLink,
   IconUser,
 } from 'twenty-ui/display';
-import { Button, Toggle } from 'twenty-ui/input';
+import { Toggle } from 'twenty-ui/input';
 import { Section } from 'twenty-ui/layout';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 import { REACT_APP_SERVER_BASE_URL } from '~/config';
 import { useMutation } from '@apollo/client/react';
 import {
   type FeatureFlagKey,
-  ImpersonateDocument,
   UpdateWorkspaceFeatureFlagDocument,
 } from '~/generated-metadata/graphql';
 
@@ -53,63 +45,18 @@ const StyledContainer = styled.div`
   margin-top: ${themeCssVariables.spacing[6]};
 `;
 
-const StyledButtonContainer = styled.div`
-  margin-top: ${themeCssVariables.spacing[3]};
-`;
-
 export const SettingsAdminWorkspaceContent = ({
   activeWorkspace,
 }: SettingsAdminWorkspaceContentProps) => {
   const canManageFeatureFlags = useAtomStateValue(canManageFeatureFlagsState);
   const { enqueueErrorSnackBar } = useSnackBar();
-  const [currentUser] = useAtomState(currentUserState);
-  const currentWorkspace = useAtomStateValue(currentWorkspaceState);
 
   const [updateFeatureFlag] = useMutation(UpdateWorkspaceFeatureFlagDocument);
-  const [isImpersonateLoading, setIsImpersonationLoading] = useState(false);
-  const { executeImpersonationAuth } = useImpersonationAuth();
-  const { executeImpersonationRedirect } = useImpersonationRedirect();
-  const [impersonate] = useMutation(ImpersonateDocument);
 
   const { updateFeatureFlagState } = useFeatureFlagState();
   const userLookupResult = useAtomStateValue(userLookupResultState);
 
   const { t } = useLingui();
-
-  const handleImpersonate = async (workspaceId: string) => {
-    if (!userLookupResult?.user.id) {
-      enqueueErrorSnackBar({ message: t`Please search for a user first` });
-      return;
-    }
-
-    setIsImpersonationLoading(true);
-
-    await impersonate({
-      variables: { userId: userLookupResult.user.id, workspaceId },
-      onCompleted: async (data) => {
-        const { loginToken, workspace } = data.impersonate;
-        const isCurrentWorkspace = workspace.id === currentWorkspace?.id;
-        if (isCurrentWorkspace) {
-          await executeImpersonationAuth(loginToken.token);
-          return;
-        }
-
-        return executeImpersonationRedirect(
-          workspace.workspaceUrls,
-          loginToken.token,
-          '_blank',
-        );
-      },
-      onError: (error) => {
-        const errorMessage = error.message;
-        enqueueErrorSnackBar({
-          message: t`Failed to impersonate user. ${errorMessage}`,
-        });
-      },
-    }).finally(() => {
-      setIsImpersonationLoading(false);
-    });
-  };
 
   const handleFeatureFlagUpdate = async (
     workspaceId: string,
@@ -206,26 +153,6 @@ export const SettingsAdminWorkspaceContent = ({
           items={workspaceInfoItems}
           gridAutoColumns="1fr 4fr"
         />
-        <StyledButtonContainer>
-          {currentUser?.canImpersonate && (
-            <Button
-              Icon={IconEyeShare}
-              variant="primary"
-              accent="default"
-              title={
-                activeWorkspace.allowImpersonation === false
-                  ? t`Impersonation is disabled for this workspace`
-                  : t`Impersonate`
-              }
-              onClick={() => handleImpersonate(activeWorkspace.id)}
-              disabled={
-                isImpersonateLoading ||
-                activeWorkspace.allowImpersonation === false
-              }
-              dataTestId="impersonate-button"
-            />
-          )}
-        </StyledButtonContainer>
       </Section>
       {canManageFeatureFlags && (
         <Table>

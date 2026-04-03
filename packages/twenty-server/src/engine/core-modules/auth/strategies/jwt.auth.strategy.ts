@@ -4,7 +4,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { msg } from '@lingui/core/macro';
 import { Strategy } from 'passport-jwt';
-import { PermissionFlagType } from 'twenty-shared/constants';
 import { assertIsDefinedOrThrow, isDefined } from 'twenty-shared/utils';
 import { WorkspaceActivationStatus } from 'twenty-shared/workspace';
 import { Repository } from 'typeorm';
@@ -32,7 +31,6 @@ import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user
 import { UserEntity } from 'src/engine/core-modules/user/user.entity';
 import { userValidator } from 'src/engine/core-modules/user/user.validate';
 import { WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
-import { PermissionsService } from 'src/engine/metadata-modules/permissions/permissions.service';
 import { WorkspaceCacheService } from 'src/engine/workspace-cache/services/workspace-cache.service';
 
 @Injectable()
@@ -49,7 +47,6 @@ export class JwtAuthStrategy extends PassportStrategy(Strategy, 'jwt') {
     private readonly userWorkspaceRepository: Repository<UserWorkspaceEntity>,
     @InjectRepository(ApiKeyEntity)
     private readonly apiKeyRepository: Repository<ApiKeyEntity>,
-    private readonly permissionsService: PermissionsService,
     private readonly workspaceCacheService: WorkspaceCacheService,
   ) {
     const jwtFromRequestFunction = jwtWrapperService.extractJwtFromRequest();
@@ -135,7 +132,10 @@ export class JwtAuthStrategy extends PassportStrategy(Strategy, 'jwt') {
     }
 
     if (payload.isImpersonating === true) {
-      context.impersonationContext = await this.validateImpersonation(payload);
+      throw new AuthException(
+        'Impersonation sessions are no longer supported; sign in again with your identity provider.',
+        AuthExceptionCode.FORBIDDEN_EXCEPTION,
+      );
     }
 
     const userId = payload.sub ?? payload.userId;
@@ -251,98 +251,6 @@ export class JwtAuthStrategy extends PassportStrategy(Strategy, 'jwt') {
     }
 
     return { user, userWorkspace };
-  }
-
-  private async validateImpersonation(payload: AccessTokenJwtPayload) {
-    // Validate required impersonation fields
-    if (
-      !payload.impersonatorUserWorkspaceId ||
-      !payload.impersonatedUserWorkspaceId
-    ) {
-      throw new AuthException(
-        'Invalid or missing user workspace ID in impersonation token',
-        AuthExceptionCode.FORBIDDEN_EXCEPTION,
-      );
-    }
-
-    if (payload.impersonatedUserWorkspaceId !== payload.userWorkspaceId) {
-      throw new AuthException(
-        'Token user workspace ID does not match impersonated user workspace ID',
-        AuthExceptionCode.FORBIDDEN_EXCEPTION,
-      );
-    }
-
-    if (
-      payload.impersonatedUserWorkspaceId ===
-      payload.impersonatorUserWorkspaceId
-    ) {
-      throw new AuthException(
-        'User cannot impersonate themselves',
-        AuthExceptionCode.FORBIDDEN_EXCEPTION,
-      );
-    }
-
-    const impersonatorUserWorkspace =
-      await this.userWorkspaceRepository.findOne({
-        where: { id: payload.impersonatorUserWorkspaceId },
-        relations: ['user', 'workspace'],
-      });
-
-    const impersonatedUserWorkspace =
-      await this.userWorkspaceRepository.findOne({
-        where: { id: payload.impersonatedUserWorkspaceId },
-        relations: ['user', 'workspace'],
-      });
-
-    if (
-      !isDefined(impersonatorUserWorkspace) ||
-      !isDefined(impersonatedUserWorkspace)
-    ) {
-      throw new AuthException(
-        'Invalid impersonation token, cannot find impersonator or impersonated user workspace',
-        AuthExceptionCode.USER_WORKSPACE_NOT_FOUND,
-      );
-    }
-
-    const isServerLevelImpersonation =
-      impersonatorUserWorkspace.workspace.id !==
-      impersonatedUserWorkspace.workspace.id;
-
-    const hasServerLevelImpersonatePermission =
-      impersonatorUserWorkspace.user.canImpersonate === true &&
-      impersonatedUserWorkspace.workspace.allowImpersonation === true;
-
-    if (isServerLevelImpersonation) {
-      if (!hasServerLevelImpersonatePermission)
-        throw new AuthException(
-          'Server level impersonation not allowed',
-          AuthExceptionCode.FORBIDDEN_EXCEPTION,
-        );
-
-      return {
-        impersonatorUserWorkspaceId: payload.impersonatorUserWorkspaceId,
-        impersonatedUserWorkspaceId: payload.impersonatedUserWorkspaceId,
-      };
-    }
-
-    const hasWorkspaceLevelImpersonatePermission =
-      await this.permissionsService.userHasWorkspaceSettingPermission({
-        userWorkspaceId: impersonatorUserWorkspace.id,
-        setting: PermissionFlagType.IMPERSONATE,
-        workspaceId: impersonatedUserWorkspace.workspace.id,
-      });
-
-    if (!hasWorkspaceLevelImpersonatePermission) {
-      throw new AuthException(
-        'Impersonation not allowed',
-        AuthExceptionCode.FORBIDDEN_EXCEPTION,
-      );
-    }
-
-    return {
-      impersonatorUserWorkspaceId: payload.impersonatorUserWorkspaceId,
-      impersonatedUserWorkspaceId: payload.impersonatedUserWorkspaceId,
-    };
   }
 
   private async validateWorkspaceAgnosticToken(

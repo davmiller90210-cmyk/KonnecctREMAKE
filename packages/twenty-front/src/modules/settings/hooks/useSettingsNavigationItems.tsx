@@ -72,9 +72,7 @@ const useSettingsNavigationItems = (): SettingsNavigationSection[] => {
 
   const isBillingEnabled = billing?.isBillingEnabled ?? false;
   const currentUser = useAtomStateValue(currentUserState);
-  const isAdminEnabled =
-    (currentUser?.canImpersonate || currentUser?.canAccessFullAdminPanel) ??
-    false;
+  const isAdminEnabled = currentUser?.canAccessFullAdminPanel === true;
   const isAIEnabled = useIsFeatureEnabled(FeatureFlagKey.IS_AI_ENABLED);
   const isApplicationEnabled = useIsFeatureEnabled(
     FeatureFlagKey.IS_APPLICATION_ENABLED,

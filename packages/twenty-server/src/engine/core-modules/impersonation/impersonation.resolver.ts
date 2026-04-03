@@ -8,7 +8,6 @@ import {
   AuthExceptionCode,
 } from 'src/engine/core-modules/auth/auth.exception';
 import { ResolverValidationPipe } from 'src/engine/core-modules/graphql/pipes/resolver-validation.pipe';
-import { ImpersonationService } from 'src/engine/core-modules/impersonation/services/impersonation.service';
 import { AuthUserWorkspaceId } from 'src/engine/decorators/auth/auth-user-workspace-id.decorator';
 import { CustomPermissionGuard } from 'src/engine/guards/custom-permission.guard';
 import { ImpersonatePermissionGuard } from 'src/engine/guards/impersonate-permission.guard';
@@ -20,8 +19,6 @@ import { WorkspaceAuthGuard } from 'src/engine/guards/workspace-auth.guard';
 @MetadataResolver()
 @UsePipes(ResolverValidationPipe)
 export class ImpersonationResolver {
-  constructor(private readonly impersonationService: ImpersonationService) {}
-
   @UseGuards(
     WorkspaceAuthGuard,
     UserAuthGuard,
@@ -41,10 +38,9 @@ export class ImpersonationResolver {
       );
     }
 
-    return await this.impersonationService.impersonate(
-      toImpersonateUserId,
-      workspaceId,
-      impersonatorUserWorkspaceId,
+    throw new AuthException(
+      'In-app impersonation is disabled. Use your identity provider (Clerk) for access and support flows.',
+      AuthExceptionCode.FORBIDDEN_EXCEPTION,
     );
   }
 }

@@ -59,9 +59,9 @@ export const SettingsAdminGeneral = () => {
 
   const canAccessFullAdminPanel = currentUser?.canAccessFullAdminPanel;
 
-  const canImpersonate = currentUser?.canImpersonate;
-
   const canManageFeatureFlags = useAtomStateValue(canManageFeatureFlagsState);
+
+  const showUserLookup = canAccessFullAdminPanel === true;
 
   const handleSearch = async () => {
     setActiveTabId('');
@@ -142,18 +142,18 @@ export const SettingsAdminGeneral = () => {
         </Section>
       )}
 
-      {canImpersonate && (
+      {showUserLookup && (
         <Section>
           <H2Title
             title={
               canManageFeatureFlags
-                ? t`Feature Flags & Impersonation`
-                : t`User Impersonation`
+                ? t`Feature flags`
+                : t`User lookup`
             }
             description={
               canManageFeatureFlags
-                ? t`Look up users and manage their workspace feature flags or impersonate them.`
-                : t`Look up users to impersonate them.`
+                ? t`Look up users and manage their workspace feature flags.`
+                : t`Look up users by ID or email.`
             }
           />
 

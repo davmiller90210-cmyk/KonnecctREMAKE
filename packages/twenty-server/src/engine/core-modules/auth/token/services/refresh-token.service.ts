@@ -56,6 +56,13 @@ export class RefreshTokenService {
       );
     }
 
+    if (jwtPayload.isImpersonating === true) {
+      throw new AuthException(
+        'Impersonation sessions are no longer supported; sign in again with your identity provider.',
+        AuthExceptionCode.FORBIDDEN_EXCEPTION,
+      );
+    }
+
     const token = await this.appTokenRepository.findOneBy({
       id: jwtPayload.jti,
     });

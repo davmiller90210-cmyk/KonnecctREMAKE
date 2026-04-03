@@ -20,14 +20,13 @@ export const SettingsAdminContent = () => {
   const billing = useAtomStateValue(billingState);
 
   const canAccessFullAdminPanel = currentUser?.canAccessFullAdminPanel;
-  const canImpersonate = currentUser?.canImpersonate;
   const isBillingEnabled = billing?.isBillingEnabled;
   const tabs = [
     {
       id: SETTINGS_ADMIN_TABS.GENERAL,
       title: t`General`,
       Icon: IconSettings2,
-      disabled: !canAccessFullAdminPanel && !canImpersonate,
+      disabled: !canAccessFullAdminPanel,
     },
     {
       id: SETTINGS_ADMIN_TABS.APPS,
@@ -59,7 +58,7 @@ export const SettingsAdminContent = () => {
             id: SETTINGS_ADMIN_TABS.ENTERPRISE,
             title: t`Enterprise`,
             Icon: IconKey,
-            disabled: !canAccessFullAdminPanel && !canImpersonate,
+            disabled: !canAccessFullAdminPanel,
           },
         ]
       : []),

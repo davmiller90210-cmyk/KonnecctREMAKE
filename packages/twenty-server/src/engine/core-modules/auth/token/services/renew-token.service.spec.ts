@@ -130,60 +130,6 @@ describe('RenewTokenService', () => {
       );
     });
 
-    it('should propagate impersonation claims when present', async () => {
-      const mockRefreshToken = 'valid-refresh-token';
-      const mockUser = { id: 'user-id' } as UserEntity;
-      const mockWorkspaceId = 'workspace-id';
-      const mockTokenId = 'token-id';
-      const mockAccessToken = {
-        token: 'new-access-token',
-        expiresAt: new Date(),
-      };
-      const mockNewRefreshToken = {
-        token: 'new-refresh-token',
-        expiresAt: new Date(),
-        targetedTokenType: JwtTokenTypeEnum.ACCESS,
-      };
-      const mockAppToken = {
-        id: mockTokenId,
-        workspaceId: mockWorkspaceId,
-      } as AppTokenEntity;
-
-      jest.spyOn(refreshTokenService, 'verifyRefreshToken').mockResolvedValue({
-        user: mockUser,
-        token: mockAppToken as AppTokenEntity,
-        authProvider: AuthProviderEnum.Password,
-        targetedTokenType: JwtTokenTypeEnum.ACCESS,
-        isImpersonating: true,
-        impersonatorUserWorkspaceId: 'uw-imp',
-        impersonatedUserWorkspaceId: 'uw-orig',
-      });
-      jest.spyOn(appTokenRepository, 'update').mockResolvedValue({} as any);
-      const accessSpy = jest
-        .spyOn(accessTokenService, 'generateAccessToken')
-        .mockResolvedValue(mockAccessToken);
-      const refreshSpy = jest
-        .spyOn(refreshTokenService, 'generateRefreshToken')
-        .mockResolvedValue(mockNewRefreshToken);
-
-      await service.generateTokensFromRefreshToken(mockRefreshToken);
-
-      expect(accessSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          isImpersonating: true,
-          impersonatorUserWorkspaceId: 'uw-imp',
-          impersonatedUserWorkspaceId: 'uw-orig',
-        }),
-      );
-      expect(refreshSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          isImpersonating: true,
-          impersonatorUserWorkspaceId: 'uw-imp',
-          impersonatedUserWorkspaceId: 'uw-orig',
-        }),
-      );
-    });
-
     it('should throw an error if refresh token is not provided', async () => {
       await expect(service.generateTokensFromRefreshToken('')).rejects.toThrow(
         AuthException,

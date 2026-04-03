@@ -177,7 +177,7 @@ describe('RefreshTokenService', () => {
     });
   });
 
-  it('returns impersonation claims from verified refresh token', async () => {
+  it('rejects impersonation refresh tokens', async () => {
     const refreshToken = 'rtok';
     const userId = 'user-id';
     const tokenId = 'token-id';
@@ -205,12 +205,11 @@ describe('RefreshTokenService', () => {
     const user = { id: userId } as UserEntity;
 
     jest.spyOn(userRepository, 'findOne').mockResolvedValue(user);
+    jest.spyOn(twentyConfigService, 'get').mockReturnValue('1h');
 
-    const out = await service.verifyRefreshToken(refreshToken);
-
-    expect(out.isImpersonating).toBe(true);
-    expect(out.impersonatorUserWorkspaceId).toBe('uw-imp');
-    expect(out.impersonatedUserWorkspaceId).toBe('uw-orig');
+    await expect(service.verifyRefreshToken(refreshToken)).rejects.toThrow(
+      AuthException,
+    );
   });
 
   it('throws on malformed refresh token', async () => {

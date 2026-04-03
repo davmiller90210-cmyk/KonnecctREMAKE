@@ -43,7 +43,6 @@ import { extractConfigVariableName } from 'src/engine/metadata-modules/ai/ai-mod
 import { loadDefaultAiProviders } from 'src/engine/metadata-modules/ai/ai-models/utils/load-default-ai-providers.util';
 import { MetadataResolver } from 'src/engine/api/graphql/graphql-config/decorators/metadata-resolver.decorator';
 import { AdminPanelGuard } from 'src/engine/guards/admin-panel-guard';
-import { ServerLevelImpersonateGuard } from 'src/engine/guards/server-level-impersonate.guard';
 import { SettingsPermissionGuard } from 'src/engine/guards/settings-permission.guard';
 import { UserAuthGuard } from 'src/engine/guards/user-auth.guard';
 import { WorkspaceAuthGuard } from 'src/engine/guards/workspace-auth.guard';
@@ -77,7 +76,7 @@ export class AdminPanelResolver {
     private readonly modelsDevCatalogService: ModelsDevCatalogService,
   ) {}
 
-  @UseGuards(ServerLevelImpersonateGuard)
+  @UseGuards(AdminPanelGuard)
   @Mutation(() => UserLookup)
   async userLookupAdminPanel(
     @Args() userLookupInput: UserLookupInput,
