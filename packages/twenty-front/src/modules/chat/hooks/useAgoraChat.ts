@@ -78,7 +78,7 @@ export const useAgoraChat = () => {
 
     return () => {
       if (_agoraClient) {
-        _agoraClient.removeEventHandler('connection_events');
+        _agoraClient.removeEventHandler('connection');
         _agoraClient.removeEventHandler('message_events');
       }
     };
