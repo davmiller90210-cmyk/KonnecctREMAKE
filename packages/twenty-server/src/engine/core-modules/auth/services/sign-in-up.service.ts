@@ -429,6 +429,12 @@ export class SignInUpService {
       return;
     }
 
+    if (
+      this.twentyConfigService.get('IS_MULTIWORKSPACE_PUBLIC_URL_SHARED')
+    ) {
+      return;
+    }
+
     const isExistingAdmin =
       userData.type === 'existingUser' &&
       userData.existingUser.canAccessFullAdminPanel;
