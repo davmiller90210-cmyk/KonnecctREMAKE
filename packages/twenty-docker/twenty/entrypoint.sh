@@ -17,7 +17,11 @@ setup_and_migrate_db() {
     fi
 
     yarn command:prod cache:flush
-    yarn command:prod upgrade
+    if ! yarn command:prod upgrade; then
+        echo "FATAL: yarn command:prod upgrade failed. The API will not start until migrations succeed."
+        echo "Check DB connectivity, APP_VERSION, and migration logs above."
+        exit 1
+    fi
     yarn command:prod cache:flush
 
     echo "Successfully migrated DB!"

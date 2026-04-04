@@ -29,6 +29,12 @@ services:
         condition: service_healthy
       crm-redis:
         condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:3000/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
     environment:
       NODE_ENV: production
       PG_DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@crm-db:5432/default

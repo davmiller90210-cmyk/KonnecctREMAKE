@@ -10,6 +10,7 @@ import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user
 
 import { AgoraAuthService } from './agora-auth.service';
 import { AgoraAuthController } from './agora-auth.controller';
+import { AgoraChatGroupService } from './agora-chat-group.service';
 
 /**
  * AgoraModule
@@ -27,8 +28,8 @@ import { AgoraAuthController } from './agora-auth.controller';
       UserWorkspaceEntity,
     ]),
   ],
-  providers: [AgoraAuthService],
+  providers: [AgoraAuthService, AgoraChatGroupService],
   controllers: [AgoraAuthController],
-  exports: [AgoraAuthService],
+  exports: [AgoraAuthService, AgoraChatGroupService],
 })
 export class AgoraModule {}
