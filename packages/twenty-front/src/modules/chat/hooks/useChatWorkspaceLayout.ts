@@ -32,7 +32,20 @@ export const useChatWorkspaceLayout = () => {
 
       if (!response.ok) {
         const text = await response.text();
-        throw new Error(text || `HTTP ${response.status}`);
+        let detail = text.trim() || `HTTP ${response.status}`;
+
+        try {
+          const parsed = JSON.parse(text) as { message?: string | string[] };
+          const msg = parsed.message;
+
+          if (msg) {
+            detail = Array.isArray(msg) ? msg.join(', ') : msg;
+          }
+        } catch {
+          // keep plain-text body
+        }
+
+        throw new Error(detail);
       }
 
       const data = (await response.json()) as ChatWorkspaceLayoutResponse;

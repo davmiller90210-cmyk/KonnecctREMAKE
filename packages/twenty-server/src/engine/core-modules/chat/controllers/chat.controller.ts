@@ -8,12 +8,14 @@ import {
   Logger,
   Post,
   Req,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { type Request } from 'express';
 import { createHash } from 'crypto';
+import { QueryFailedError } from 'typeorm';
 
 import { ChatLayoutService } from 'src/engine/core-modules/chat/services/chat-layout.service';
 import { ChatMutationService } from 'src/engine/core-modules/chat/services/chat-mutation.service';
@@ -60,10 +62,14 @@ export class ChatController {
   async getLayout(@Req() req: Request) {
     const context = await this.resolveVerifiedAccessContext(req);
 
-    return this.chatLayoutService.getLayout(
-      context.workspaceId,
-      context.userWorkspaceId,
-    );
+    try {
+      return await this.chatLayoutService.getLayout(
+        context.workspaceId,
+        context.userWorkspaceId,
+      );
+    } catch (error) {
+      this.rethrowIfMissingChatSchema(error, 'GET /chat/layout');
+    }
   }
 
   @Get('workspace-members')
@@ -71,10 +77,14 @@ export class ChatController {
   async getWorkspaceMembers(@Req() req: Request) {
     const context = await this.resolveVerifiedAccessContext(req);
 
-    return this.chatLayoutService.getWorkspaceMembersForChat(
-      context.workspaceId,
-      context.userWorkspaceId,
-    );
+    try {
+      return await this.chatLayoutService.getWorkspaceMembersForChat(
+        context.workspaceId,
+        context.userWorkspaceId,
+      );
+    } catch (error) {
+      this.rethrowIfMissingChatSchema(error, 'GET /chat/workspace-members');
+    }
   }
 
   @Post('channels')
@@ -133,6 +143,46 @@ export class ChatController {
       userWorkspaceId: context.userWorkspaceId,
       peerUserWorkspaceId: body.peerUserWorkspaceId,
     });
+  }
+
+  /**
+   * When chat tables are not migrated yet, Postgres returns 42P01 (undefined_table).
+   * Without this, the client only sees HTTP 500.
+   */
+  private static isMissingChatTablesError(error: unknown): boolean {
+    if (!(error instanceof QueryFailedError)) {
+      return false;
+    }
+
+    const code = (error.driverError as { code?: string } | undefined)?.code;
+
+    if (code !== '42P01') {
+      return false;
+    }
+
+    const msg = error.message.toLowerCase();
+
+    return (
+      msg.includes('chatchannel') ||
+      msg.includes('chatcategory') ||
+      msg.includes('chatdmthread') ||
+      msg.includes('chatdmparticipant') ||
+      msg.includes('chatchannelmember')
+    );
+  }
+
+  private rethrowIfMissingChatSchema(error: unknown, operation: string): never {
+    if (ChatController.isMissingChatTablesError(error)) {
+      this.logger.error(
+        `${operation}: chat tables missing — run DB migrations (e.g. yarn command:prod upgrade).`,
+        error instanceof Error ? error.stack : String(error),
+      );
+      throw new ServiceUnavailableException(
+        'Chat is not ready: database migrations have not created chat tables yet. On the server, run migrations (for example: yarn command:prod upgrade inside the API container), then restart if needed.',
+      );
+    }
+
+    throw error;
   }
 
   private async resolveVerifiedAccessContext(
