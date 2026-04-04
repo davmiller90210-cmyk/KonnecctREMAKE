@@ -1,16 +1,19 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useAtomValue } from 'jotai';
 import { styled } from '@linaria/react';
 import { useParams } from 'react-router-dom';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 
+import { tokenPairState } from '@/auth/states/tokenPairState';
 import {
   agoraConnectionStateAtom,
   agoraConnectionErrorAtom,
-  agoraConversationsAtom,
+  type ChatConversation,
 } from '@/chat/states/agoraSessionState';
-import { useAgoraChat } from '@/chat/hooks/useAgoraChat';
+import { ChatWorkspaceSidebar } from '@/chat/components/ChatWorkspaceSidebar';
 import { ConversationView } from '@/chat/components/ConversationView';
+import { useAgoraChat } from '@/chat/hooks/useAgoraChat';
+import { useChatWorkspaceLayout } from '@/chat/hooks/useChatWorkspaceLayout';
 
 const StyledShell = styled.div`
   display: flex;
@@ -48,16 +51,102 @@ const StyledErrorState = styled(StyledLoadingState)`
 `;
 
 export const CommunicationHub = () => {
-  const { '*' : conversationId } = useParams();
+  const { channelId, dmThreadId } = useParams<{
+    channelId?: string;
+    dmThreadId?: string;
+  }>();
   const connectionState = useAtomValue(agoraConnectionStateAtom);
   const connectionError = useAtomValue(agoraConnectionErrorAtom);
-  const conversations = useAtomValue(agoraConversationsAtom);
-  const { connectToAgora, disconnectFromAgora, sendMessage, sendAttachment } = useAgoraChat();
+  const tokenPair = useAtomValue(tokenPairState.atom);
+  const authToken = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
+
+  const { layout, isLoading, error: layoutError, reload } = useChatWorkspaceLayout();
+  const {
+    connectToAgora,
+    disconnectFromAgora,
+    sendMessage,
+    sendAttachment,
+    client,
+  } = useAgoraChat();
 
   useEffect(() => {
     connectToAgora();
     return () => disconnectFromAgora();
   }, [connectToAgora, disconnectFromAgora]);
+
+  const selectedChannel = useMemo(() => {
+    if (!channelId || !layout) {
+      return null;
+    }
+
+    for (const category of layout.categories) {
+      const found = category.channels.find((c) => c.id === channelId);
+      if (found) {
+        return found;
+      }
+    }
+
+    return null;
+  }, [channelId, layout]);
+
+  const selectedDm = useMemo(() => {
+    if (!dmThreadId || !layout) {
+      return null;
+    }
+
+    return layout.directThreads.find((t) => t.id === dmThreadId) ?? null;
+  }, [dmThreadId, layout]);
+
+  const selectedConversation: ChatConversation | null = useMemo(() => {
+    if (selectedChannel) {
+      if (!selectedChannel.agoraGroupId) {
+        return null;
+      }
+
+      return {
+        id: selectedChannel.agoraGroupId,
+        type: 'groupChat',
+        name: selectedChannel.name,
+        unreadCount: 0,
+        crmChannelId: selectedChannel.id,
+      };
+    }
+
+    if (selectedDm) {
+      const agoraTarget =
+        selectedDm.agoraGroupId ?? selectedDm.peerAgoraUserId;
+
+      if (!agoraTarget) {
+        return null;
+      }
+
+      return {
+        id: agoraTarget,
+        type: selectedDm.agoraGroupId ? 'groupChat' : 'singleChat',
+        name: selectedDm.title ?? 'Direct',
+        unreadCount: 0,
+        crmDmThreadId: selectedDm.id,
+      };
+    }
+
+    return null;
+  }, [selectedChannel, selectedDm]);
+
+  useEffect(() => {
+    if (
+      connectionState !== 'connected' ||
+      !client ||
+      !selectedChannel?.agoraGroupId
+    ) {
+      return;
+    }
+
+    const groupId = selectedChannel.agoraGroupId;
+
+    client.joinGroup({ groupId }).catch((err: unknown) => {
+      console.warn('[KONNECCT-AGORA] joinGroup failed', err);
+    });
+  }, [client, connectionState, selectedChannel?.agoraGroupId]);
 
   if (connectionState === 'error') {
     return (
@@ -71,24 +160,56 @@ export const CommunicationHub = () => {
   if (connectionState !== 'connected') {
     return (
       <StyledLoadingState>
-        <span>Connecting to Agora Hub…</span>
+        <span>Connecting to chat…</span>
       </StyledLoadingState>
     );
   }
 
-  const selectedConversation = conversations.find((c) => c.id === conversationId) ?? null;
+  const chatType = selectedConversation?.type ?? 'singleChat';
+
+  const mainPane =
+    layoutError && !layout ? (
+      <StyledErrorState>
+        <span>Could not load chat layout</span>
+        <span style={{ fontSize: '12px' }}>{layoutError}</span>
+      </StyledErrorState>
+    ) : isLoading && !layout ? (
+      <StyledLoadingState>
+        <span>Loading workspace chat…</span>
+      </StyledLoadingState>
+    ) : selectedConversation ? (
+        <ConversationView
+          conversation={selectedConversation}
+          onSendMessage={(text) =>
+            sendMessage(selectedConversation.id, text, chatType)
+          }
+          onSendAttachment={(file, type) =>
+            sendAttachment(
+              selectedConversation.id,
+              file,
+              type,
+              chatType,
+            )
+          }
+        />
+    ) : (
+      <StyledNoSelection>
+        {channelId || dmThreadId
+          ? 'This conversation is not available or chat is still provisioning.'
+          : 'Select a channel or direct message to start chatting'}
+      </StyledNoSelection>
+    );
 
   return (
     <StyledShell>
-      {selectedConversation ? (
-        <ConversationView 
-          conversation={selectedConversation} 
-          onSendMessage={(text) => sendMessage(selectedConversation.id, text, selectedConversation.type)}
-          onSendAttachment={(file, type) => sendAttachment(selectedConversation.id, file, type, selectedConversation.type)}
-        />
-      ) : (
-        <StyledNoSelection>Select a conversation from the sidebar to start chatting</StyledNoSelection>
-      )}
+      <ChatWorkspaceSidebar
+        layout={layout}
+        selectedChannelId={channelId ?? null}
+        selectedDmThreadId={dmThreadId ?? null}
+        authToken={authToken}
+        onLayoutRefresh={() => void reload()}
+      />
+      {mainPane}
     </StyledShell>
   );
 };

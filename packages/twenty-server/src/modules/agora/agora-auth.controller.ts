@@ -61,16 +61,21 @@ export class AgoraAuthController {
           .digest('hex');
 
         const verifiedPayload = await this.jwtService.verifyAsync(token, { secret });
-        const workspaceMemberId = verifiedPayload.workspaceMemberId;
+        const userId =
+          verifiedPayload.userId ??
+          verifiedPayload.sub;
 
-        if (!workspaceMemberId) {
-          throw new NotFoundException('No workspace member ID found');
+        if (!userId) {
+          throw new NotFoundException('No user ID found in workspace token');
         }
 
-        // 4. Issue Agora token natively. (workspaceMemberId becomes the Agora User ID)
-        const tokenPayload = await this.agoraAuthService.getChatUserToken(workspaceMemberId, workspaceId);
+        // Agora scoped ids are derived from Twenty userId + workspaceId (matches chat groups / layout).
+        const tokenPayload = await this.agoraAuthService.getChatUserToken(
+          String(userId),
+          workspaceId,
+        );
 
-        this.logger.log(`[KONNECCT-AGORA] Token issued for ${workspaceMemberId} (legacy JWT)`);
+        this.logger.log(`[KONNECCT-AGORA] Token issued for user ${userId} (legacy JWT)`);
         return tokenPayload;
       }
 
@@ -96,12 +101,33 @@ export class AgoraAuthController {
         );
       }
 
-      const tokenPayload = await this.agoraAuthService.getChatUserToken(
+      const emailHint =
+        typeof decodedUnverified.email === 'string'
+          ? decodedUnverified.email
+          : typeof decodedUnverified.email_address === 'string'
+            ? decodedUnverified.email_address
+            : undefined;
+
+      const resolved = await this.agoraAuthService.resolveTwentyIdentityForClerkSession(
         String(clerkUserId),
         String(clerkOrgId),
+        emailHint,
       );
 
-      this.logger.log(`[KONNECCT-AGORA] Token issued for ${clerkUserId} (clerk JWT)`);
+      if (!resolved) {
+        throw new UnauthorizedException(
+          'Could not map Clerk session to a workspace user. Open the app so /auth/clerk/exchange can run, then retry.',
+        );
+      }
+
+      const tokenPayload = await this.agoraAuthService.getChatUserToken(
+        resolved.userId,
+        resolved.workspaceId,
+      );
+
+      this.logger.log(
+        `[KONNECCT-AGORA] Token issued for user ${resolved.userId} (Clerk session → Twenty)`,
+      );
       return tokenPayload;
     } catch (error) {
       const message =

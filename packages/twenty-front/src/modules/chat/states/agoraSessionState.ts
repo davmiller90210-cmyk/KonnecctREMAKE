@@ -30,11 +30,15 @@ export interface ChatMessage {
 }
 
 export interface ChatConversation {
+  /** Agora routing id: group id or peer scoped user id */
   id: string;
   type: 'singleChat' | 'groupChat' | 'chatRoom';
   name: string;
   unreadCount: number;
   lastMessage?: ChatMessage;
+  /** CRM ids for deep links (/chat/c/…, /chat/dm/…) */
+  crmChannelId?: string;
+  crmDmThreadId?: string;
 }
 
 // ─── State Atoms ──────────────────────────────────────────────────────────────

@@ -62,14 +62,25 @@ export const MainNavigationDrawerRecentChats = () => {
       </StyledSectionHeader>
 
       {recentConversations.map((conv) => {
-        const isSelected = location.pathname === `/chat/${conv.id}`;
+        const to =
+          conv.type === 'groupChat' && conv.crmChannelId
+            ? `/chat/c/${conv.crmChannelId}`
+            : conv.crmDmThreadId
+              ? `/chat/dm/${conv.crmDmThreadId}`
+              : '/chat';
+        const isSelected =
+          conv.type === 'groupChat' && conv.crmChannelId
+            ? location.pathname === `/chat/c/${conv.crmChannelId}`
+            : conv.crmDmThreadId
+              ? location.pathname === `/chat/dm/${conv.crmDmThreadId}`
+              : false;
         const displayName = conv.name || conv.id;
 
         return (
           <NavigationDrawerItem
             key={conv.id}
             label={displayName}
-            to={`/chat/${conv.id}`}
+            to={to}
             active={isSelected}
             Icon={IconCircle} // Using a circle icon as a fallback for user avatar
             rightOptions={conv.unreadCount > 0 ? <StyledCounter>{conv.unreadCount}</StyledCounter> : null}
