@@ -94,6 +94,11 @@ export abstract class UpgradeCommandRunner extends ActiveOrSuspendedWorkspacesMi
     passedParams: string[],
     options: ActiveOrSuspendedWorkspacesMigrationCommandOptions,
   ): Promise<void> {
+    // Core TypeORM migrations (core schema tables) must run even when
+    // APP_VERSION does not match upgrade command keys (e.g. product semver 11.7.0
+    // vs Twenty engine keys 1.20.0). Previously we bailed before this ran.
+    await this.coreMigrationRunnerService.run();
+
     try {
       this.setUpgradeContextVersionsAndCommandsForCurrentAppVersion();
 
@@ -144,7 +149,6 @@ If any workspaces are not on the previous minor version, roll back to that versi
       return;
     }
 
-    await this.coreMigrationRunnerService.run();
     await super.runMigrationCommand(passedParams, options);
   }
 

@@ -178,7 +178,7 @@ export class ChatController {
         error instanceof Error ? error.stack : String(error),
       );
       throw new ServiceUnavailableException(
-        'Chat is not ready: database migrations have not created chat tables yet. On the server, run migrations (for example: yarn command:prod upgrade inside the API container), then restart if needed.',
+        'Chat is not ready: core database migrations have not created chat tables yet. In the API container run: yarn command:prod upgrade (or yarn command:prod run-typeorm-migration --force if upgrade fails on APP_VERSION). Then reload the app.',
       );
     }
 

@@ -38,7 +38,8 @@ services:
       NODE_PORT: 3000
       APP_SECRET: ${APP_SECRET:-konnecct-secret-6789}
       STORAGE_TYPE: local
-      APP_VERSION: 11.7.0
+      # Must match Twenty upgrade keys (1.x.y), not the npm package semver, or `yarn command:prod upgrade` skips core migrations before workspace steps.
+      APP_VERSION: ${APP_VERSION:-1.20.0}
       AGORA_APP_ID: ${AGORA_APP_ID:-c40d7b366062426e8cfcf1eba9e84194}
       AGORA_APP_CERTIFICATE: ${AGORA_APP_CERTIFICATE:-08feb4e9c80a471cae8744b61076acfe}
       AGORA_CHAT_ORG_NAME: ${AGORA_CHAT_ORG_NAME:-7110032205}
@@ -73,7 +74,8 @@ services:
       NODE_PORT: 3000
       APP_SECRET: ${APP_SECRET:-konnecct-secret-6789}
       STORAGE_TYPE: local
-      APP_VERSION: 11.7.0
+      # Must match Twenty upgrade keys (1.x.y), not the npm package semver, or `yarn command:prod upgrade` skips core migrations before workspace steps.
+      APP_VERSION: ${APP_VERSION:-1.20.0}
       AGORA_APP_ID: ${AGORA_APP_ID:-c40d7b366062426e8cfcf1eba9e84194}
       AGORA_APP_CERTIFICATE: ${AGORA_APP_CERTIFICATE:-08feb4e9c80a471cae8744b61076acfe}
       AGORA_CHAT_ORG_NAME: ${AGORA_CHAT_ORG_NAME:-7110032205}
