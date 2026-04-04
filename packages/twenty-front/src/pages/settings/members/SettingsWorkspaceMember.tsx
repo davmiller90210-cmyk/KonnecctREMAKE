@@ -3,10 +3,8 @@ import { useDebouncedCallback } from 'use-debounce';
 
 import { CoreObjectNameSingular, SettingsPath } from 'twenty-shared/types';
 import { useFindOneRecord } from '@/object-record/hooks/useFindOneRecord';
-import { useImpersonationAuth } from '@/settings/admin-panel/hooks/useImpersonationAuth';
 import { SettingsPageContainer } from '@/settings/components/SettingsPageContainer';
 import { SettingsRolesQueryEffect } from '@/settings/roles/components/SettingsRolesQueryEffect';
-import { useHasPermissionFlag } from '@/settings/roles/hooks/useHasPermissionFlag';
 import { useSnackBar } from '@/ui/feedback/snack-bar-manager/hooks/useSnackBar';
 import { ConfirmationModal } from '@/ui/layout/modal/components/ConfirmationModal';
 import { useModal } from '@/ui/layout/modal/hooks/useModal';
@@ -15,13 +13,10 @@ import { TabList } from '@/ui/layout/tab-list/components/TabList';
 import { activeTabIdComponentState } from '@/ui/layout/tab-list/states/activeTabIdComponentState';
 import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 import { t } from '@lingui/core/macro';
-import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { getSettingsPath } from 'twenty-shared/utils';
 import { IconInfoCircle, IconLockOpen } from 'twenty-ui/display';
 import { useNavigateSettings } from '~/hooks/useNavigateSettings';
 
-import { currentWorkspaceState } from '@/auth/states/currentWorkspaceState';
-import { isImpersonatingState } from '@/auth/states/isImpersonatingState';
 import { useUpdateOneRecord } from '@/object-record/hooks/useUpdateOneRecord';
 import { MemberInfosTab } from '@/settings/members/components/MemberInfosTab';
 import { MemberPermissionsTab } from '@/settings/members/components/MemberPermissionsTab';
@@ -29,9 +24,7 @@ import { useWorkspaceMemberRoles } from '@/settings/members/hooks/useWorkspaceMe
 import { type WorkspaceMember } from '@/workspace-member/types/WorkspaceMember';
 import { useMutation } from '@apollo/client/react';
 import {
-  PermissionFlagType,
   DeleteUserWorkspaceDocument,
-  ImpersonateDocument,
 } from '~/generated-metadata/graphql';
 
 const SETTINGS_WORKSPACE_MEMBER_TABS = {
@@ -49,13 +42,6 @@ export const SettingsWorkspaceMember = () => {
   const navigateSettings = useNavigateSettings();
   const { enqueueErrorSnackBar, enqueueSuccessSnackBar } = useSnackBar();
   const { openModal, closeModal } = useModal();
-  const currentWorkspace = useAtomStateValue(currentWorkspaceState);
-  const { executeImpersonationAuth } = useImpersonationAuth();
-  const [impersonate] = useMutation(ImpersonateDocument);
-  const isImpersonating = useAtomStateValue(isImpersonatingState);
-  const canImpersonate =
-    useHasPermissionFlag(PermissionFlagType.IMPERSONATE) && !isImpersonating;
-
   const {
     roles,
     allRoles,
@@ -134,33 +120,6 @@ export const SettingsWorkspaceMember = () => {
     }
   };
 
-  const handleImpersonate = async () => {
-    if (!member?.userId || !currentWorkspace?.id) {
-      enqueueErrorSnackBar({
-        message: t`Cannot impersonate selected user`,
-        options: { duration: 2000 },
-      });
-      return;
-    }
-
-    await impersonate({
-      variables: {
-        userId: member.userId,
-        workspaceId: currentWorkspace.id,
-      },
-      onCompleted: async (data) => {
-        const { loginToken } = data.impersonate;
-        await executeImpersonationAuth(loginToken.token);
-      },
-      onError: () => {
-        enqueueErrorSnackBar({
-          message: t`Cannot impersonate selected user`,
-          options: { duration: 2000 },
-        });
-      },
-    });
-  };
-
   const isLoading = loading || rolesLoading || !member;
 
   return (
@@ -203,7 +162,6 @@ export const SettingsWorkspaceMember = () => {
             {activeTabId === SETTINGS_WORKSPACE_MEMBER_TABS.TABS_IDS.INFOS && (
               <MemberInfosTab
                 member={member}
-                onImpersonate={canImpersonate ? handleImpersonate : undefined}
                 onNameChange={debouncedUpdateName}
                 onDelete={() => openModal(DELETE_MEMBER_MODAL_ID)}
               />
