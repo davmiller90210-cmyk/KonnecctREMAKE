@@ -21,6 +21,7 @@ export interface ChatMessage {
   conversationId: string;
   senderId: string;
   senderName?: string;
+  senderAvatarUrl?: string;
   type: 'txt' | 'img' | 'audio' | 'video' | 'file' | 'custom';
   text?: string;
   url?: string;
@@ -44,3 +45,12 @@ export const agoraConversationsAtom = atom<ChatConversation[]>([]);
 export const selectedConversationIdAtom = atom<string | null>(null);
 
 export const currentMessagesAtom = atom<Record<string, ChatMessage[]>>({});
+
+/** Latest inbound message for lightweight notifications (e.g. snackbar) */
+export const lastInboundChatNotifyAtom = atom<{
+  conversationId: string;
+  preview: string;
+  senderName: string;
+  messageId: string;
+  at: number;
+} | null>(null);

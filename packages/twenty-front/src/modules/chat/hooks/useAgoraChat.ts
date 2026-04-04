@@ -1,27 +1,118 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSetAtom, useAtomValue } from 'jotai';
 import AC from 'agora-chat';
 import { useAuth as useClerkAuth } from '@clerk/clerk-react';
 
+import { currentUserState } from '@/auth/states/currentUserState';
+import { currentWorkspaceMemberState } from '@/auth/states/currentWorkspaceMemberState';
+import { tokenPairState } from '@/auth/states/tokenPairState';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import {
   agoraConnectionStateAtom,
   agoraConnectionErrorAtom,
   agoraConversationsAtom,
   currentMessagesAtom,
-  ChatMessage,
+  lastInboundChatNotifyAtom,
+  type ChatMessage,
 } from '../states/agoraSessionState';
-import { tokenPairState } from '@/auth/states/tokenPairState';
+
 const AGORA_APP_KEY = '7110032205#200010602';
 
 let _agoraClient: AC.Connection | null = null;
+
+function parseMessageExt(raw: unknown): Record<string, string> {
+  if (raw == null) {
+    return {};
+  }
+
+  if (typeof raw === 'object' && !Array.isArray(raw)) {
+    return raw as Record<string, string>;
+  }
+
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed as Record<string, string>;
+      }
+    } catch {
+      return {};
+    }
+  }
+
+  return {};
+}
+
+/** Agora uses group id as `to` for group traffic; DMs key by the peer id. */
+function resolveConversationId(
+  msg: {
+    from?: string;
+    to?: string;
+    chatType?: string;
+    type?: string;
+    group?: string;
+  },
+  selfUser: string | undefined,
+): string {
+  const chatTypeRaw = String(msg.chatType ?? msg.type ?? '').toLowerCase();
+  const isGroup =
+    chatTypeRaw === 'groupchat' ||
+    chatTypeRaw === 'group' ||
+    Boolean(msg.group);
+
+  if (isGroup) {
+    return String(msg.to ?? '');
+  }
+
+  const from = String(msg.from ?? '');
+  const to = String(msg.to ?? '');
+
+  if (selfUser && from === selfUser) {
+    return to;
+  }
+
+  return from;
+}
 
 export const useAgoraChat = () => {
   const setConnectionState = useSetAtom(agoraConnectionStateAtom);
   const setConnectionError = useSetAtom(agoraConnectionErrorAtom);
   const setConversations = useSetAtom(agoraConversationsAtom);
   const setMessages = useSetAtom(currentMessagesAtom);
+  const setLastInboundNotify = useSetAtom(lastInboundChatNotifyAtom);
   const tokenPair = useAtomValue(tokenPairState.atom);
   const crmToken = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
+  const workspaceMember = useAtomStateValue(currentWorkspaceMemberState);
+  const currentUser = useAtomStateValue(currentUserState);
+
+  const senderProfile = useMemo(() => {
+    const nameFromMember = workspaceMember
+      ? [workspaceMember.name.firstName, workspaceMember.name.lastName]
+          .filter(Boolean)
+          .join(' ')
+          .trim()
+      : '';
+    const nameFromUser = currentUser
+      ? [currentUser.firstName, currentUser.lastName]
+          .filter(Boolean)
+          .join(' ')
+          .trim()
+      : '';
+    const displayName =
+      nameFromMember ||
+      nameFromUser ||
+      currentUser?.email?.split('@')[0] ||
+      'Member';
+
+    return {
+      displayName,
+      avatarUrl: workspaceMember?.avatarUrl ?? '',
+    };
+  }, [workspaceMember, currentUser]);
+
+  const senderProfileRef = useRef(senderProfile);
+  senderProfileRef.current = senderProfile;
+
   const {
     getToken: getClerkToken,
     orgId: clerkOrgId,
@@ -30,7 +121,98 @@ export const useAgoraChat = () => {
   } = useClerkAuth();
   const initRef = useRef(false);
 
-  // 1. Initialize Client
+  const handleIncomingMessage = useCallback(
+    (msg: Record<string, unknown>, type: string) => {
+      const self = _agoraClient?.user;
+      const ext = parseMessageExt(msg.ext);
+      const actualConvoId = resolveConversationId(
+        msg as {
+          from?: string;
+          to?: string;
+          chatType?: string;
+          type?: string;
+          group?: string;
+        },
+        self,
+      );
+
+      if (!actualConvoId) {
+        return;
+      }
+
+      const fromId = String(msg.from ?? '');
+      const direction: ChatMessage['direction'] =
+        self && fromId === self ? 'out' : 'in';
+
+      const newChatMessage: ChatMessage = {
+        id: String(msg.id ?? msg.mid ?? `${Date.now()}-${Math.random()}`),
+        conversationId: actualConvoId,
+        senderId: fromId,
+        senderName: ext.senderName || fromId,
+        senderAvatarUrl: ext.senderAvatarUrl || undefined,
+        type: type as ChatMessage['type'],
+        text: typeof msg.msg === 'string' ? msg.msg : undefined,
+        url: typeof msg.url === 'string' ? msg.url : undefined,
+        filename: typeof msg.filename === 'string' ? msg.filename : undefined,
+        createdAt: (msg.time as number) || Date.now(),
+        status: 'delivered',
+        direction,
+      };
+
+      setMessages((prev) => ({
+        ...prev,
+        [actualConvoId]: [...(prev[actualConvoId] || []), newChatMessage],
+      }));
+
+      if (direction === 'in') {
+        const preview =
+          newChatMessage.type === 'txt'
+            ? (newChatMessage.text ?? '').slice(0, 200)
+            : `[${newChatMessage.type}]`;
+
+        setLastInboundNotify({
+          conversationId: actualConvoId,
+          preview: preview || 'New message',
+          senderName: newChatMessage.senderName ?? fromId,
+          messageId: newChatMessage.id,
+          at: Date.now(),
+        });
+      }
+
+      setConversations((prev) => {
+        const existing = prev.find((c) => c.id === actualConvoId);
+        if (existing) {
+          return prev.map((c) =>
+            c.id === actualConvoId
+              ? {
+                  ...c,
+                  lastMessage: newChatMessage,
+                  unreadCount:
+                    direction === 'in'
+                      ? c.unreadCount + 1
+                      : c.unreadCount,
+                }
+              : c,
+          );
+        }
+        return [
+          ...prev,
+          {
+            id: actualConvoId,
+            type:
+              String(msg.chatType ?? '').toLowerCase() === 'groupchat'
+                ? 'groupChat'
+                : 'singleChat',
+            name: newChatMessage.senderName || actualConvoId,
+            unreadCount: direction === 'in' ? 1 : 0,
+            lastMessage: newChatMessage,
+          },
+        ];
+      });
+    },
+    [setMessages, setConversations, setLastInboundNotify],
+  );
+
   useEffect(() => {
     if (!initRef.current) {
       if (!_agoraClient) {
@@ -44,35 +226,30 @@ export const useAgoraChat = () => {
     if (_agoraClient) {
       _agoraClient.addEventHandler('connection', {
         onOpened: () => {
-          console.log('[KONNECCT-AGORA] Connection opened');
           setConnectionState('connected');
         },
         onConnected: () => {
-          console.log('[KONNECCT-AGORA] Connection established');
           setConnectionState('connected');
         },
         onClosed: () => {
-          console.log('[KONNECCT-AGORA] Connection closed');
           setConnectionState('disconnected');
         },
         onDisconnected: () => {
-          console.log('[KONNECCT-AGORA] Connection interrupted');
           setConnectionState('disconnected');
         },
         onError: (err) => {
-          console.error('[KONNECCT-AGORA] Connection error:', err);
           setConnectionError(err.message || 'Unknown Agora error');
           setConnectionState('error');
         },
       });
 
       _agoraClient.addEventHandler('message_events', {
-        onTextMessage: (msg) => handleIncomingMessage(msg, 'txt'),
-        onImageMessage: (msg) => handleIncomingMessage(msg, 'img'),
-        onAudioMessage: (msg) => handleIncomingMessage(msg, 'audio'),
-        onVideoMessage: (msg) => handleIncomingMessage(msg, 'video'),
-        onFileMessage: (msg) => handleIncomingMessage(msg, 'file'),
-        onCustomMessage: (msg) => handleIncomingMessage(msg, 'custom'),
+        onTextMessage: (msg) => handleIncomingMessage(msg as any, 'txt'),
+        onImageMessage: (msg) => handleIncomingMessage(msg as any, 'img'),
+        onAudioMessage: (msg) => handleIncomingMessage(msg as any, 'audio'),
+        onVideoMessage: (msg) => handleIncomingMessage(msg as any, 'video'),
+        onFileMessage: (msg) => handleIncomingMessage(msg as any, 'file'),
+        onCustomMessage: (msg) => handleIncomingMessage(msg as any, 'custom'),
       });
     }
 
@@ -82,56 +259,8 @@ export const useAgoraChat = () => {
         _agoraClient.removeEventHandler('message_events');
       }
     };
-  }, [setConnectionState, setConnectionError]);
+  }, [handleIncomingMessage, setConnectionError, setConnectionState]);
 
-  // Handle incoming formatted
-  const handleIncomingMessage = useCallback((msg: any, type: string) => {
-    const actualConvoId = _agoraClient?.user === msg.from ? msg.to : msg.from;
-
-    const newChatMessage: ChatMessage = {
-      id: msg.id,
-      conversationId: actualConvoId,
-      senderId: msg.from,
-      senderName: msg.ext?.senderName || msg.from,
-      type: type as any,
-      text: msg.msg,
-      url: msg.url,
-      filename: msg.filename,
-      createdAt: msg.time || Date.now(),
-      status: 'delivered',
-      direction: _agoraClient?.user === msg.from ? 'out' : 'in',
-    };
-
-    setMessages((prev) => ({
-      ...prev,
-      [actualConvoId]: [...(prev[actualConvoId] || []), newChatMessage],
-    }));
-
-    // Update conversation list preview
-    setConversations((prev) => {
-      const existing = prev.find((c) => c.id === actualConvoId);
-      if (existing) {
-        return prev.map((c) =>
-          c.id === actualConvoId
-            ? { ...c, lastMessage: newChatMessage, unreadCount: c.unreadCount + 1 }
-            : c
-        );
-      }
-      return [
-        ...prev,
-        {
-          id: actualConvoId,
-          type: msg.chatType === 'groupChat' ? 'groupChat' : 'singleChat',
-          name: msg.ext?.senderName || actualConvoId,
-          unreadCount: 1,
-          lastMessage: newChatMessage,
-        },
-      ];
-    });
-  }, [setMessages, setConversations]);
-
-
-  // 2. Connect
   const connectToAgora = useCallback(async () => {
     const resolveAuthToken = async () => {
       if (crmToken) {
@@ -139,7 +268,6 @@ export const useAgoraChat = () => {
       }
 
       return await getClerkToken();
-
     };
 
     try {
@@ -151,15 +279,12 @@ export const useAgoraChat = () => {
         return;
       }
 
-      // Wait for Clerk to hydrate before deciding org context (Clerk-only path).
       if (!crmToken && !isClerkLoaded) {
         setConnectionState('waiting_session');
         setConnectionError(null);
         return;
       }
 
-      // Clerk JWTs usually omit org_id; backend accepts X-Clerk-Org-Id. After
-      // /auth/clerk/exchange, prefer CRM JWT (legacy path) which always has workspace context.
       if (
         isClerkLoaded &&
         isClerkSignedIn &&
@@ -203,9 +328,6 @@ export const useAgoraChat = () => {
         throw new Error('Agora client not initialized');
       }
 
-      console.log('[KONNECCT-AGORA] Logging in as', userIdentifier);
-
-      // SDK deprecates `agoraToken`; use `accessToken`. Combine callbacks + promise so we always settle.
       await new Promise<void>((resolve, reject) => {
         let settled = false;
         const safeResolve = () => {
@@ -222,11 +344,10 @@ export const useAgoraChat = () => {
         };
 
         void _agoraClient
-          .open({
+          ?.open({
             user: userIdentifier,
             accessToken: agoraToken,
             success: () => {
-              console.log('[KONNECCT-AGORA] open() success callback');
               safeResolve();
             },
             error: (res: { message?: string; type?: number } | string) => {
@@ -234,16 +355,13 @@ export const useAgoraChat = () => {
                 typeof res === 'string'
                   ? res
                   : res?.message ?? JSON.stringify(res);
-              console.error('[KONNECCT-AGORA] open() error callback:', res);
               safeReject(new Error(detail || 'Agora login failed'));
             },
           })
           .then(() => {
-            console.log('[KONNECCT-AGORA] open() promise resolved');
             safeResolve();
           })
           .catch((err: unknown) => {
-            console.error('[KONNECCT-AGORA] open() promise rejected:', err);
             safeReject(
               err instanceof Error ? err : new Error(String(err)),
             );
@@ -251,8 +369,10 @@ export const useAgoraChat = () => {
       });
 
       setConnectionState('connected');
-    } catch (error: any) {
-      setConnectionError(error.message);
+    } catch (error: unknown) {
+      setConnectionError(
+        error instanceof Error ? error.message : String(error),
+      );
       setConnectionState('error');
     }
   }, [
@@ -269,40 +389,90 @@ export const useAgoraChat = () => {
     _agoraClient?.close();
   }, []);
 
-  const sendMessage = useCallback((targetId: string, text: string, chatType: 'singleChat' | 'groupChat' = 'singleChat') => {
-    if (!_agoraClient) return;
+  const buildSenderExt = useCallback(() => {
+    const { displayName, avatarUrl } = senderProfileRef.current;
 
-    const msg = AC.message.create({
-      to: targetId,
-      type: 'txt',
-      msg: text,
-      chatType,
-    });
+    return {
+      senderName: displayName,
+      senderAvatarUrl: avatarUrl || '',
+    };
+  }, []);
 
-    handleIncomingMessage({...msg, time: Date.now(), from: _agoraClient.user}, 'txt');
-    _agoraClient.send(msg).catch((err) => console.error(err));
-  }, [handleIncomingMessage]);
+  const sendMessage = useCallback(
+    (
+      targetId: string,
+      text: string,
+      chatType: 'singleChat' | 'groupChat' = 'singleChat',
+    ) => {
+      if (!_agoraClient) {
+        return;
+      }
 
-  const sendAttachment = useCallback((targetId: string, file: File, type: 'img' | 'file' | 'audio' | 'video', chatType: 'singleChat' | 'groupChat' = 'singleChat', extraParams?: any) => {
-    if (!_agoraClient) return;
+      const ext = buildSenderExt();
+      const msg = AC.message.create({
+        to: targetId,
+        type: 'txt',
+        msg: text,
+        chatType,
+        ext,
+      });
 
-    const msg = AC.message.create({
-      type,
-      to: targetId,
-      chatType,
-      file: {
-        data: file,
-        filename: file.name,
-        url: '', // It will be generated by Agora servers
-      },
-      ...extraParams
-    });
+      handleIncomingMessage(
+        {
+          ...msg,
+          time: Date.now(),
+          from: _agoraClient.user,
+          ext,
+        },
+        'txt',
+      );
+      void _agoraClient.send(msg).catch((err) => console.error(err));
+    },
+    [buildSenderExt, handleIncomingMessage],
+  );
 
-    const localUrl = URL.createObjectURL(file);
-    handleIncomingMessage({...msg, url: localUrl, time: Date.now(), from: _agoraClient.user}, type);
-    
-    _agoraClient.send(msg).catch((err) => console.error(err));
-  }, [handleIncomingMessage]);
+  const sendAttachment = useCallback(
+    (
+      targetId: string,
+      file: File,
+      type: 'img' | 'file' | 'audio' | 'video',
+      chatType: 'singleChat' | 'groupChat' = 'singleChat',
+      extraParams?: Record<string, unknown>,
+    ) => {
+      if (!_agoraClient) {
+        return;
+      }
+
+      const ext = buildSenderExt();
+      const msg = AC.message.create({
+        type,
+        to: targetId,
+        chatType,
+        ext,
+        file: {
+          data: file,
+          filename: file.name,
+          url: '',
+        },
+        ...extraParams,
+      });
+
+      const localUrl = URL.createObjectURL(file);
+      handleIncomingMessage(
+        {
+          ...msg,
+          url: localUrl,
+          time: Date.now(),
+          from: _agoraClient.user,
+          ext,
+        },
+        type,
+      );
+
+      void _agoraClient.send(msg).catch((err) => console.error(err));
+    },
+    [buildSenderExt, handleIncomingMessage],
+  );
 
   return {
     connectToAgora,

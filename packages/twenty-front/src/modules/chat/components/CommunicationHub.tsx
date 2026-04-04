@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useAtomValue } from 'jotai';
 import { styled } from '@linaria/react';
 import { t } from '@lingui/core/macro';
@@ -12,8 +12,10 @@ import { useChatWorkspaceLayout } from '@/chat/hooks/useChatWorkspaceLayout';
 import {
   agoraConnectionStateAtom,
   agoraConnectionErrorAtom,
+  lastInboundChatNotifyAtom,
 } from '@/chat/states/agoraSessionState';
 import { tokenPairState } from '@/auth/states/tokenPairState';
+import { useSnackBar } from '@/ui/feedback/snack-bar-manager/hooks/useSnackBar';
 
 const StyledShell = styled.div`
   display: flex;
@@ -73,13 +75,16 @@ export const CommunicationHub = () => {
     error: layoutError,
     reload: reloadChatLayout,
   } = useChatWorkspaceLayout();
-  const { connectToAgora, disconnectFromAgora, sendMessage, sendAttachment } =
-    useAgoraChat();
-
-  useEffect(() => {
-    connectToAgora();
-    return () => disconnectFromAgora();
-  }, [connectToAgora, disconnectFromAgora]);
+  const {
+    connectToAgora,
+    disconnectFromAgora,
+    sendMessage,
+    sendAttachment,
+    client: agoraClient,
+  } = useAgoraChat();
+  const inboundNotify = useAtomValue(lastInboundChatNotifyAtom);
+  const { enqueueSuccessSnackBar } = useSnackBar();
+  const lastSnackIdRef = useRef<string | null>(null);
 
   const selectedConversation = useMemo(() => {
     if (!layout) {
@@ -129,6 +134,74 @@ export const CommunicationHub = () => {
 
     return null;
   }, [layout, channelId, dmThreadId]);
+
+  useEffect(() => {
+    connectToAgora();
+    return () => disconnectFromAgora();
+  }, [connectToAgora, disconnectFromAgora]);
+
+  useEffect(() => {
+    if (!inboundNotify) {
+      return;
+    }
+
+    if (lastSnackIdRef.current === inboundNotify.messageId) {
+      return;
+    }
+
+    const activeAgoraId = selectedConversation?.id ?? null;
+
+    if (inboundNotify.conversationId === activeAgoraId) {
+      return;
+    }
+
+    lastSnackIdRef.current = inboundNotify.messageId;
+    enqueueSuccessSnackBar({
+      message: `${inboundNotify.senderName}: ${inboundNotify.preview}`,
+      options: {
+        dedupeKey: `chat-${inboundNotify.messageId}`,
+      },
+    });
+  }, [inboundNotify, selectedConversation?.id, enqueueSuccessSnackBar]);
+
+  useEffect(() => {
+    if (connectionState !== 'connected' || !agoraClient || !selectedConversation) {
+      return;
+    }
+
+    if (selectedConversation.type !== 'groupChat') {
+      return;
+    }
+
+    const groupId = selectedConversation.id;
+
+    if (!groupId) {
+      return;
+    }
+
+    void agoraClient
+      .joinGroup({
+        groupId,
+        message: 'Konnecct',
+      })
+      .catch((err: unknown) => {
+        const text =
+          err instanceof Error ? err.message : JSON.stringify(err ?? '');
+        if (
+          text.includes('already') ||
+          text.includes('member') ||
+          text.includes('joined')
+        ) {
+          return;
+        }
+        console.warn('[KONNECCT-AGORA] joinGroup', err);
+      });
+  }, [
+    connectionState,
+    agoraClient,
+    selectedConversation?.id,
+    selectedConversation?.type,
+  ]);
 
   if (connectionState === 'error') {
     return (
