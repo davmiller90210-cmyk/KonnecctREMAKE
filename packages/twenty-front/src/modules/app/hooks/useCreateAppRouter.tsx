@@ -52,6 +52,12 @@ const CommunicationHub = lazy(() =>
   })),
 );
 
+const RocketChatEmbed = lazy(() =>
+  import('@/chat/components/RocketChatEmbed').then((module) => ({
+    default: module.RocketChatEmbed,
+  })),
+);
+
 const CreateWorkspace = lazy(() =>
   import('~/pages/onboarding/CreateWorkspace').then((module) => ({
     default: module.CreateWorkspace,
@@ -140,6 +146,14 @@ export const useCreateAppRouter = (
             element={
               <LazyRoute>
                 <CommunicationHub />
+              </LazyRoute>
+            }
+          />
+          <Route
+            path={AppPath.Communications}
+            element={
+              <LazyRoute>
+                <RocketChatEmbed />
               </LazyRoute>
             }
           />

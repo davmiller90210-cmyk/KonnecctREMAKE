@@ -83,6 +83,44 @@ services:
       CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-}
     restart: always
 
+  # Rocket.Chat (proxied at https://app.konnecct.com/communications/ — see nginx.conf)
+  rocketchat-mongo:
+    image: mongo:6.0
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    volumes:
+      - rocketchat-mongo-data:/data/db
+    restart: always
+
+  rocketchat-mongo-init:
+    image: mongo:6.0
+    depends_on:
+      rocketchat-mongo:
+        condition: service_started
+    restart: on-failure
+    entrypoint:
+      - bash
+      - -c
+      - |
+        set -e
+        for i in $$(seq 1 40); do
+          mongosh "mongodb://rocketchat-mongo:27017" --eval "db.runCommand({ ping: 1 })" && break
+          sleep 3
+        done
+        mongosh "mongodb://rocketchat-mongo:27017" --eval 'try { rs.status() } catch (e) { rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "rocketchat-mongo:27017" }] }) }'
+
+  rocketchat:
+    image: rocketchat/rocket.chat:latest
+    depends_on:
+      rocketchat-mongo-init:
+        condition: service_completed_successfully
+    environment:
+      ROOT_URL: https://app.konnecct.com/communications/
+      MONGO_URL: mongodb://rocketchat-mongo:27017/rocketchat?replicaSet=rs0
+      PORT: "3000"
+    expose:
+      - "3000"
+    restart: always
+
   # Nginx Reverse Proxy
   nginx:
     image: nginx:1.25-alpine
@@ -95,6 +133,7 @@ services:
       - ./nginx/certbot-www:/var/www/certbot:ro
     depends_on:
       - crm-server
+      - rocketchat
     restart: always
 
   # Certbot (SSL Renewal)
@@ -109,3 +148,4 @@ services:
 volumes:
   crm-postgres-data:
   crm-redis-data:
+  rocketchat-mongo-data:
