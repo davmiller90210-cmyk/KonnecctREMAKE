@@ -72,12 +72,16 @@ export const agoraPayloadToChatMessage = (
         type: 'txt',
         text: (msg.msg as string) || '',
       };
-    case 'img':
+    case 'img': {
+      const url = (msg.url as string) || '';
+
       return {
         ...base,
         type: 'img',
-        url: (msg.url as string) || '',
+        url,
+        imageUrls: url ? [url] : [],
       };
+    }
     case 'file':
       return {
         ...base,

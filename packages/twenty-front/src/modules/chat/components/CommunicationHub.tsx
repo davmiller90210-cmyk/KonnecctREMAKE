@@ -1,19 +1,23 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAtomValue } from 'jotai';
 import { styled } from '@linaria/react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 import { tokenPairState } from '@/auth/states/tokenPairState';
+import { ChatInfoPanel } from '@/chat/components/ChatInfoPanel';
+import { ChatRail } from '@/chat/components/ChatRail';
+import { ChatWorkspaceSidebar } from '@/chat/components/ChatWorkspaceSidebar';
+import { ConversationView } from '@/chat/components/ConversationView';
+import { useAgoraChat } from '@/chat/hooks/useAgoraChat';
+import { useChatResponsiveLayout } from '@/chat/hooks/useChatResponsiveLayout';
+import { useChatWorkspaceLayout } from '@/chat/hooks/useChatWorkspaceLayout';
+import { useChatWorkspaceMembers } from '@/chat/hooks/useChatWorkspaceMembers';
 import {
   agoraConnectionStateAtom,
   agoraConnectionErrorAtom,
   type ChatConversation,
 } from '@/chat/states/agoraSessionState';
-import { ChatWorkspaceSidebar } from '@/chat/components/ChatWorkspaceSidebar';
-import { ConversationView } from '@/chat/components/ConversationView';
-import { useAgoraChat } from '@/chat/hooks/useAgoraChat';
-import { useChatWorkspaceLayout } from '@/chat/hooks/useChatWorkspaceLayout';
 
 const StyledShell = styled.div`
   display: flex;
@@ -22,6 +26,23 @@ const StyledShell = styled.div`
   height: 100%;
   overflow: hidden;
   background: ${themeCssVariables.background.primary};
+`;
+
+const StyledListColumn = styled.div<{ $grow: boolean }>`
+  display: flex;
+  flex-direction: column;
+  flex: ${({ $grow }) => ($grow ? '1 1 auto' : '0 0 auto')};
+  min-width: 0;
+  max-width: ${({ $grow }) => ($grow ? 'none' : '308px')};
+  height: 100%;
+`;
+
+const StyledThreadColumn = styled.div`
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 `;
 
 const StyledNoSelection = styled.div`
@@ -50,17 +71,45 @@ const StyledErrorState = styled(StyledLoadingState)`
   color: ${themeCssVariables.color.red5};
 `;
 
+const StyledInfoBackdrop = styled.div`
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  background: rgba(15, 23, 42, 0.42);
+  display: flex;
+  justify-content: flex-end;
+  align-items: stretch;
+`;
+
+const StyledInfoSheet = styled.div`
+  max-width: 360px;
+  width: 100%;
+  height: 100%;
+  box-shadow: ${themeCssVariables.boxShadow.strong};
+`;
+
+const StyledErrorDetail = styled.span`
+  font-size: 12px;
+`;
+
 export const CommunicationHub = () => {
   const { channelId, dmThreadId } = useParams<{
     channelId?: string;
     dmThreadId?: string;
   }>();
+  const navigate = useNavigate();
   const connectionState = useAtomValue(agoraConnectionStateAtom);
   const connectionError = useAtomValue(agoraConnectionErrorAtom);
   const tokenPair = useAtomValue(tokenPairState.atom);
   const authToken = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
 
-  const { layout, isLoading, error: layoutError, reload } = useChatWorkspaceLayout();
+  const { isMobile, isNarrowDesktop } = useChatResponsiveLayout();
+  const [infoOpen, setInfoOpen] = useState(true);
+  const [openDmSignal, setOpenDmSignal] = useState(0);
+
+  const { layout, isLoading, error: layoutError, reload } =
+    useChatWorkspaceLayout();
+  const { members } = useChatWorkspaceMembers(authToken);
   const {
     connectToAgora,
     disconnectFromAgora,
@@ -74,6 +123,14 @@ export const CommunicationHub = () => {
     connectToAgora();
     return () => disconnectFromAgora();
   }, [connectToAgora, disconnectFromAgora]);
+
+  useEffect(() => {
+    if (isMobile || isNarrowDesktop) {
+      setInfoOpen(false);
+    } else {
+      setInfoOpen(true);
+    }
+  }, [isMobile, isNarrowDesktop]);
 
   const selectedChannel = useMemo(() => {
     if (!channelId || !layout) {
@@ -172,11 +229,68 @@ export const CommunicationHub = () => {
     syncConversationHistory,
   ]);
 
+  const chatType = selectedConversation?.type ?? 'singleChat';
+
+  const memberCountPreview = members.length + 1;
+  const metaLine =
+    selectedConversation?.type === 'groupChat'
+      ? `${memberCountPreview} members · preview`
+      : `Direct · live delivery`;
+
+  const showInfoOverlay =
+    !!selectedConversation && infoOpen && (isNarrowDesktop || isMobile);
+
+  const showInfoDocked =
+    !!selectedConversation &&
+    infoOpen &&
+    !isNarrowDesktop &&
+    !isMobile;
+
+  const showListColumn = !isMobile || !selectedConversation;
+
+  const mainPane =
+    layoutError && !layout ? (
+      <StyledErrorState>
+        <span>Could not load chat layout</span>
+        <StyledErrorDetail>{layoutError}</StyledErrorDetail>
+      </StyledErrorState>
+    ) : isLoading && !layout ? (
+      <StyledLoadingState>
+        <span>Loading workspace chat…</span>
+      </StyledLoadingState>
+    ) : selectedConversation ? (
+      <ConversationView
+        conversation={selectedConversation}
+        metaLine={metaLine}
+        onBack={
+          isMobile ? () => navigate('/chat') : undefined
+        }
+        onOpenDetails={() => setInfoOpen(true)}
+        onSendMessage={(text) =>
+          sendMessage(selectedConversation.id, text, chatType)
+        }
+        onSendAttachment={(file, type) =>
+          sendAttachment(
+            selectedConversation.id,
+            file,
+            type,
+            chatType,
+          )
+        }
+      />
+    ) : (
+      <StyledNoSelection>
+        {channelId || dmThreadId
+          ? 'This conversation is not available or chat is still provisioning.'
+          : 'Select a channel or direct message to start chatting'}
+      </StyledNoSelection>
+    );
+
   if (connectionState === 'error') {
     return (
       <StyledErrorState>
         <span>Error connecting to Agora SDK</span>
-        <span style={{ fontSize: '12px' }}>{connectionError}</span>
+        <StyledErrorDetail>{connectionError}</StyledErrorDetail>
       </StyledErrorState>
     );
   }
@@ -189,51 +303,63 @@ export const CommunicationHub = () => {
     );
   }
 
-  const chatType = selectedConversation?.type ?? 'singleChat';
-
-  const mainPane =
-    layoutError && !layout ? (
-      <StyledErrorState>
-        <span>Could not load chat layout</span>
-        <span style={{ fontSize: '12px' }}>{layoutError}</span>
-      </StyledErrorState>
-    ) : isLoading && !layout ? (
-      <StyledLoadingState>
-        <span>Loading workspace chat…</span>
-      </StyledLoadingState>
-    ) : selectedConversation ? (
-        <ConversationView
-          conversation={selectedConversation}
-          onSendMessage={(text) =>
-            sendMessage(selectedConversation.id, text, chatType)
-          }
-          onSendAttachment={(file, type) =>
-            sendAttachment(
-              selectedConversation.id,
-              file,
-              type,
-              chatType,
-            )
-          }
-        />
-    ) : (
-      <StyledNoSelection>
-        {channelId || dmThreadId
-          ? 'This conversation is not available or chat is still provisioning.'
-          : 'Select a channel or direct message to start chatting'}
-      </StyledNoSelection>
-    );
-
   return (
-    <StyledShell>
-      <ChatWorkspaceSidebar
-        layout={layout}
-        selectedChannelId={channelId ?? null}
-        selectedDmThreadId={dmThreadId ?? null}
-        authToken={authToken}
-        onLayoutRefresh={() => void reload()}
-      />
-      {mainPane}
-    </StyledShell>
+    <>
+      <StyledShell>
+        {!isMobile && (
+          <ChatRail
+            viewerLabel="Me"
+            onCompose={() => setOpenDmSignal((n) => n + 1)}
+          />
+        )}
+        {showListColumn ? (
+          <StyledListColumn $grow={isMobile && !selectedConversation}>
+            <ChatWorkspaceSidebar
+              layout={layout}
+              selectedChannelId={channelId ?? null}
+              selectedDmThreadId={dmThreadId ?? null}
+              authToken={authToken}
+              onLayoutRefresh={() => void reload()}
+              members={members}
+              viewerUserWorkspaceId={layout?.viewer.userWorkspaceId ?? null}
+              fullWidth={isMobile && !selectedConversation}
+              openDmSignal={openDmSignal}
+            />
+          </StyledListColumn>
+        ) : null}
+        {(!isMobile || !!selectedConversation) && (
+          <StyledThreadColumn>{mainPane}</StyledThreadColumn>
+        )}
+        {showInfoDocked && selectedConversation && (
+          <ChatInfoPanel
+            title={selectedConversation.name}
+            isGroup={selectedConversation.type === 'groupChat'}
+            memberCount={memberCountPreview}
+            members={members}
+            onClose={() => setInfoOpen(false)}
+          />
+        )}
+      </StyledShell>
+      {showInfoOverlay && selectedConversation && (
+        <StyledInfoBackdrop
+          role="presentation"
+          onClick={() => setInfoOpen(false)}
+        >
+          <StyledInfoSheet
+            role="dialog"
+            aria-label="Conversation details"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ChatInfoPanel
+              title={selectedConversation.name}
+              isGroup={selectedConversation.type === 'groupChat'}
+              memberCount={memberCountPreview}
+              members={members}
+              onClose={() => setInfoOpen(false)}
+            />
+          </StyledInfoSheet>
+        </StyledInfoBackdrop>
+      )}
+    </>
   );
 };

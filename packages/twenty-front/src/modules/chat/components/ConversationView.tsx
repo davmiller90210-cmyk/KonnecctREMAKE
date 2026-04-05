@@ -1,11 +1,22 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useAtomValue } from 'jotai';
 import { styled } from '@linaria/react';
 import TextareaAutosize from 'react-textarea-autosize';
 import {
+  IconArrowLeft,
+  IconLayoutGrid,
   IconPaperclip,
+  IconPhone,
   IconPlayerPlay,
   IconPlayerStop,
+  IconSearch,
   IconSend,
 } from 'twenty-ui/display';
 import { IconButton } from 'twenty-ui/input';
@@ -16,7 +27,9 @@ import {
   currentMessagesAtom,
   type ChatMessage,
 } from '@/chat/states/agoraSessionState';
+import { CHAT_ACCENT_GRADIENT, CHAT_ACCENT_GRADIENT_SOFT } from '@/chat/constants/chatAccentTheme';
 import { requestChatNotificationPermission } from '@/chat/utils/chat-desktop-notify';
+import { VoiceWaveformPlayer } from '@/chat/components/VoiceWaveformPlayer';
 import { useSnackBar } from '@/ui/feedback/snack-bar-manager/hooks/useSnackBar';
 
 const StyledContainer = styled.div`
@@ -33,12 +46,20 @@ const StyledHeader = styled.header`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 ${themeCssVariables.spacing[5]};
+  padding: 0 ${themeCssVariables.spacing[4]};
   min-height: 56px;
   border-bottom: 1px solid ${themeCssVariables.border.color.medium};
   flex-shrink: 0;
   gap: ${themeCssVariables.spacing[3]};
   background: ${themeCssVariables.background.secondary};
+`;
+
+const StyledHeaderMain = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${themeCssVariables.spacing[2]};
+  min-width: 0;
+  flex: 1 1 auto;
 `;
 
 const StyledHeaderLeft = styled.div`
@@ -62,6 +83,13 @@ const StyledHeaderMeta = styled.span`
   font-size: ${themeCssVariables.font.size.xs};
   font-family: ${themeCssVariables.font.family};
   color: ${themeCssVariables.font.color.tertiary};
+`;
+
+const StyledHeaderActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${themeCssVariables.spacing[1]};
+  flex-shrink: 0;
 `;
 
 const StyledNotifyLink = styled.button`
@@ -120,6 +148,11 @@ interface StyledMessageBubbleProps {
   isOwn: boolean;
 }
 
+const StyledMessageColumn = styled.div`
+  min-width: 0;
+  max-width: 100%;
+`;
+
 const StyledMessageRow = styled.div<StyledMessageBubbleProps>`
   display: flex;
   flex-direction: ${({ isOwn }) => (isOwn ? 'row-reverse' : 'row')};
@@ -132,7 +165,7 @@ const StyledAvatar = styled.div`
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: ${themeCssVariables.background.transparent.medium};
+  background: ${CHAT_ACCENT_GRADIENT_SOFT};
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -152,16 +185,14 @@ const StyledBubble = styled.div<StyledMessageBubbleProps>`
       ? `${themeCssVariables.border.radius.xl} ${themeCssVariables.border.radius.sm} ${themeCssVariables.border.radius.xl} ${themeCssVariables.border.radius.xl}`
       : `${themeCssVariables.border.radius.sm} ${themeCssVariables.border.radius.xl} ${themeCssVariables.border.radius.xl} ${themeCssVariables.border.radius.xl}`};
   background: ${({ isOwn }) =>
-    isOwn
-      ? themeCssVariables.color.blue9
-      : themeCssVariables.background.primary};
+    isOwn ? CHAT_ACCENT_GRADIENT : themeCssVariables.background.primary};
   color: ${({ isOwn }) =>
     isOwn ? '#ffffff' : themeCssVariables.font.color.primary};
   border: ${({ isOwn }) =>
     isOwn ? 'none' : `1px solid ${themeCssVariables.border.color.medium}`};
   box-shadow: ${({ isOwn }) =>
     isOwn
-      ? '0 1px 2px rgba(15, 23, 42, 0.08)'
+      ? '0 1px 3px rgba(255, 77, 109, 0.25)'
       : '0 1px 2px rgba(15, 23, 42, 0.06)'};
 `;
 
@@ -172,6 +203,16 @@ const StyledBubbleText = styled.p`
   line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-word;
+`;
+
+const StyledMention = styled.span<{ $isOwn: boolean }>`
+  font-weight: ${themeCssVariables.font.weight.semiBold};
+  padding: 0 2px;
+  border-radius: 2px;
+  background: ${({ $isOwn }) =>
+    $isOwn ? 'rgba(255,255,255,0.22)' : CHAT_ACCENT_GRADIENT_SOFT};
+  color: ${({ $isOwn }) =>
+    $isOwn ? '#ffffff' : themeCssVariables.font.color.primary};
 `;
 
 const StyledSenderLabel = styled.div`
@@ -188,9 +229,19 @@ const StyledImageAttachment = styled.img`
   margin-top: ${themeCssVariables.spacing[1]};
 `;
 
-const StyledAudio = styled.audio`
-  max-width: 240px;
-  outline: none;
+const StyledImageGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: ${themeCssVariables.spacing[1]};
+  margin-top: ${themeCssVariables.spacing[1]};
+`;
+
+const StyledGridImg = styled.img`
+  width: 100%;
+  height: 96px;
+  object-fit: cover;
+  border-radius: ${themeCssVariables.border.radius.sm};
+  border: 1px solid ${themeCssVariables.border.color.light};
 `;
 
 const StyledVideo = styled.video`
@@ -282,8 +333,55 @@ const StyledEmptyState = styled.div`
   padding: ${themeCssVariables.spacing[8]};
 `;
 
+const StyledReactionRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+`;
+
+const StyledReactionChip = styled.button`
+  border: 1px solid ${themeCssVariables.border.color.light};
+  background: ${themeCssVariables.background.secondary};
+  border-radius: ${themeCssVariables.border.radius.pill};
+  padding: 2px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: ${themeCssVariables.font.family};
+
+  &:hover {
+    background: ${themeCssVariables.background.transparent.light};
+  }
+`;
+
+const StyledTyping = styled.div`
+  font-size: ${themeCssVariables.font.size.sm};
+  font-family: ${themeCssVariables.font.family};
+  color: ${themeCssVariables.font.color.tertiary};
+  padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[5]} 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const StyledTypingDots = styled.span`
+  display: inline-flex;
+  gap: 3px;
+
+  span {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: ${themeCssVariables.color.blue9};
+    opacity: 0.45;
+  }
+`;
+
 type ConversationViewProps = {
   conversation: ChatConversation;
+  metaLine?: string;
+  onBack?: () => void;
+  onOpenDetails?: () => void;
   onSendMessage: (text: string) => void;
   onSendAttachment: (
     file: File,
@@ -318,14 +416,39 @@ const dayLabel = (ts: number) => {
   });
 };
 
+const QUICK_REACTIONS = ['👍', '❤️', '😂'];
+
+const renderTextWithMentions = (text: string, isOwn: boolean) => {
+  const parts = text.split(/(@[^\s@]+)/g);
+
+  return parts.map((part, i) => {
+    if (part.startsWith('@')) {
+      return (
+        <StyledMention key={i} $isOwn={isOwn}>
+          {part}
+        </StyledMention>
+      );
+    }
+
+    return <Fragment key={i}>{part}</Fragment>;
+  });
+};
+
 export const ConversationView = ({
   conversation,
+  metaLine,
+  onBack,
+  onOpenDetails,
   onSendMessage,
   onSendAttachment,
 }: ConversationViewProps) => {
   const [draft, setDraft] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [reactionsById, setReactionsById] = useState<Record<string, string[]>>(
+    {},
+  );
+  const [showTyping, setShowTyping] = useState(false);
 
   const allMessagesMap = useAtomValue(currentMessagesAtom);
   const messages = allMessagesMap[conversation.id] || [];
@@ -358,7 +481,28 @@ export const ConversationView = ({
     if (timelineRef.current) {
       timelineRef.current.scrollTop = timelineRef.current.scrollHeight;
     }
-  }, [messages, timelineEntries.length]);
+  }, [messages, timelineEntries.length, showTyping]);
+
+  useEffect(() => {
+    setShowTyping(false);
+    const show = window.setTimeout(() => setShowTyping(true), 1800);
+    const hide = window.setTimeout(() => setShowTyping(false), 5200);
+
+    return () => {
+      window.clearTimeout(show);
+      window.clearTimeout(hide);
+    };
+  }, [conversation.id]);
+
+  const toggleReaction = useCallback((messageId: string, emoji: string) => {
+    setReactionsById((prev) => {
+      const cur = prev[messageId] ?? [];
+      const has = cur.includes(emoji);
+      const next = has ? cur.filter((e) => e !== emoji) : [...cur, emoji];
+
+      return { ...prev, [messageId]: next };
+    });
+  }, []);
 
   const handleSend = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -460,24 +604,61 @@ export const ConversationView = ({
     }
   };
 
-  const channelKind =
-    conversation.type === 'groupChat' ? 'Channel' : 'Direct message';
+  const subtitle = metaLine ?? (
+    conversation.type === 'groupChat' ? 'Channel' : 'Direct message'
+  );
 
   return (
     <StyledContainer>
       <StyledHeader>
-        <StyledHeaderLeft>
-          <StyledHeaderName>
-            {conversation.name || 'Conversation'}
-          </StyledHeaderName>
-          <StyledHeaderMeta>{channelKind}</StyledHeaderMeta>
-        </StyledHeaderLeft>
-        {typeof Notification !== 'undefined' &&
-          Notification.permission !== 'granted' && (
-            <StyledNotifyLink type="button" onClick={handleNotifyClick}>
-              Enable desktop alerts
-            </StyledNotifyLink>
-          )}
+        <StyledHeaderMain>
+          {onBack ? (
+            <IconButton
+              Icon={IconArrowLeft}
+              variant="tertiary"
+              size="small"
+              onClick={onBack}
+              ariaLabel="Back to inbox"
+            />
+          ) : null}
+          <StyledHeaderLeft>
+            <StyledHeaderName>
+              {conversation.name || 'Conversation'}
+            </StyledHeaderName>
+            <StyledHeaderMeta>{subtitle}</StyledHeaderMeta>
+          </StyledHeaderLeft>
+        </StyledHeaderMain>
+        <StyledHeaderActions>
+          {typeof Notification !== 'undefined' &&
+            Notification.permission !== 'granted' && (
+              <StyledNotifyLink type="button" onClick={handleNotifyClick}>
+                Alerts
+              </StyledNotifyLink>
+            )}
+          <IconButton
+            Icon={IconPhone}
+            variant="tertiary"
+            size="small"
+            ariaLabel="Call (preview)"
+            onClick={() => {}}
+          />
+          <IconButton
+            Icon={IconSearch}
+            variant="tertiary"
+            size="small"
+            ariaLabel="Search (preview)"
+            onClick={() => {}}
+          />
+          {onOpenDetails ? (
+            <IconButton
+              Icon={IconLayoutGrid}
+              variant="tertiary"
+              size="small"
+              ariaLabel="Conversation details"
+              onClick={onOpenDetails}
+            />
+          ) : null}
+        </StyledHeaderActions>
       </StyledHeader>
 
       <StyledTimeline ref={timelineRef}>
@@ -490,7 +671,11 @@ export const ConversationView = ({
         ) : (
           timelineEntries.map((entry, index) => {
             if (entry.kind === 'day') {
-              return <StyledDayDivider key={`day-${entry.label}-${index}`}>{entry.label}</StyledDayDivider>;
+              return (
+                <StyledDayDivider key={`day-${entry.label}-${index}`}>
+                  {entry.label}
+                </StyledDayDivider>
+              );
             }
 
             const msg = entry.message;
@@ -502,46 +687,93 @@ export const ConversationView = ({
               hour: '2-digit',
               minute: '2-digit',
             });
+            const imgs =
+              msg.imageUrls && msg.imageUrls.length > 0
+                ? msg.imageUrls
+                : msg.url
+                  ? [msg.url]
+                  : [];
 
             return (
               <StyledMessageRow key={msg.id} isOwn={isOwn}>
                 {!isOwn && <StyledAvatar>{initial}</StyledAvatar>}
 
-                <StyledBubble isOwn={isOwn}>
-                  {!isOwn && msg.type === 'txt' && (
-                    <StyledSenderLabel>
-                      {msg.senderName || msg.senderId}
-                    </StyledSenderLabel>
-                  )}
-                  {msg.type === 'txt' && (
-                    <StyledBubbleText>{msg.text}</StyledBubbleText>
-                  )}
-                  {msg.type === 'img' && (
-                    <StyledImageAttachment src={msg.url} alt="" />
-                  )}
-                  {msg.type === 'file' && (
-                    <StyledBubbleText>
-                      Attachment: {msg.filename || 'File'}
-                    </StyledBubbleText>
-                  )}
-                  {msg.type === 'audio' && (
-                    <StyledAudio controls>
-                      <source src={msg.url} />
-                    </StyledAudio>
-                  )}
-                  {msg.type === 'video' && (
-                    <StyledVideo controls>
-                      <source src={msg.url} />
-                    </StyledVideo>
-                  )}
+                <StyledMessageColumn>
+                  <StyledBubble isOwn={isOwn}>
+                    {!isOwn && msg.type === 'txt' && (
+                      <StyledSenderLabel>
+                        {msg.senderName || msg.senderId}
+                      </StyledSenderLabel>
+                    )}
+                    {msg.type === 'txt' && (
+                      <StyledBubbleText>
+                        {msg.text
+                          ? renderTextWithMentions(msg.text, isOwn)
+                          : null}
+                      </StyledBubbleText>
+                    )}
+                    {msg.type === 'img' && imgs.length > 1 ? (
+                      <StyledImageGrid>
+                        {imgs.slice(0, 4).map((u, j) => (
+                          <StyledGridImg key={j} src={u} alt="" />
+                        ))}
+                      </StyledImageGrid>
+                    ) : msg.type === 'img' && imgs[0] ? (
+                      <StyledImageAttachment src={imgs[0]} alt="" />
+                    ) : null}
+                    {msg.type === 'file' && (
+                      <StyledBubbleText>
+                        Attachment: {msg.filename || 'File'}
+                      </StyledBubbleText>
+                    )}
+                    {msg.type === 'audio' && (
+                      <VoiceWaveformPlayer src={msg.url} />
+                    )}
+                    {msg.type === 'video' && (
+                      <StyledVideo controls>
+                        <source src={msg.url} />
+                      </StyledVideo>
+                    )}
 
-                  <StyledTimestamp $isOwn={isOwn}>{time}</StyledTimestamp>
-                </StyledBubble>
+                    <StyledTimestamp $isOwn={isOwn}>{time}</StyledTimestamp>
+                  </StyledBubble>
+                  <StyledReactionRow>
+                    {(reactionsById[msg.id] ?? []).map((em) => (
+                      <StyledReactionChip
+                        key={em}
+                        type="button"
+                        onClick={() => toggleReaction(msg.id, em)}
+                      >
+                        {em}
+                      </StyledReactionChip>
+                    ))}
+                    {QUICK_REACTIONS.map((em) => (
+                      <StyledReactionChip
+                        key={`add-${em}`}
+                        type="button"
+                        onClick={() => toggleReaction(msg.id, em)}
+                      >
+                        + {em}
+                      </StyledReactionChip>
+                    ))}
+                  </StyledReactionRow>
+                </StyledMessageColumn>
               </StyledMessageRow>
             );
           })
         )}
       </StyledTimeline>
+
+      {showTyping && messages.length > 0 ? (
+        <StyledTyping>
+          <StyledTypingDots aria-hidden>
+            <span />
+            <span />
+            <span />
+          </StyledTypingDots>
+          Someone is typing…
+        </StyledTyping>
+      ) : null}
 
       <StyledComposerWrap>
         <StyledComposer onSubmit={handleSend}>
@@ -572,7 +804,7 @@ export const ConversationView = ({
 
           {!isRecording ? (
             <StyledTextarea
-              placeholder="Message…  (Enter to send, Shift+Enter for new line)"
+              placeholder="Type something here…"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={handleKeyDown}

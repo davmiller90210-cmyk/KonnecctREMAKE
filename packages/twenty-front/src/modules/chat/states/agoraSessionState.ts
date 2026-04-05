@@ -23,6 +23,8 @@ export interface ChatMessage {
   type: 'txt' | 'img' | 'audio' | 'video' | 'file' | 'custom';
   text?: string;
   url?: string;
+  /** When multiple images are bundled (future / server); single image still uses url */
+  imageUrls?: string[];
   filename?: string;
   createdAt: number;
   status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
