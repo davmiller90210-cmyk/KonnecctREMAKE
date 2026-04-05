@@ -53,6 +53,8 @@ services:
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}
       REACT_APP_CLERK_PUBLISHABLE_KEY: ${REACT_APP_CLERK_PUBLISHABLE_KEY:-}
       CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-}
+      # Optional: Rocket.Chat iframe URL if subpath shows "Unknown path" (e.g. https://chat.konnecct.com/)
+      REACT_APP_ROCKETCHAT_URL: ${REACT_APP_ROCKETCHAT_URL:-}
     restart: always
 
   crm-worker:
