@@ -149,8 +149,8 @@ const StyledBubble = styled.div<StyledMessageBubbleProps>`
   padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[4]};
   border-radius: ${({ isOwn }) =>
     isOwn
-      ? `${themeCssVariables.border.radius.lg} ${themeCssVariables.border.radius.sm} ${themeCssVariables.border.radius.lg} ${themeCssVariables.border.radius.lg}`
-      : `${themeCssVariables.border.radius.sm} ${themeCssVariables.border.radius.lg} ${themeCssVariables.border.radius.lg} ${themeCssVariables.border.radius.lg}`};
+      ? `${themeCssVariables.border.radius.xl} ${themeCssVariables.border.radius.sm} ${themeCssVariables.border.radius.xl} ${themeCssVariables.border.radius.xl}`
+      : `${themeCssVariables.border.radius.sm} ${themeCssVariables.border.radius.xl} ${themeCssVariables.border.radius.xl} ${themeCssVariables.border.radius.xl}`};
   background: ${({ isOwn }) =>
     isOwn
       ? themeCssVariables.color.blue9
@@ -233,7 +233,7 @@ const StyledComposer = styled.form`
   gap: ${themeCssVariables.spacing[2]};
   padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[2]}
     ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[3]};
-  border-radius: ${themeCssVariables.border.radius.lg};
+  border-radius: ${themeCssVariables.border.radius.xl};
   border: 1px solid ${themeCssVariables.border.color.medium};
   background: ${themeCssVariables.background.primary};
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
