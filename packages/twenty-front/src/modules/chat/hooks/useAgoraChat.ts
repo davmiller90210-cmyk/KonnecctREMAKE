@@ -8,9 +8,12 @@ import {
   agoraConnectionErrorAtom,
   agoraConversationsAtom,
   currentMessagesAtom,
-  ChatMessage,
+  type ChatMessage,
 } from '../states/agoraSessionState';
+import { agoraPayloadToChatMessage } from '../utils/agora-message-mapper';
+import { notifyIncomingChatIfBackground } from '../utils/chat-desktop-notify';
 import { tokenPairState } from '@/auth/states/tokenPairState';
+
 const AGORA_APP_KEY = '7110032205#200010602';
 
 let _agoraClient: AC.Connection | null = null;
@@ -30,69 +33,76 @@ export const useAgoraChat = () => {
   } = useClerkAuth();
   const initRef = useRef(false);
 
-  const resolveConversationId = (msg: any): string => {
-    const isGroup =
-      msg.chatType === 'groupChat' ||
-      msg.chatType === 'groupchat' ||
-      msg.type === 'groupchat';
+  const handleIncomingMessage = useCallback((msg: Record<string, unknown>, typeHint: string) => {
+    const merged = { ...msg, type: (msg.type as string) || typeHint };
+    const currentUser = _agoraClient?.user;
+    const newChatMessage = agoraPayloadToChatMessage(merged, currentUser);
 
-    if (isGroup) {
-      return msg.to;
+    if (!newChatMessage) {
+      return;
     }
 
-    return _agoraClient?.user === msg.from ? msg.to : msg.from;
-  };
+    const actualConvoId = newChatMessage.conversationId;
 
-  // Handle incoming formatted
-  const handleIncomingMessage = useCallback((msg: any, type: string) => {
-    const actualConvoId = resolveConversationId(msg);
+    if (newChatMessage.direction === 'in') {
+      notifyIncomingChatIfBackground({
+        title: 'Konnecct chat',
+        body:
+          newChatMessage.type === 'txt'
+            ? (newChatMessage.text ?? '').slice(0, 160) || 'New message'
+            : 'New message',
+      });
+    }
 
-    const newChatMessage: ChatMessage = {
-      id: msg.id,
-      conversationId: actualConvoId,
-      senderId: msg.from,
-      senderName: msg.ext?.senderName || msg.from,
-      type: type as any,
-      text: msg.msg,
-      url: msg.url,
-      filename: msg.filename,
-      createdAt: msg.time || Date.now(),
-      status: 'delivered',
-      direction: _agoraClient?.user === msg.from ? 'out' : 'in',
-    };
+    setMessages((prev) => {
+      const list = prev[actualConvoId] ?? [];
 
-    setMessages((prev) => ({
-      ...prev,
-      [actualConvoId]: [...(prev[actualConvoId] || []), newChatMessage],
-    }));
+      if (list.some((m) => m.id === newChatMessage.id)) {
+        return prev;
+      }
 
-    // Update conversation list preview
+      return {
+        ...prev,
+        [actualConvoId]: [...list, newChatMessage],
+      };
+    });
+
     setConversations((prev) => {
       const existing = prev.find((c) => c.id === actualConvoId);
+
       if (existing) {
         return prev.map((c) =>
           c.id === actualConvoId
-            ? { ...c, lastMessage: newChatMessage, unreadCount: c.unreadCount + 1 }
-            : c
+            ? {
+                ...c,
+                lastMessage: newChatMessage,
+                unreadCount:
+                  newChatMessage.direction === 'in'
+                    ? c.unreadCount + 1
+                    : c.unreadCount,
+              }
+            : c,
         );
       }
+
       return [
         ...prev,
         {
           id: actualConvoId,
           type:
-            msg.chatType === 'groupChat' || msg.chatType === 'groupchat'
+            merged.chatType === 'groupChat' || merged.chatType === 'groupchat'
               ? 'groupChat'
               : 'singleChat',
-          name: msg.ext?.senderName || actualConvoId,
-          unreadCount: 1,
+          name:
+            (merged.ext as { senderName?: string } | undefined)?.senderName ||
+            actualConvoId,
+          unreadCount: newChatMessage.direction === 'in' ? 1 : 0,
           lastMessage: newChatMessage,
         },
       ];
     });
   }, [setMessages, setConversations]);
 
-  // 1. Initialize client + message handlers (after handleIncomingMessage exists)
   useEffect(() => {
     if (!initRef.current) {
       if (!_agoraClient) {
@@ -106,19 +116,15 @@ export const useAgoraChat = () => {
     if (_agoraClient) {
       _agoraClient.addEventHandler('connection', {
         onOpened: () => {
-          console.log('[KONNECCT-AGORA] Connection opened');
           setConnectionState('connected');
         },
         onConnected: () => {
-          console.log('[KONNECCT-AGORA] Connection established');
           setConnectionState('connected');
         },
         onClosed: () => {
-          console.log('[KONNECCT-AGORA] Connection closed');
           setConnectionState('disconnected');
         },
         onDisconnected: () => {
-          console.log('[KONNECCT-AGORA] Connection interrupted');
           setConnectionState('disconnected');
         },
         onError: (err) => {
@@ -129,12 +135,12 @@ export const useAgoraChat = () => {
       });
 
       _agoraClient.addEventHandler('message_events', {
-        onTextMessage: (msg) => handleIncomingMessage(msg, 'txt'),
-        onImageMessage: (msg) => handleIncomingMessage(msg, 'img'),
-        onAudioMessage: (msg) => handleIncomingMessage(msg, 'audio'),
-        onVideoMessage: (msg) => handleIncomingMessage(msg, 'video'),
-        onFileMessage: (msg) => handleIncomingMessage(msg, 'file'),
-        onCustomMessage: (msg) => handleIncomingMessage(msg, 'custom'),
+        onTextMessage: (msg) => handleIncomingMessage(msg as unknown as Record<string, unknown>, 'txt'),
+        onImageMessage: (msg) => handleIncomingMessage(msg as unknown as Record<string, unknown>, 'img'),
+        onAudioMessage: (msg) => handleIncomingMessage(msg as unknown as Record<string, unknown>, 'audio'),
+        onVideoMessage: (msg) => handleIncomingMessage(msg as unknown as Record<string, unknown>, 'video'),
+        onFileMessage: (msg) => handleIncomingMessage(msg as unknown as Record<string, unknown>, 'file'),
+        onCustomMessage: (msg) => handleIncomingMessage(msg as unknown as Record<string, unknown>, 'custom'),
       });
     }
 
@@ -146,7 +152,6 @@ export const useAgoraChat = () => {
     };
   }, [handleIncomingMessage, setConnectionError, setConnectionState]);
 
-  // 2. Connect
   const connectToAgora = useCallback(async () => {
     const resolveAuthToken = async () => {
       if (crmToken) {
@@ -154,7 +159,6 @@ export const useAgoraChat = () => {
       }
 
       return await getClerkToken();
-
     };
 
     try {
@@ -166,21 +170,13 @@ export const useAgoraChat = () => {
         return;
       }
 
-      // Wait for Clerk to hydrate before deciding org context (Clerk-only path).
       if (!crmToken && !isClerkLoaded) {
         setConnectionState('idle');
         setConnectionError(null);
         return;
       }
 
-      // Clerk JWTs usually omit org_id; backend accepts X-Clerk-Org-Id. After
-      // /auth/clerk/exchange, prefer CRM JWT (legacy path) which always has workspace context.
-      if (
-        isClerkLoaded &&
-        isClerkSignedIn &&
-        !crmToken &&
-        !clerkOrgId
-      ) {
+      if (isClerkLoaded && isClerkSignedIn && !crmToken && !clerkOrgId) {
         setConnectionState('idle');
         setConnectionError(null);
         return;
@@ -218,9 +214,10 @@ export const useAgoraChat = () => {
         user: userIdentifier,
         accessToken: agoraToken,
       });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
 
-    } catch (error: any) {
-      setConnectionError(error.message);
+      setConnectionError(message);
       setConnectionState('error');
     }
   }, [
@@ -237,66 +234,122 @@ export const useAgoraChat = () => {
     _agoraClient?.close();
   }, []);
 
-  const sendMessage = useCallback((targetId: string, text: string, chatType: 'singleChat' | 'groupChat' = 'singleChat') => {
-    if (!_agoraClient) return;
+  const syncConversationHistory = useCallback(
+    async (targetId: string, chatType: 'singleChat' | 'groupChat') => {
+      if (!_agoraClient) {
+        return;
+      }
 
-    const msg = AC.message.create({
-      to: targetId,
-      type: 'txt',
-      msg: text,
-      chatType,
-    });
+      try {
+        const res = await _agoraClient.getHistoryMessages({
+          targetId,
+          chatType,
+          pageSize: 50,
+          cursor: -1,
+          searchDirection: 'up',
+        });
 
-    handleIncomingMessage(
-      {
-        ...msg,
-        id: `local-${Date.now()}`,
-        time: Date.now(),
-        from: _agoraClient.user,
+        const currentUser = _agoraClient.user;
+        const mapped = (res.messages ?? [])
+          .map((m) =>
+            agoraPayloadToChatMessage(m as unknown as Record<string, unknown>, currentUser),
+          )
+          .filter((m): m is ChatMessage => m !== null);
+
+        mapped.sort((a, b) => a.createdAt - b.createdAt);
+
+        setMessages((prev) => ({
+          ...prev,
+          [targetId]: mapped,
+        }));
+      } catch (error) {
+        console.warn('[KONNECCT-AGORA] getHistoryMessages failed', error);
+      }
+    },
+    [setMessages],
+  );
+
+  const sendMessage = useCallback(
+    (targetId: string, text: string, chatType: 'singleChat' | 'groupChat' = 'singleChat') => {
+      if (!_agoraClient) {
+        return;
+      }
+
+      const msg = AC.message.create({
+        to: targetId,
+        type: 'txt',
+        msg: text,
+        chatType,
+      });
+
+      handleIncomingMessage(
+        {
+          ...msg,
+          id: `local-${Date.now()}`,
+          time: Date.now(),
+          from: _agoraClient.user,
+          to: targetId,
+          chatType,
+          type: 'txt',
+          msg: text,
+        },
+        'txt',
+      );
+      _agoraClient.send(msg).catch((err) => console.error(err));
+    },
+    [handleIncomingMessage],
+  );
+
+  const sendAttachment = useCallback(
+    (
+      targetId: string,
+      file: File,
+      type: 'img' | 'file' | 'audio' | 'video',
+      chatType: 'singleChat' | 'groupChat' = 'singleChat',
+      extraParams?: Record<string, unknown>,
+    ) => {
+      if (!_agoraClient) {
+        return;
+      }
+
+      const msg = AC.message.create({
+        type,
         to: targetId,
         chatType,
-      },
-      'txt',
-    );
-    _agoraClient.send(msg).catch((err) => console.error(err));
-  }, [handleIncomingMessage]);
+        file: {
+          data: file,
+          filename: file.name,
+          url: '',
+        },
+        ...extraParams,
+      });
 
-  const sendAttachment = useCallback((targetId: string, file: File, type: 'img' | 'file' | 'audio' | 'video', chatType: 'singleChat' | 'groupChat' = 'singleChat', extraParams?: any) => {
-    if (!_agoraClient) return;
+      const localUrl = URL.createObjectURL(file);
+      handleIncomingMessage(
+        {
+          ...msg,
+          url: localUrl,
+          time: Date.now(),
+          from: _agoraClient.user,
+          to: targetId,
+          chatType,
+          type,
+          filename: file.name,
+        },
+        type,
+      );
 
-    const msg = AC.message.create({
-      type,
-      to: targetId,
-      chatType,
-      file: {
-        data: file,
-        filename: file.name,
-        url: '', // It will be generated by Agora servers
-      },
-      ...extraParams
-    });
-
-    const localUrl = URL.createObjectURL(file);
-    handleIncomingMessage(
-      {
-        ...msg,
-        url: localUrl,
-        time: Date.now(),
-        from: _agoraClient.user,
-        to: targetId,
-        chatType,
-      },
-      type,
-    );
-    
-    _agoraClient.send(msg).catch((err) => console.error(err));
-  }, [handleIncomingMessage]);
+      _agoraClient.send(msg).catch((err) => console.error(err));
+    },
+    [handleIncomingMessage],
+  );
 
   return {
     connectToAgora,
     disconnectFromAgora,
     sendMessage,
     sendAttachment,
+    syncConversationHistory,
     client: _agoraClient,
   };
 };

@@ -66,6 +66,7 @@ export const CommunicationHub = () => {
     disconnectFromAgora,
     sendMessage,
     sendAttachment,
+    syncConversationHistory,
     client,
   } = useAgoraChat();
 
@@ -133,20 +134,43 @@ export const CommunicationHub = () => {
   }, [selectedChannel, selectedDm]);
 
   useEffect(() => {
-    if (
-      connectionState !== 'connected' ||
-      !client ||
-      !selectedChannel?.agoraGroupId
-    ) {
+    if (connectionState !== 'connected' || !client) {
       return;
     }
 
-    const groupId = selectedChannel.agoraGroupId;
+    const groupId =
+      selectedChannel?.agoraGroupId ?? selectedDm?.agoraGroupId ?? null;
+
+    if (!groupId) {
+      return;
+    }
 
     client.joinGroup({ groupId }).catch((err: unknown) => {
       console.warn('[KONNECCT-AGORA] joinGroup failed', err);
     });
-  }, [client, connectionState, selectedChannel?.agoraGroupId]);
+  }, [
+    client,
+    connectionState,
+    selectedChannel?.agoraGroupId,
+    selectedDm?.agoraGroupId,
+  ]);
+
+  useEffect(() => {
+    if (connectionState !== 'connected' || !client || !selectedConversation) {
+      return;
+    }
+
+    const chatType =
+      selectedConversation.type === 'groupChat' ? 'groupChat' : 'singleChat';
+
+    void syncConversationHistory(selectedConversation.id, chatType);
+  }, [
+    client,
+    connectionState,
+    selectedConversation?.id,
+    selectedConversation?.type,
+    syncConversationHistory,
+  ]);
 
   if (connectionState === 'error') {
     return (
