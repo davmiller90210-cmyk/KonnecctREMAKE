@@ -84,15 +84,16 @@ services:
     restart: always
 
   # Rocket.Chat (proxied at https://app.konnecct.com/communications/ — see nginx.conf)
+  # Rocket.Chat 8.x requires MongoDB 8.0+ (see container startup banner).
   rocketchat-mongo:
-    image: mongo:6.0
+    image: mongo:8.0
     command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
     volumes:
       - rocketchat-mongo-data:/data/db
     restart: always
 
   rocketchat-mongo-init:
-    image: mongo:6.0
+    image: mongo:8.0
     depends_on:
       rocketchat-mongo:
         condition: service_started
@@ -109,7 +110,8 @@ services:
         mongosh "mongodb://rocketchat-mongo:27017" --eval 'try { rs.status() } catch (e) { rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "rocketchat-mongo:27017" }] }) }'
 
   rocketchat:
-    image: rocketchat/rocket.chat:latest
+    # Pin major line; bump when you upgrade Mongo/RC together.
+    image: rocketchat/rocket.chat:8.2.1
     depends_on:
       rocketchat-mongo-init:
         condition: service_completed_successfully
