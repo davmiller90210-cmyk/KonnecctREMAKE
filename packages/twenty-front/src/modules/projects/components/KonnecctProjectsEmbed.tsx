@@ -32,9 +32,6 @@ const USER_PROJECTS_PREFIX = '/projects';
  */
 const INTERNAL_PLANE_PATH = '/_konnecct/plane';
 
-/** Stock makeplane images serve `/assets/` at the site root; on app.* that collides with Twenty. */
-const DEFAULT_PLANE_PRODUCTION_URL = 'https://projects.konnecct.com';
-
 const MF_SESSION_FAIL = 'konnecct.plane.mf.failed.v1';
 
 const StyledShell = styled.div`
@@ -119,8 +116,8 @@ const resolvePlaneMount = (
   }
   if (!isLocalhost) {
     return {
-      iframeBase: DEFAULT_PLANE_PRODUCTION_URL,
-      syncPathPrefix: null,
+      iframeBase: `${window.location.origin}${INTERNAL_PLANE_PATH}`,
+      syncPathPrefix: INTERNAL_PLANE_PATH,
     };
   }
   return null;
@@ -188,25 +185,16 @@ export const KonnecctProjectsEmbed = () => {
     typeof sessionStorage !== 'undefined' &&
     sessionStorage.getItem(MF_SESSION_FAIL) === '1';
 
-  const sameOriginPlaneHost =
-    typeof window !== 'undefined' &&
-    resolved !== null &&
-    resolved.iframeBase.startsWith(window.location.origin);
-
   const showIframe =
     embedMode === 'iframe' ||
     mfBlockedBySession ||
-    (embedMode === 'auto' && federationFailed) ||
-    (embedMode === 'auto' && resolved !== null && !sameOriginPlaneHost);
+    (embedMode === 'auto' && federationFailed);
 
   const showFederated =
     Boolean(federated) && embedMode !== 'iframe' && !mfBlockedBySession;
 
   const tryFederation =
-    embedMode !== 'iframe' &&
-    resolved &&
-    !mfBlockedBySession &&
-    sameOriginPlaneHost;
+    embedMode !== 'iframe' && resolved && !mfBlockedBySession;
 
   useEffect(() => {
     if (!tryFederation || federated || !remoteEntryUrl) {
@@ -303,17 +291,7 @@ export const KonnecctProjectsEmbed = () => {
     return (
       <StyledShell>
         <StyledPlaceholder>
-          {t`Set REACT_APP_PLANE_WEB_URL to your Plane web URL (required on localhost). In production the default is projects.* so Plane assets do not clash with the CRM.`}
-        </StyledPlaceholder>
-      </StyledShell>
-    );
-  }
-
-  if (embedMode === 'federation' && !sameOriginPlaneHost) {
-    return (
-      <StyledShell>
-        <StyledPlaceholder>
-          {t`REACT_APP_PLANE_EMBED=federation only works with a same-origin Plane build (e.g. REACT_APP_PLANE_WEB_URL=https://app…/_konnecct/plane with remoteEntry.js). Use REACT_APP_PLANE_EMBED=auto or set REACT_APP_PLANE_WEB_URL to the dedicated Plane host.`}
+          {t`Set REACT_APP_PLANE_WEB_URL to your Plane web URL (required on localhost). In production, Plane is loaded from /_konnecct/plane when this is unset.`}
         </StyledPlaceholder>
       </StyledShell>
     );
