@@ -28,14 +28,15 @@ const StyledIframe = styled.iframe`
 `;
 
 /**
- * Rocket.Chat in an iframe. Default: same-origin `/communications/` (nginx → Rocket.Chat).
- * Set `REACT_APP_ROCKETCHAT_URL` to a dedicated host if subpath shows Rocket.Chat "Unknown path".
+ * Full-viewport chat embedded at same origin as the CRM (`/communications/`) so the address bar stays `app.*`.
+ * Optional override: `REACT_APP_ROCKETCHAT_URL` (e.g. debugging). In Rocket.Chat Admin: set workspace name/logo,
+ * Layout → Custom CSS to tone down vendor chrome if your license allows.
  */
 export const RocketChatEmbed = () => {
   return (
     <StyledShell>
       <StyledIframe
-        title="Rocket.Chat"
+        title="Communications"
         src={getRocketChatIframeSrc()}
         allow="camera *; microphone *; display-capture *; fullscreen *"
         sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals allow-top-navigation-by-user-activation"
