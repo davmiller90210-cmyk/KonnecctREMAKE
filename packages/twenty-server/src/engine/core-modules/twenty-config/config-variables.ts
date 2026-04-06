@@ -1331,6 +1331,7 @@ export class ConfigVariables {
     description:
       'When true with multi-workspace, the public app URL is shared: do not prepend DEFAULT_SUBDOMAIN to FRONTEND_URL/SERVER_URL, and do not prefix workspace subdomains onto the hostname. Use when the CRM is already served on a dedicated host like app.example.com (avoids app.app.example.com).',
     type: ConfigVariableType.BOOLEAN,
+    isEnvOnly: true,
   })
   @IsOptional()
   IS_MULTIWORKSPACE_PUBLIC_URL_SHARED = false;

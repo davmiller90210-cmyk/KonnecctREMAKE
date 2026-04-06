@@ -9,7 +9,9 @@ export const useReadDefaultDomainFromConfiguration = () => {
   );
 
   const defaultDomain = isMultiWorkspaceEnabled
-    ? `${domainConfiguration.defaultSubdomain}.${domainConfiguration.frontDomain}`
+    ? domainConfiguration.isMultiWorkspacePublicUrlShared
+      ? domainConfiguration.frontDomain
+      : `${domainConfiguration.defaultSubdomain}.${domainConfiguration.frontDomain}`
     : domainConfiguration.frontDomain;
 
   return {

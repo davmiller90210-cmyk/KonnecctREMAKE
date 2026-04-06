@@ -29,6 +29,8 @@ export type ClientConfig = {
   isMicrosoftCalendarEnabled: boolean;
   isMicrosoftMessagingEnabled: boolean;
   isMultiWorkspaceEnabled: boolean;
+  /** When true, default workspace host is `frontDomain` only (not defaultSubdomain.frontDomain). */
+  isMultiWorkspacePublicUrlShared: boolean;
   isImapSmtpCaldavEnabled: boolean;
   isEmailingDomainsEnabled: boolean;
   isCloudflareIntegrationEnabled: boolean;

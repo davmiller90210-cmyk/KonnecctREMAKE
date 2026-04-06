@@ -177,6 +177,9 @@ export class ClientConfigService {
       isMultiWorkspaceEnabled: this.twentyConfigService.get(
         'IS_MULTIWORKSPACE_ENABLED',
       ),
+      isMultiWorkspacePublicUrlShared: this.twentyConfigService.get(
+        'IS_MULTIWORKSPACE_PUBLIC_URL_SHARED',
+      ),
       isEmailVerificationRequired: this.twentyConfigService.get(
         'IS_EMAIL_VERIFICATION_REQUIRED',
       ),

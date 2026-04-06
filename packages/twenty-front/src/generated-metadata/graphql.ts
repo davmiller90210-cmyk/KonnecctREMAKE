@@ -895,6 +895,7 @@ export type ClientConfig = {
   isMicrosoftCalendarEnabled: Scalars['Boolean'];
   isMicrosoftMessagingEnabled: Scalars['Boolean'];
   isMultiWorkspaceEnabled: Scalars['Boolean'];
+  isMultiWorkspacePublicUrlShared: Scalars['Boolean'];
   publicFeatureFlags: Array<PublicFeatureFlag>;
   sentry: Sentry;
   signInPrefilled: Scalars['Boolean'];

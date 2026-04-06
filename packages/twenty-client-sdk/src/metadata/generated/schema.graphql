@@ -1758,6 +1758,7 @@ type ClientConfig {
   aiModels: [ClientAIModelConfig!]!
   signInPrefilled: Boolean!
   isMultiWorkspaceEnabled: Boolean!
+  isMultiWorkspacePublicUrlShared: Boolean!
   isEmailVerificationRequired: Boolean!
   defaultSubdomain: String
   frontDomain: String!
