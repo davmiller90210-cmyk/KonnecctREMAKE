@@ -11876,6 +11876,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@module-federation/error-codes@npm:2.3.1":
+  version: 2.3.1
+  resolution: "@module-federation/error-codes@npm:2.3.1"
+  checksum: 10c0/0a6ae4f5eb868845489456b24a82dc34288942f05a89332772eefc3b60b2489ced48604df41e6fe6dfde9451a0f05946f24640dd9143271536f969926d4e249a
+  languageName: node
+  linkType: hard
+
 "@module-federation/inject-external-runtime-core-plugin@npm:0.21.4":
   version: 0.21.4
   resolution: "@module-federation/inject-external-runtime-core-plugin@npm:0.21.4"
@@ -11979,6 +11986,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@module-federation/runtime-core@npm:2.3.1":
+  version: 2.3.1
+  resolution: "@module-federation/runtime-core@npm:2.3.1"
+  dependencies:
+    "@module-federation/error-codes": "npm:2.3.1"
+    "@module-federation/sdk": "npm:2.3.1"
+  checksum: 10c0/0d7a946183b49ec1882faa8a704bf8e9df612a5a2cf61f0f2f80b05d12267606a60a74b88432840f5293d6afe62032fdde944c73ca22758f7585c5b7f55bf8ee
+  languageName: node
+  linkType: hard
+
 "@module-federation/runtime-tools@npm:0.21.4":
   version: 0.21.4
   resolution: "@module-federation/runtime-tools@npm:0.21.4"
@@ -12021,6 +12038,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@module-federation/runtime@npm:^2.3.1":
+  version: 2.3.1
+  resolution: "@module-federation/runtime@npm:2.3.1"
+  dependencies:
+    "@module-federation/error-codes": "npm:2.3.1"
+    "@module-federation/runtime-core": "npm:2.3.1"
+    "@module-federation/sdk": "npm:2.3.1"
+  checksum: 10c0/f06cbb30048daf7e4ecdf767e5254a536806e8debefdf1b46ac7ff9b15efd40e8aae932b9fc7a5b979eb2edc8c82f2ebe4b093cc5b808af733ebc763b4209c8d
+  languageName: node
+  linkType: hard
+
 "@module-federation/sdk@npm:0.21.4, @module-federation/sdk@npm:^0.21.2":
   version: 0.21.4
   resolution: "@module-federation/sdk@npm:0.21.4"
@@ -12032,6 +12060,18 @@ __metadata:
   version: 0.21.6
   resolution: "@module-federation/sdk@npm:0.21.6"
   checksum: 10c0/54f33fb48e1f3db09e03b529af9f28fcd8007c4dbd8b197cb0691c392f3eb143961c526e1ecd400f1d652451976a378da962edbb961f5859f33f56edda527f88
+  languageName: node
+  linkType: hard
+
+"@module-federation/sdk@npm:2.3.1":
+  version: 2.3.1
+  resolution: "@module-federation/sdk@npm:2.3.1"
+  peerDependencies:
+    node-fetch: ^3.3.2
+  peerDependenciesMeta:
+    node-fetch:
+      optional: true
+  checksum: 10c0/7be17202f4cb1f6fa853ee171ff07d737c170eb8bd5e03eb987847b28c821f4ff7c8f8c259f1ea9122d1430617bcd963b7225ac143921d89285b607972893dc1
   languageName: node
   linkType: hard
 
@@ -20481,13 +20521,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@rollup/rollup-darwin-arm64@npm:^4.18":
-  version: 4.60.1
-  resolution: "@rollup/rollup-darwin-arm64@npm:4.60.1"
-  conditions: os=darwin & cpu=arm64
-  languageName: node
-  linkType: hard
-
 "@rollup/rollup-darwin-x64@npm:4.59.0":
   version: 4.59.0
   resolution: "@rollup/rollup-darwin-x64@npm:4.59.0"
@@ -20589,13 +20622,6 @@ __metadata:
 "@rollup/rollup-linux-x64-gnu@npm:4.59.0":
   version: 4.59.0
   resolution: "@rollup/rollup-linux-x64-gnu@npm:4.59.0"
-  conditions: os=linux & cpu=x64 & libc=glibc
-  languageName: node
-  linkType: hard
-
-"@rollup/rollup-linux-x64-gnu@npm:^4.18":
-  version: 4.60.1
-  resolution: "@rollup/rollup-linux-x64-gnu@npm:4.60.1"
   conditions: os=linux & cpu=x64 & libc=glibc
   languageName: node
   linkType: hard
@@ -30339,15 +30365,6 @@ __metadata:
   version: 1.0.1
   resolution: "async-limiter@npm:1.0.1"
   checksum: 10c0/0693d378cfe86842a70d4c849595a0bb50dc44c11649640ca982fa90cbfc74e3cc4753b5a0847e51933f2e9c65ce8e05576e75e5e1fd963a086e673735b35969
-  languageName: node
-  linkType: hard
-
-"async-mutex@npm:^0.5.0":
-  version: 0.5.0
-  resolution: "async-mutex@npm:0.5.0"
-  dependencies:
-    tslib: "npm:^2.4.0"
-  checksum: 10c0/9096e6ad6b674c894d8ddd5aa4c512b09bb05931b8746ebd634952b05685608b2b0820ed5c406e6569919ff5fe237ab3c491e6f2887d6da6b6ba906db3ee9c32
   languageName: node
   linkType: hard
 
@@ -59918,6 +59935,7 @@ __metadata:
     "@mantine/core": "npm:^8.3.11"
     "@mantine/hooks": "npm:^8.3.11"
     "@mantine/utils": "npm:^6.0.22"
+    "@module-federation/runtime": "npm:^2.3.1"
     "@monaco-editor/react": "npm:^4.7.0"
     "@nivo/core": "npm:^0.99.0"
     "@nivo/line": "npm:^0.99.0"

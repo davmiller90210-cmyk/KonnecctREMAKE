@@ -29,8 +29,20 @@ export const CLERK_PUBLISHABLE_KEY =
   process.env.REACT_APP_CLERK_PUBLISHABLE_KEY ||
   '';
 
-/** Base URL for the Plane stack (Konnecct Projects), e.g. https://projects.example.com */
+/** Plane web origin/path (optional). Empty = same host /_konnecct/plane (production). */
 export const REACT_APP_PLANE_WEB_URL =
   window._env_?.REACT_APP_PLANE_WEB_URL ||
   process.env.REACT_APP_PLANE_WEB_URL ||
+  '';
+
+/** `auto` | `federation` | `iframe` — see KonnecctProjectsEmbed. */
+export const REACT_APP_PLANE_EMBED =
+  window._env_?.REACT_APP_PLANE_EMBED ||
+  process.env.REACT_APP_PLANE_EMBED ||
+  'auto';
+
+/** Module Federation id, e.g. konnecct_plane/./KonnecctShell */
+export const REACT_APP_PLANE_MF_MODULE =
+  window._env_?.REACT_APP_PLANE_MF_MODULE ||
+  process.env.REACT_APP_PLANE_MF_MODULE ||
   '';

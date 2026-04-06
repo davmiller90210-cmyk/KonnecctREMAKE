@@ -52,6 +52,7 @@
     "@mantine/core": "^8.3.11",
     "@mantine/hooks": "^8.3.11",
     "@mantine/utils": "^6.0.22",
+    "@module-federation/runtime": "^2.3.1",
     "@monaco-editor/react": "^4.7.0",
     "@nivo/core": "^0.99.0",
     "@nivo/line": "^0.99.0",

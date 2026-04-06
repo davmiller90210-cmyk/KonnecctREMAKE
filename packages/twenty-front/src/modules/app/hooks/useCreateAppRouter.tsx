@@ -50,7 +50,7 @@ const CommunicationHub = lazy(() =>
 );
 
 const KonnecctProjectsEmbed = lazy(() =>
-  import('@/chat/components/KonnecctProjectsEmbed').then((module) => ({
+  import('@/projects/components/KonnecctProjectsEmbed').then((module) => ({
     default: module.KonnecctProjectsEmbed,
   })),
 );
@@ -147,7 +147,7 @@ export const useCreateAppRouter = (
             }
           />
           <Route
-            path={AppPath.Projects}
+            path={`${AppPath.Projects}/*`}
             element={
               <LazyRoute>
                 <KonnecctProjectsEmbed />

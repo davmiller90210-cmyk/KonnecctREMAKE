@@ -24,7 +24,7 @@ x-plane-aws-s3-env: &plane-aws-s3-env
   AWS_S3_BUCKET_NAME: ${PLANE_AWS_S3_BUCKET_NAME:-uploads}
 
 x-plane-proxy-env: &plane-proxy-env
-  APP_DOMAIN: ${PLANE_APP_DOMAIN:-projects.konnecct.com}
+  APP_DOMAIN: ${PLANE_APP_DOMAIN:-app.konnecct.com}
   FILE_SIZE_LIMIT: ${PLANE_FILE_SIZE_LIMIT:-5242880}
   BUCKET_NAME: ${PLANE_AWS_S3_BUCKET_NAME:-uploads}
   SITE_ADDRESS: ":80"
@@ -42,9 +42,9 @@ x-plane-live-env: &plane-live-env
   LIVE_SERVER_SECRET_KEY: ${PLANE_LIVE_SERVER_SECRET_KEY:-2FiJk1U2aiVPEQtzLehYGlTSnTnrs7LW}
 
 x-plane-app-env: &plane-app-env
-  WEB_URL: ${PLANE_WEB_URL:-https://projects.konnecct.com}
+  WEB_URL: ${PLANE_WEB_URL:-https://app.konnecct.com/_konnecct/plane}
   DEBUG: "0"
-  CORS_ALLOWED_ORIGINS: ${PLANE_CORS_ALLOWED_ORIGINS:-https://projects.konnecct.com}
+  CORS_ALLOWED_ORIGINS: ${PLANE_CORS_ALLOWED_ORIGINS:-https://app.konnecct.com}
   GUNICORN_WORKERS: 1
   USE_MINIO: ${PLANE_USE_MINIO:-1}
   DATABASE_URL: ${PLANE_DATABASE_URL:-postgresql://plane:plane@plane-db/plane}
@@ -104,8 +104,12 @@ services:
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}
       REACT_APP_CLERK_PUBLISHABLE_KEY: ${REACT_APP_CLERK_PUBLISHABLE_KEY:-}
       CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-}
-      REACT_APP_PLANE_WEB_URL: ${REACT_APP_PLANE_WEB_URL:-https://projects.konnecct.com}
-      PLANE_WEB_URL: ${PLANE_WEB_URL:-https://projects.konnecct.com}
+      # Empty = CRM uses same-origin https://app.../projects (see KonnecctProjectsEmbed).
+      REACT_APP_PLANE_WEB_URL: ${REACT_APP_PLANE_WEB_URL:-}
+      # auto = try Module Federation then iframe; federation = unified shell only (needs remoteEntry.js).
+      REACT_APP_PLANE_EMBED: ${REACT_APP_PLANE_EMBED:-auto}
+      REACT_APP_PLANE_MF_MODULE: ${REACT_APP_PLANE_MF_MODULE:-}
+      PLANE_WEB_URL: ${PLANE_WEB_URL:-https://app.konnecct.com/_konnecct/plane}
       # Required for Clerk: each org maps to its own workspace; Twenty defaults to
       # single-workspace mode and blocks new workspaces when one already exists (e.g. seed data).
       IS_MULTIWORKSPACE_ENABLED: ${IS_MULTIWORKSPACE_ENABLED:-true}
@@ -222,6 +226,8 @@ services:
       plane-mq:
         condition: service_started
 
+  # Same host as Twenty: build apps/web with Vite base + router basename /_konnecct/plane/
+  # (user-facing URLs stay /projects/* via the CRM shell; nginx strips this prefix to Plane).
   web:
     image: makeplane/plane-frontend:${PLANE_APP_RELEASE:-stable}
     restart: always
@@ -324,6 +330,7 @@ services:
       - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/plane-upstream-common.conf:/etc/nginx/plane-upstream-common.conf:ro
       - ./nginx/certbot-etc:/etc/letsencrypt:ro
       - ./nginx/certbot-www:/var/www/certbot:ro
     depends_on:

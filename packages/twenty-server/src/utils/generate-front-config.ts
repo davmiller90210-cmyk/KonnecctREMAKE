@@ -17,6 +17,8 @@ export function generateFrontConfig(): void {
         REACT_APP_CLERK_PUBLISHABLE_KEY:
           process.env.REACT_APP_CLERK_PUBLISHABLE_KEY ?? '',
         REACT_APP_PLANE_WEB_URL: process.env.REACT_APP_PLANE_WEB_URL ?? '',
+        REACT_APP_PLANE_EMBED: process.env.REACT_APP_PLANE_EMBED ?? 'auto',
+        REACT_APP_PLANE_MF_MODULE: process.env.REACT_APP_PLANE_MF_MODULE ?? '',
       },
     },
   };
