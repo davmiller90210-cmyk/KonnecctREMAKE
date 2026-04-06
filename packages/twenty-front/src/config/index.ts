@@ -28,9 +28,3 @@ export const CLERK_PUBLISHABLE_KEY =
   window._env_?.REACT_APP_CLERK_PUBLISHABLE_KEY ||
   process.env.REACT_APP_CLERK_PUBLISHABLE_KEY ||
   '';
-
-/** Full URL to Rocket.Chat UI (trailing slash). Empty = same-origin `/communications/`. Prefer a subdomain if subpath shows "Unknown path". */
-export const REACT_APP_ROCKETCHAT_URL =
-  window._env_?.REACT_APP_ROCKETCHAT_URL ||
-  process.env.REACT_APP_ROCKETCHAT_URL ||
-  '';

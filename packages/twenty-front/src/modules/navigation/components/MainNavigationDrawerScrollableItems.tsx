@@ -4,9 +4,7 @@ import { styled } from '@linaria/react';
 import { lazy, Suspense } from 'react';
 
 import { themeCssVariables } from 'twenty-ui/theme-constants';
-import { IconMessage, IconMessageCirclePlus } from 'twenty-ui/display';
-
-import { AppPath } from 'twenty-shared/types';
+import { IconMessage } from 'twenty-ui/display';
 
 import { NavigationDrawerOpenedSection } from '@/navigation-menu-item/display/sections/components/NavigationDrawerOpenedSection';
 import { NavigationDrawerWorkspaceSectionSkeletonLoader } from '@/object-metadata/components/NavigationDrawerWorkspaceSectionSkeletonLoader';
@@ -52,12 +50,6 @@ export const MainNavigationDrawerScrollableItems = () => {
         to="/chat"
         Icon={IconMessage}
         active={location.pathname.startsWith('/chat')}
-      />
-      <NavigationDrawerItem
-        label={t`Communications`}
-        to={AppPath.Communications}
-        Icon={IconMessageCirclePlus}
-        active={location.pathname.startsWith(AppPath.Communications)}
       />
 
       <NavigationDrawerOtherSection />

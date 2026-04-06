@@ -53,8 +53,6 @@ services:
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}
       REACT_APP_CLERK_PUBLISHABLE_KEY: ${REACT_APP_CLERK_PUBLISHABLE_KEY:-}
       CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-}
-      # Optional: only if you must override iframe URL. Default = same-origin /communications/ (unified app URL).
-      REACT_APP_ROCKETCHAT_URL: ${REACT_APP_ROCKETCHAT_URL:-}
     restart: always
 
   crm-worker:
@@ -85,55 +83,6 @@ services:
       CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-}
     restart: always
 
-  # Rocket.Chat — only exposed at https://app.konnecct.com/communications/ (same-origin iframe; see nginx).
-  # Rocket.Chat 8.x requires MongoDB 8.0+ (see container startup banner).
-  # If you previously ran Mongo 6 on this volume, Mongo 8 will exit (FCV 6.0 invalid).
-  # Stop services, `docker volume rm …rocketchat-mongo-data`, then up again for a clean DB.
-  rocketchat-mongo:
-    image: mongo:8.0
-    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
-    volumes:
-      - rocketchat-mongo-data:/data/db
-    healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
-      interval: 5s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-    restart: always
-
-  rocketchat-mongo-init:
-    image: mongo:8.0
-    depends_on:
-      rocketchat-mongo:
-        condition: service_healthy
-    restart: on-failure
-    entrypoint:
-      - bash
-      - -c
-      - |
-        set -e
-        for i in $$(seq 1 40); do
-          mongosh "mongodb://rocketchat-mongo:27017" --eval "db.runCommand({ ping: 1 })" && break
-          sleep 3
-        done
-        mongosh "mongodb://rocketchat-mongo:27017" --eval 'try { rs.status() } catch (e) { rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "rocketchat-mongo:27017" }] }) }'
-
-  rocketchat:
-    # Pin major line; bump when you upgrade Mongo/RC together.
-    image: rocketchat/rocket.chat:8.2.1
-    depends_on:
-      rocketchat-mongo-init:
-        condition: service_completed_successfully
-    environment:
-      # Must match nginx location /communications/ + TLS host (users stay on app.konnecct.com only).
-      ROOT_URL: ${ROCKETCHAT_ROOT_URL:-https://app.konnecct.com/communications/}
-      MONGO_URL: mongodb://rocketchat-mongo:27017/rocketchat?replicaSet=rs0
-      PORT: "3000"
-    expose:
-      - "3000"
-    restart: always
-
   # Nginx Reverse Proxy
   nginx:
     image: nginx:1.25-alpine
@@ -146,7 +95,6 @@ services:
       - ./nginx/certbot-www:/var/www/certbot:ro
     depends_on:
       - crm-server
-      - rocketchat
     restart: always
 
   # Certbot (SSL Renewal)
@@ -161,4 +109,3 @@ services:
 volumes:
   crm-postgres-data:
   crm-redis-data:
-  rocketchat-mongo-data:

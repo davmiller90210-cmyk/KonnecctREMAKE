@@ -31,7 +31,6 @@ export enum AppPath {
 
   Authorize = '/authorize',
   Chat = '/chat',
-  Communications = '/communications',
 
   // 404 page not found
   NotFoundWildcard = '*',

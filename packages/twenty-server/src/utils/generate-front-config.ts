@@ -20,7 +20,6 @@ export function generateFrontConfig(): void {
           process.env.AGORA_CHAT_APP_KEY ?? '7110032205#200010602',
         AGORA_CHAT_REST_HOST:
           process.env.AGORA_CHAT_REST_HOST ?? 'a71.chat.agora.io',
-        REACT_APP_ROCKETCHAT_URL: process.env.REACT_APP_ROCKETCHAT_URL ?? '',
       },
     },
   };
