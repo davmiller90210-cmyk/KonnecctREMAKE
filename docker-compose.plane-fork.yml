@@ -1,0 +1,90 @@
+# Build Plane from your fork instead of Docker Hub (makeplane/*).
+#
+# Setup once:
+#   git submodule update --init --recursive
+#   # or: git clone https://github.com/davmiller90210-cmyk/plane.git plane
+#
+# Build & run (example):
+#   docker compose -f docker-compose.prod.yml -f docker-compose.plane-fork.yml build
+#   docker compose -f docker-compose.prod.yml -f docker-compose.plane-fork.yml up -d
+#
+# Override source path:
+#   PLANE_REPO_PATH=/path/to/plane docker compose -f docker-compose.prod.yml -f docker-compose.plane-fork.yml build
+#
+# Optional Vite public URLs (defaults match PLANE_WEB_URL in prod compose):
+#   export PLANE_VITE_PUBLIC_ROOT_URL=https://projects.konnecct.com
+
+x-plane-root: &plane-root ${PLANE_REPO_PATH:-./plane}
+
+# Backend Dockerfile expects build context = apps/api (see apps/api/Dockerfile.api COPY paths).
+x-plane-backend-build: &plane-backend-build
+  context: ${PLANE_REPO_PATH:-./plane}/apps/api
+  dockerfile: Dockerfile.api
+  args:
+    DOCKER_BUILDKIT: 1
+
+x-plane-vite-args: &plane-vite-args
+  VITE_API_BASE_URL: ${PLANE_VITE_API_BASE_URL:-}
+  VITE_WEB_BASE_URL: ${PLANE_VITE_WEB_BASE_URL:-${PLANE_VITE_PUBLIC_ROOT_URL:-https://projects.konnecct.com}}
+  VITE_ADMIN_BASE_URL: ${PLANE_VITE_ADMIN_BASE_URL:-${PLANE_VITE_PUBLIC_ROOT_URL:-https://projects.konnecct.com}}
+  VITE_SPACE_BASE_URL: ${PLANE_VITE_SPACE_BASE_URL:-${PLANE_VITE_PUBLIC_ROOT_URL:-https://projects.konnecct.com}}
+  VITE_LIVE_BASE_URL: ${PLANE_VITE_LIVE_BASE_URL:-${PLANE_VITE_PUBLIC_ROOT_URL:-https://projects.konnecct.com}}
+
+services:
+  migrator:
+    image: konnecct/plane-backend:${PLANE_IMAGE_TAG:-fork}
+    build: *plane-backend-build
+
+  api:
+    image: konnecct/plane-backend:${PLANE_IMAGE_TAG:-fork}
+    build: *plane-backend-build
+
+  worker:
+    image: konnecct/plane-backend:${PLANE_IMAGE_TAG:-fork}
+    build: *plane-backend-build
+
+  beat-worker:
+    image: konnecct/plane-backend:${PLANE_IMAGE_TAG:-fork}
+    build: *plane-backend-build
+
+  web:
+    image: konnecct/plane-web:${PLANE_IMAGE_TAG:-fork}
+    build:
+      context: *plane-root
+      dockerfile: ./apps/web/Dockerfile.web
+      args:
+        DOCKER_BUILDKIT: 1
+        <<: *plane-vite-args
+
+  space:
+    image: konnecct/plane-space:${PLANE_IMAGE_TAG:-fork}
+    build:
+      context: *plane-root
+      dockerfile: ./apps/space/Dockerfile.space
+      args:
+        DOCKER_BUILDKIT: 1
+        <<: *plane-vite-args
+
+  admin:
+    image: konnecct/plane-admin:${PLANE_IMAGE_TAG:-fork}
+    build:
+      context: *plane-root
+      dockerfile: ./apps/admin/Dockerfile.admin
+      args:
+        DOCKER_BUILDKIT: 1
+        <<: *plane-vite-args
+
+  live:
+    image: konnecct/plane-live:${PLANE_IMAGE_TAG:-fork}
+    build:
+      context: *plane-root
+      dockerfile: ./apps/live/Dockerfile.live
+      args:
+        DOCKER_BUILDKIT: 1
+        <<: *plane-vite-args
+
+  proxy:
+    image: konnecct/plane-proxy:${PLANE_IMAGE_TAG:-fork}
+    build:
+      context: ${PLANE_REPO_PATH:-./plane}/apps/proxy
+      dockerfile: Dockerfile.ce
