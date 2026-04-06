@@ -1,9 +1,6 @@
 import { AppRouterProviders } from '@/app/components/AppRouterProviders';
 import { LazyRoute } from '@/app/components/LazyRoute';
 import { SettingsRoutes } from '@/app/components/SettingsRoutes';
-import { VerifyLoginTokenEffect } from '@/auth/components/VerifyLoginTokenEffect';
-
-import { VerifyEmailEffect } from '@/auth/components/VerifyEmailEffect';
 import indexAppPath from '@/navigation/utils/indexAppPath';
 import { BlankLayout } from '@/ui/layout/page/components/BlankLayout';
 import { DefaultLayout } from '@/ui/layout/page/components/DefaultLayout';
@@ -34,9 +31,9 @@ const ClerkSignInUp = lazy(() =>
   })),
 );
 
-const PasswordReset = lazy(() =>
-  import('~/pages/auth/ClerkSignInUp').then((module) => ({
-    default: module.ClerkSignInUp,
+const LegacyAuthRedirectToWelcome = lazy(() =>
+  import('~/pages/auth/LegacyAuthRedirectToWelcome').then((module) => ({
+    default: module.LegacyAuthRedirectToWelcome,
   })),
 );
 
@@ -49,6 +46,12 @@ const Authorize = lazy(() =>
 const CommunicationHub = lazy(() =>
   import('@/chat/components/CommunicationHub').then((module) => ({
     default: module.CommunicationHub,
+  })),
+);
+
+const KonnecctProjectsEmbed = lazy(() =>
+  import('@/chat/components/KonnecctProjectsEmbed').then((module) => ({
+    default: module.KonnecctProjectsEmbed,
   })),
 );
 
@@ -143,8 +146,30 @@ export const useCreateAppRouter = (
               </LazyRoute>
             }
           />
-          <Route path={AppPath.Verify} element={<VerifyLoginTokenEffect />} />
-          <Route path={AppPath.VerifyEmail} element={<VerifyEmailEffect />} />
+          <Route
+            path={AppPath.Projects}
+            element={
+              <LazyRoute>
+                <KonnecctProjectsEmbed />
+              </LazyRoute>
+            }
+          />
+          <Route
+            path={AppPath.Verify}
+            element={
+              <LazyRoute>
+                <LegacyAuthRedirectToWelcome />
+              </LazyRoute>
+            }
+          />
+          <Route
+            path={AppPath.VerifyEmail}
+            element={
+              <LazyRoute>
+                <LegacyAuthRedirectToWelcome />
+              </LazyRoute>
+            }
+          />
           <Route
             path={AppPath.SignInUp}
             element={
@@ -157,7 +182,7 @@ export const useCreateAppRouter = (
             path={AppPath.Invite}
             element={
               <LazyRoute>
-                <ClerkSignInUp />
+                <LegacyAuthRedirectToWelcome preferSignUpMode />
               </LazyRoute>
             }
           />
@@ -165,7 +190,7 @@ export const useCreateAppRouter = (
             path={AppPath.ResetPassword}
             element={
               <LazyRoute>
-                <PasswordReset />
+                <LegacyAuthRedirectToWelcome />
               </LazyRoute>
             }
           />

@@ -84,6 +84,15 @@ export const ClerkSessionExchangeEffect = () => {
 
         setTokenPair(tokens);
         await loadCurrentUser();
+
+        void fetch('/integrations/plane/sync', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${clerkToken}`,
+            ...(orgId ? { 'X-Clerk-Org-Id': orgId } : {}),
+          },
+        }).catch(() => {});
+
         setExchangeError(null);
       } catch (error) {
         // oxlint-disable-next-line no-console

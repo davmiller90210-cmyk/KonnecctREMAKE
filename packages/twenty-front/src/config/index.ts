@@ -28,3 +28,9 @@ export const CLERK_PUBLISHABLE_KEY =
   window._env_?.REACT_APP_CLERK_PUBLISHABLE_KEY ||
   process.env.REACT_APP_CLERK_PUBLISHABLE_KEY ||
   '';
+
+/** Base URL for the Plane stack (Konnecct Projects), e.g. https://projects.example.com */
+export const REACT_APP_PLANE_WEB_URL =
+  window._env_?.REACT_APP_PLANE_WEB_URL ||
+  process.env.REACT_APP_PLANE_WEB_URL ||
+  '';

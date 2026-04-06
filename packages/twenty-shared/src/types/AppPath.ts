@@ -31,6 +31,8 @@ export enum AppPath {
 
   Authorize = '/authorize',
   Chat = '/chat',
+  /** Konnecct Projects (Plane UI embedded in the CRM shell) */
+  Projects = '/projects',
 
   // 404 page not found
   NotFoundWildcard = '*',

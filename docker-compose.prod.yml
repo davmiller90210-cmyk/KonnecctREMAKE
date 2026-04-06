@@ -1,3 +1,59 @@
+x-plane-db-env: &plane-db-env
+  PGHOST: ${PLANE_PGHOST:-plane-db}
+  PGDATABASE: ${PLANE_PGDATABASE:-plane}
+  POSTGRES_USER: ${PLANE_POSTGRES_USER:-plane}
+  POSTGRES_PASSWORD: ${PLANE_POSTGRES_PASSWORD:-plane}
+  POSTGRES_DB: ${PLANE_POSTGRES_DB:-plane}
+  POSTGRES_PORT: ${PLANE_POSTGRES_PORT:-5432}
+  PGDATA: ${PLANE_PGDATA:-/var/lib/postgresql/data}
+
+x-plane-redis-env: &plane-redis-env
+  REDIS_HOST: ${PLANE_REDIS_HOST:-plane-redis}
+  REDIS_PORT: ${PLANE_REDIS_PORT:-6379}
+  REDIS_URL: ${PLANE_REDIS_URL:-redis://plane-redis:6379}
+
+x-plane-minio-env: &plane-minio-env
+  MINIO_ROOT_USER: ${PLANE_AWS_ACCESS_KEY_ID:-access-key}
+  MINIO_ROOT_PASSWORD: ${PLANE_AWS_SECRET_ACCESS_KEY:-secret-key}
+
+x-plane-aws-s3-env: &plane-aws-s3-env
+  AWS_REGION: ${PLANE_AWS_REGION:-}
+  AWS_ACCESS_KEY_ID: ${PLANE_AWS_ACCESS_KEY_ID:-access-key}
+  AWS_SECRET_ACCESS_KEY: ${PLANE_AWS_SECRET_ACCESS_KEY:-secret-key}
+  AWS_S3_ENDPOINT_URL: ${PLANE_AWS_S3_ENDPOINT_URL:-http://plane-minio:9000}
+  AWS_S3_BUCKET_NAME: ${PLANE_AWS_S3_BUCKET_NAME:-uploads}
+
+x-plane-proxy-env: &plane-proxy-env
+  APP_DOMAIN: ${PLANE_APP_DOMAIN:-projects.konnecct.com}
+  FILE_SIZE_LIMIT: ${PLANE_FILE_SIZE_LIMIT:-5242880}
+  BUCKET_NAME: ${PLANE_AWS_S3_BUCKET_NAME:-uploads}
+  SITE_ADDRESS: ":80"
+
+x-plane-mq-env: &plane-mq-env
+  RABBITMQ_HOST: ${PLANE_RABBITMQ_HOST:-plane-mq}
+  RABBITMQ_PORT: ${PLANE_RABBITMQ_PORT:-5672}
+  RABBITMQ_DEFAULT_USER: ${PLANE_RABBITMQ_USER:-plane}
+  RABBITMQ_DEFAULT_PASS: ${PLANE_RABBITMQ_PASSWORD:-plane}
+  RABBITMQ_DEFAULT_VHOST: ${PLANE_RABBITMQ_VHOST:-plane}
+  RABBITMQ_VHOST: ${PLANE_RABBITMQ_VHOST:-plane}
+
+x-plane-live-env: &plane-live-env
+  API_BASE_URL: ${PLANE_API_BASE_URL:-http://api:8000}
+  LIVE_SERVER_SECRET_KEY: ${PLANE_LIVE_SERVER_SECRET_KEY:-2FiJk1U2aiVPEQtzLehYGlTSnTnrs7LW}
+
+x-plane-app-env: &plane-app-env
+  WEB_URL: ${PLANE_WEB_URL:-https://projects.konnecct.com}
+  DEBUG: "0"
+  CORS_ALLOWED_ORIGINS: ${PLANE_CORS_ALLOWED_ORIGINS:-https://projects.konnecct.com}
+  GUNICORN_WORKERS: 1
+  USE_MINIO: ${PLANE_USE_MINIO:-1}
+  DATABASE_URL: ${PLANE_DATABASE_URL:-postgresql://plane:plane@plane-db/plane}
+  SECRET_KEY: ${PLANE_SECRET_KEY:-60gp0byfz2dvffa45cxl20p1scy9xbpf6d8c5y0geejgkyp1b5}
+  AMQP_URL: ${PLANE_AMQP_URL:-amqp://plane:plane@plane-mq:5672/plane}
+  API_KEY_RATE_LIMIT: ${PLANE_API_KEY_RATE_LIMIT:-60/minute}
+  MINIO_ENDPOINT_SSL: ${PLANE_MINIO_ENDPOINT_SSL:-0}
+  LIVE_SERVER_SECRET_KEY: ${PLANE_LIVE_SERVER_SECRET_KEY:-2FiJk1U2aiVPEQtzLehYGlTSnTnrs7LW}
+
 services:
   # Konnecct CRM Services
   crm-db:
@@ -29,12 +85,6 @@ services:
         condition: service_healthy
       crm-redis:
         condition: service_started
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:3000/healthz"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 120s
     environment:
       NODE_ENV: production
       PG_DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@crm-db:5432/default
@@ -44,7 +94,8 @@ services:
       NODE_PORT: 3000
       APP_SECRET: ${APP_SECRET:-konnecct-secret-6789}
       STORAGE_TYPE: local
-      APP_VERSION: 11.7.0
+      # Must match Twenty upgrade keys (1.x.y), not the npm package semver, or `yarn command:prod upgrade` skips core migrations before workspace steps.
+      APP_VERSION: ${APP_VERSION:-1.20.0}
       AGORA_APP_ID: ${AGORA_APP_ID:-c40d7b366062426e8cfcf1eba9e84194}
       AGORA_APP_CERTIFICATE: ${AGORA_APP_CERTIFICATE:-08feb4e9c80a471cae8744b61076acfe}
       AGORA_CHAT_ORG_NAME: ${AGORA_CHAT_ORG_NAME:-7110032205}
@@ -53,6 +104,21 @@ services:
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}
       REACT_APP_CLERK_PUBLISHABLE_KEY: ${REACT_APP_CLERK_PUBLISHABLE_KEY:-}
       CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-}
+      REACT_APP_PLANE_WEB_URL: ${REACT_APP_PLANE_WEB_URL:-https://projects.konnecct.com}
+      PLANE_WEB_URL: ${PLANE_WEB_URL:-https://projects.konnecct.com}
+      # Required for Clerk: each org maps to its own workspace; Twenty defaults to
+      # single-workspace mode and blocks new workspaces when one already exists (e.g. seed data).
+      IS_MULTIWORKSPACE_ENABLED: ${IS_MULTIWORKSPACE_ENABLED:-true}
+      # Single host app.konnecct.com — no *.app.konnecct.com DNS; do not prefix workspace subdomain.
+      IS_MULTIWORKSPACE_PUBLIC_URL_SHARED: ${IS_MULTIWORKSPACE_PUBLIC_URL_SHARED:-true}
+      # Clerk org signup creates a workspace; Twenty defaults to "admins only" which blocks normal users.
+      IS_WORKSPACE_CREATION_LIMITED_TO_SERVER_ADMINS: ${IS_WORKSPACE_CREATION_LIMITED_TO_SERVER_ADMINS:-false}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
     restart: always
 
   crm-worker:
@@ -72,7 +138,8 @@ services:
       NODE_PORT: 3000
       APP_SECRET: ${APP_SECRET:-konnecct-secret-6789}
       STORAGE_TYPE: local
-      APP_VERSION: 11.7.0
+      # Must match Twenty upgrade keys (1.x.y), not the npm package semver, or `yarn command:prod upgrade` skips core migrations before workspace steps.
+      APP_VERSION: ${APP_VERSION:-1.20.0}
       AGORA_APP_ID: ${AGORA_APP_ID:-c40d7b366062426e8cfcf1eba9e84194}
       AGORA_APP_CERTIFICATE: ${AGORA_APP_CERTIFICATE:-08feb4e9c80a471cae8744b61076acfe}
       AGORA_CHAT_ORG_NAME: ${AGORA_CHAT_ORG_NAME:-7110032205}
@@ -81,7 +148,173 @@ services:
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}
       REACT_APP_CLERK_PUBLISHABLE_KEY: ${REACT_APP_CLERK_PUBLISHABLE_KEY:-}
       CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-}
+      IS_MULTIWORKSPACE_ENABLED: ${IS_MULTIWORKSPACE_ENABLED:-true}
+      IS_MULTIWORKSPACE_PUBLIC_URL_SHARED: ${IS_MULTIWORKSPACE_PUBLIC_URL_SHARED:-true}
+      IS_WORKSPACE_CREATION_LIMITED_TO_SERVER_ADMINS: ${IS_WORKSPACE_CREATION_LIMITED_TO_SERVER_ADMINS:-false}
     restart: always
+
+  # Plane (Konnecct Projects) — service names match upstream compose (api, web, proxy) for DNS.
+  migrator:
+    image: makeplane/plane-backend:${PLANE_APP_RELEASE:-stable}
+    command: ./bin/docker-entrypoint-migrator.sh
+    restart: "no"
+    volumes:
+      - plane-logs-migrator:/code/plane/logs
+    environment:
+      <<: [*plane-app-env, *plane-db-env, *plane-redis-env, *plane-minio-env, *plane-aws-s3-env, *plane-proxy-env]
+    depends_on:
+      plane-db:
+        condition: service_started
+      plane-redis:
+        condition: service_started
+
+  api:
+    image: makeplane/plane-backend:${PLANE_APP_RELEASE:-stable}
+    command: ./bin/docker-entrypoint-api.sh
+    restart: always
+    volumes:
+      - plane-logs-api:/code/plane/logs
+    environment:
+      <<: [*plane-app-env, *plane-db-env, *plane-redis-env, *plane-minio-env, *plane-aws-s3-env, *plane-proxy-env]
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+      plane-db:
+        condition: service_started
+      plane-redis:
+        condition: service_started
+      plane-mq:
+        condition: service_started
+
+  worker:
+    image: makeplane/plane-backend:${PLANE_APP_RELEASE:-stable}
+    command: ./bin/docker-entrypoint-worker.sh
+    restart: always
+    volumes:
+      - plane-logs-worker:/code/plane/logs
+    environment:
+      <<: [*plane-app-env, *plane-db-env, *plane-redis-env, *plane-minio-env, *plane-aws-s3-env, *plane-proxy-env]
+    depends_on:
+      api:
+        condition: service_started
+      plane-db:
+        condition: service_started
+      plane-redis:
+        condition: service_started
+      plane-mq:
+        condition: service_started
+
+  beat-worker:
+    image: makeplane/plane-backend:${PLANE_APP_RELEASE:-stable}
+    command: ./bin/docker-entrypoint-beat.sh
+    restart: always
+    volumes:
+      - plane-logs-beat:/code/plane/logs
+    environment:
+      <<: [*plane-app-env, *plane-db-env, *plane-redis-env, *plane-minio-env, *plane-aws-s3-env, *plane-proxy-env]
+    depends_on:
+      api:
+        condition: service_started
+      plane-db:
+        condition: service_started
+      plane-redis:
+        condition: service_started
+      plane-mq:
+        condition: service_started
+
+  web:
+    image: makeplane/plane-frontend:${PLANE_APP_RELEASE:-stable}
+    restart: always
+    depends_on:
+      api:
+        condition: service_started
+      worker:
+        condition: service_started
+
+  space:
+    image: makeplane/plane-space:${PLANE_APP_RELEASE:-stable}
+    restart: always
+    depends_on:
+      api:
+        condition: service_started
+      worker:
+        condition: service_started
+      web:
+        condition: service_started
+
+  admin:
+    image: makeplane/plane-admin:${PLANE_APP_RELEASE:-stable}
+    restart: always
+    depends_on:
+      api:
+        condition: service_started
+      web:
+        condition: service_started
+
+  live:
+    image: makeplane/plane-live:${PLANE_APP_RELEASE:-stable}
+    environment:
+      <<: [*plane-live-env, *plane-redis-env]
+    restart: always
+    depends_on:
+      api:
+        condition: service_started
+      web:
+        condition: service_started
+
+  plane-db:
+    image: postgres:15.7-alpine
+    command: postgres -c 'max_connections=1000'
+    restart: always
+    environment:
+      <<: *plane-db-env
+    volumes:
+      - plane-pgdata:/var/lib/postgresql/data
+
+  plane-redis:
+    image: valkey/valkey:7.2.11-alpine
+    restart: always
+    volumes:
+      - plane-redisdata:/data
+
+  plane-mq:
+    image: rabbitmq:3.13.6-management-alpine
+    restart: always
+    environment:
+      <<: *plane-mq-env
+    volumes:
+      - plane-rabbitmq-data:/var/lib/rabbitmq
+
+  plane-minio:
+    image: minio/minio:latest
+    command: server /export --console-address ":9090"
+    restart: always
+    environment:
+      <<: *plane-minio-env
+    volumes:
+      - plane-uploads:/export
+
+  proxy:
+    image: makeplane/plane-proxy:${PLANE_APP_RELEASE:-stable}
+    restart: always
+    expose:
+      - "80"
+    environment:
+      <<: *plane-proxy-env
+    volumes:
+      - plane-proxy-config:/config
+      - plane-proxy-data:/data
+    depends_on:
+      web:
+        condition: service_started
+      api:
+        condition: service_started
+      space:
+        condition: service_started
+      admin:
+        condition: service_started
+      live:
+        condition: service_started
 
   # Nginx Reverse Proxy
   nginx:
@@ -94,7 +327,10 @@ services:
       - ./nginx/certbot-etc:/etc/letsencrypt:ro
       - ./nginx/certbot-www:/var/www/certbot:ro
     depends_on:
-      - crm-server
+      crm-server:
+        condition: service_started
+      proxy:
+        condition: service_started
     restart: always
 
   # Certbot (SSL Renewal)
@@ -109,3 +345,13 @@ services:
 volumes:
   crm-postgres-data:
   crm-redis-data:
+  plane-pgdata:
+  plane-redisdata:
+  plane-uploads:
+  plane-logs-api:
+  plane-logs-worker:
+  plane-logs-beat:
+  plane-logs-migrator:
+  plane-rabbitmq-data:
+  plane-proxy-config:
+  plane-proxy-data:
