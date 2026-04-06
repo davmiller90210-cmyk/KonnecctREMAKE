@@ -53,8 +53,8 @@ services:
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}
       REACT_APP_CLERK_PUBLISHABLE_KEY: ${REACT_APP_CLERK_PUBLISHABLE_KEY:-}
       CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-}
-      # Optional: Rocket.Chat iframe URL if subpath shows "Unknown path" (e.g. https://chat.konnecct.com/)
-      REACT_APP_ROCKETCHAT_URL: ${REACT_APP_ROCKETCHAT_URL:-}
+      # Iframe loads this URL; must match public Rocket.Chat host (see nginx chat.konnecct.com + ROOT_URL).
+      REACT_APP_ROCKETCHAT_URL: ${REACT_APP_ROCKETCHAT_URL:-https://chat.konnecct.com/}
     restart: always
 
   crm-worker:
@@ -85,7 +85,7 @@ services:
       CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-}
     restart: always
 
-  # Rocket.Chat (proxied at https://app.konnecct.com/communications/ — see nginx.conf)
+  # Rocket.Chat — public URL = ROOT_URL (default https://chat.konnecct.com/); see nginx server_name chat.konnecct.com
   # Rocket.Chat 8.x requires MongoDB 8.0+ (see container startup banner).
   # If you previously ran Mongo 6 on this volume, Mongo 8 will exit (FCV 6.0 invalid).
   # Stop services, `docker volume rm …rocketchat-mongo-data`, then up again for a clean DB.
@@ -126,7 +126,8 @@ services:
       rocketchat-mongo-init:
         condition: service_completed_successfully
     environment:
-      ROOT_URL: https://app.konnecct.com/communications/
+      # Must exactly match the public URL nginx serves (dedicated host, no /communications path).
+      ROOT_URL: ${ROCKETCHAT_ROOT_URL:-https://chat.konnecct.com/}
       MONGO_URL: mongodb://rocketchat-mongo:27017/rocketchat?replicaSet=rs0
       PORT: "3000"
     expose:
