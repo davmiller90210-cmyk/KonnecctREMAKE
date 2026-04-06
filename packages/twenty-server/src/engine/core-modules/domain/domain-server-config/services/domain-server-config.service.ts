@@ -19,7 +19,8 @@ export class DomainServerConfigService {
 
     if (
       this.twentyConfigService.get('IS_MULTIWORKSPACE_ENABLED') &&
-      this.twentyConfigService.get('DEFAULT_SUBDOMAIN')
+      this.twentyConfigService.get('DEFAULT_SUBDOMAIN') &&
+      !this.twentyConfigService.get('IS_MULTIWORKSPACE_PUBLIC_URL_SHARED')
     ) {
       baseUrl.hostname = `${this.twentyConfigService.get('DEFAULT_SUBDOMAIN')}.${baseUrl.hostname}`;
     }
@@ -49,6 +50,16 @@ export class DomainServerConfigService {
     const { hostname: originHostname } = new URL(url);
 
     const frontDomain = this.getFrontUrl().hostname;
+
+    if (
+      this.twentyConfigService.get('IS_MULTIWORKSPACE_PUBLIC_URL_SHARED') &&
+      originHostname === frontDomain
+    ) {
+      return {
+        subdomain: this.twentyConfigService.get('DEFAULT_SUBDOMAIN'),
+        domain: null,
+      };
+    }
 
     const isFrontdomain = originHostname.endsWith(`.${frontDomain}`);
 

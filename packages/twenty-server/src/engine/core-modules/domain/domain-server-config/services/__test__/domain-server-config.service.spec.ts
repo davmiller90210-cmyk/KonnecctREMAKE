@@ -78,5 +78,25 @@ describe('SubdomainManagerService', () => {
 
       expect(result.toString()).toBe('https://test.example.com/');
     });
+
+    it('should not append default subdomain when multi-workspace public URL is shared', () => {
+      jest
+        .spyOn(twentyConfigService, 'get')
+        .mockImplementation((key: string) => {
+          const env = {
+            FRONTEND_URL: 'https://app.example.com',
+            IS_MULTIWORKSPACE_ENABLED: true,
+            DEFAULT_SUBDOMAIN: 'app',
+            IS_MULTIWORKSPACE_PUBLIC_URL_SHARED: true,
+          };
+
+          // @ts-expect-error legacy noImplicitAny
+          return env[key];
+        });
+
+      const result = domainServerConfigService.getBaseUrl();
+
+      expect(result.toString()).toBe('https://app.example.com/');
+    });
   });
 });
