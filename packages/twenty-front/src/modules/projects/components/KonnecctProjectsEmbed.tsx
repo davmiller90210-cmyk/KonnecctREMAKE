@@ -19,10 +19,12 @@ import {
   REACT_APP_PLANE_WEB_URL,
 } from '~/config';
 
+import { currentWorkspaceState } from '@/auth/states/currentWorkspaceState';
 import {
   ensureKonnecctModuleFederationHost,
   KONNECCT_PLANE_REMOTE_NAME,
 } from '@/projects/utils/konnecctModuleFederationHost';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 
 /** Browser URL prefix (Twenty shell). */
 const USER_PROJECTS_PREFIX = '/projects';
@@ -129,12 +131,10 @@ type FederatedPlaneProps = Record<string, unknown>;
  * Konnecct Projects: prefers Module Federation (true single-document micro-frontend)
  * when Plane ships `remoteEntry.js` exposing `REACT_APP_PLANE_MF_MODULE`.
  *
- * Plane fork (apps/web): add @module-federation/vite with
- * `name: 'konnecct_plane'`, `filename: 'remoteEntry.js'`,
- * `exposes: { './KonnecctShell': './src/konnecct-shell.tsx' }`,
- * `shared: { react: { singleton: true }, 'react-dom': { singleton: true } }`,
- * and export a default React component from konnecct-shell that renders your app root
- * (with router basename `/_konnecct/plane` or props from this host).
+ * Plane fork (apps/web): `app/konnecct-shell.tsx` + `entry.client` MF mount hook are in place.
+ * `@module-federation/vite` currently rewrites the React Router SSR graph and breaks SPA
+ * `index.html` pre-render; ship `remoteEntry.js` via a client-only MF pipeline or upstream fix,
+ * exposing `./KonnecctShell` with shared `react` / `react-dom` singletons to match this host.
  *
  * Embed modes (REACT_APP_PLANE_EMBED):
  * - `auto` — try federation once per session, then iframe (default).
@@ -146,6 +146,8 @@ export const KonnecctProjectsEmbed = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const currentWorkspace = useAtomStateValue(currentWorkspaceState);
+  const workspaceSlug = currentWorkspace?.subdomain ?? '';
 
   const explicit = REACT_APP_PLANE_WEB_URL.trim().replace(/\/$/, '');
   const isLocalhost =
@@ -167,12 +169,20 @@ export const KonnecctProjectsEmbed = () => {
     ? `${resolved.iframeBase.replace(/\/$/, '')}/remoteEntry.js`
     : '';
 
-  const iframeSrc =
-    resolved === null
-      ? ''
-      : `${resolved.iframeBase.replace(/\/$/, '')}${suffixFromUserProjectsPath(location.pathname)}`;
+  const iframeSrc = useMemo(() => {
+    if (resolved === null || !workspaceSlug) {
+      return '';
+    }
+    const suffix = suffixFromUserProjectsPath(location.pathname);
+    const underWorkspace =
+      suffix === '/' ? `/${workspaceSlug}/` : `/${workspaceSlug}${suffix}`;
+    return `${resolved.iframeBase.replace(/\/$/, '')}${underWorkspace}`;
+  }, [resolved, workspaceSlug, location.pathname]);
 
   const pathSuffix = suffixFromUserProjectsPath(location.pathname);
+
+  const planePathSyncPrefix =
+    workspaceSlug !== '' ? `${INTERNAL_PLANE_PATH}/${workspaceSlug}` : null;
 
   const [federated, setFederated] = useState<ComponentType<FederatedPlaneProps> | null>(
     null,
@@ -262,8 +272,7 @@ export const KonnecctProjectsEmbed = () => {
   ]);
 
   useEffect(() => {
-    const syncPathPrefix = resolved?.syncPathPrefix;
-    if (syncPathPrefix === null || syncPathPrefix === undefined || !showIframe) {
+    if (planePathSyncPrefix === null || !showIframe) {
       return;
     }
 
@@ -275,7 +284,7 @@ export const KonnecctProjectsEmbed = () => {
       }
       try {
         const iframePath = win.location.pathname;
-        const target = userPathFromPlanePathname(iframePath, syncPathPrefix);
+        const target = userPathFromPlanePathname(iframePath, planePathSyncPrefix);
         if (target !== null && target !== location.pathname) {
           navigate(target, { replace: true });
         }
@@ -285,13 +294,23 @@ export const KonnecctProjectsEmbed = () => {
     }, 400);
 
     return () => window.clearInterval(id);
-  }, [resolved?.syncPathPrefix, location.pathname, navigate, showIframe]);
+  }, [planePathSyncPrefix, location.pathname, navigate, showIframe]);
 
   if (!resolved) {
     return (
       <StyledShell>
         <StyledPlaceholder>
           {t`Set REACT_APP_PLANE_WEB_URL to your Plane web URL (required on localhost). In production, Plane is loaded from /_konnecct/plane when this is unset.`}
+        </StyledPlaceholder>
+      </StyledShell>
+    );
+  }
+
+  if (!workspaceSlug) {
+    return (
+      <StyledShell>
+        <StyledPlaceholder>
+          {t`Konnecct Projects needs a workspace subdomain. Open Settings or complete workspace setup.`}
         </StyledPlaceholder>
       </StyledShell>
     );

@@ -4,12 +4,12 @@ import { styled } from '@linaria/react';
 import { lazy, Suspense } from 'react';
 
 import { themeCssVariables } from 'twenty-ui/theme-constants';
-import { IconLayoutKanban, IconMessage } from 'twenty-ui/display';
+import { IconMessage } from 'twenty-ui/display';
 
-import { AppPath } from 'twenty-shared/types';
 
 import { NavigationDrawerOpenedSection } from '@/navigation-menu-item/display/sections/components/NavigationDrawerOpenedSection';
 import { NavigationDrawerWorkspaceSectionSkeletonLoader } from '@/object-metadata/components/NavigationDrawerWorkspaceSectionSkeletonLoader';
+import { KonnecctProjectsNavigationSection } from '@/navigation/components/KonnecctProjectsNavigationSection';
 import { NavigationDrawerOtherSection } from '@/navigation/components/NavigationDrawerOtherSection';
 import { NavigationDrawerItem } from '@/ui/navigation/navigation-drawer/components/NavigationDrawerItem';
 
@@ -53,12 +53,7 @@ export const MainNavigationDrawerScrollableItems = () => {
         Icon={IconMessage}
         active={location.pathname.startsWith('/chat')}
       />
-      <NavigationDrawerItem
-        label={t`Konnecct Projects`}
-        to={AppPath.Projects}
-        Icon={IconLayoutKanban}
-        active={location.pathname.startsWith(AppPath.Projects)}
-      />
+      <KonnecctProjectsNavigationSection />
 
       <NavigationDrawerOtherSection />
     </StyledScrollableItemsContainer>

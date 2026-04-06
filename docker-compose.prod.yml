@@ -53,6 +53,15 @@ x-plane-app-env: &plane-app-env
   API_KEY_RATE_LIMIT: ${PLANE_API_KEY_RATE_LIMIT:-60/minute}
   MINIO_ENDPOINT_SSL: ${PLANE_MINIO_ENDPOINT_SSL:-0}
   LIVE_SERVER_SECRET_KEY: ${PLANE_LIVE_SERVER_SECRET_KEY:-2FiJk1U2aiVPEQtzLehYGlTSnTnrs7LW}
+  # Shared with crm-server: HS256 bridge JWT for /auth/konnecct-bridge/ (Django session).
+  KONNECCT_BRIDGE_SECRET: ${KONNECCT_BRIDGE_SECRET:-}
+
+# Forked Plane backend (Konnecct SSO bridge). Build once; migrator/api/worker/beat share the image.
+x-plane-backend-build: &plane-backend-build
+  build:
+    context: ./plane/apps/api
+    dockerfile: Dockerfile.api
+  image: konnecct/plane-backend:${PLANE_BACKEND_IMAGE_TAG:-fork}
 
 services:
   # Konnecct CRM Services
@@ -110,6 +119,9 @@ services:
       REACT_APP_PLANE_EMBED: ${REACT_APP_PLANE_EMBED:-auto}
       REACT_APP_PLANE_MF_MODULE: ${REACT_APP_PLANE_MF_MODULE:-}
       PLANE_WEB_URL: ${PLANE_WEB_URL:-https://app.konnecct.com/_konnecct/plane}
+      KONNECCT_BRIDGE_SECRET: ${KONNECCT_BRIDGE_SECRET:-}
+      # Optional: Plane workspace slug when it differs from Twenty workspace.subdomain.
+      PLANE_KONNECCT_WORKSPACE_SLUG: ${PLANE_KONNECCT_WORKSPACE_SLUG:-}
       # Required for Clerk: each org maps to its own workspace; Twenty defaults to
       # single-workspace mode and blocks new workspaces when one already exists (e.g. seed data).
       IS_MULTIWORKSPACE_ENABLED: ${IS_MULTIWORKSPACE_ENABLED:-true}
@@ -159,7 +171,7 @@ services:
 
   # Plane (Konnecct Projects) — service names match upstream compose (api, web, proxy) for DNS.
   migrator:
-    image: makeplane/plane-backend:${PLANE_APP_RELEASE:-stable}
+    <<: *plane-backend-build
     command: ./bin/docker-entrypoint-migrator.sh
     restart: "no"
     volumes:
@@ -173,7 +185,7 @@ services:
         condition: service_started
 
   api:
-    image: makeplane/plane-backend:${PLANE_APP_RELEASE:-stable}
+    <<: *plane-backend-build
     command: ./bin/docker-entrypoint-api.sh
     restart: always
     volumes:
@@ -191,7 +203,7 @@ services:
         condition: service_started
 
   worker:
-    image: makeplane/plane-backend:${PLANE_APP_RELEASE:-stable}
+    <<: *plane-backend-build
     command: ./bin/docker-entrypoint-worker.sh
     restart: always
     volumes:
@@ -209,7 +221,7 @@ services:
         condition: service_started
 
   beat-worker:
-    image: makeplane/plane-backend:${PLANE_APP_RELEASE:-stable}
+    <<: *plane-backend-build
     command: ./bin/docker-entrypoint-beat.sh
     restart: always
     volumes:
@@ -234,6 +246,7 @@ services:
       dockerfile: apps/web/Dockerfile.web
       args:
         VITE_BASE_PATH: ${PLANE_VITE_BASE_PATH:-/_konnecct/plane/}
+        VITE_KONNECCT_EMBED_SHELL: ${PLANE_VITE_KONNECCT_EMBED_SHELL:-1}
     image: konnecct/plane-web:${PLANE_WEB_IMAGE_TAG:-fork}
     restart: always
     depends_on:
