@@ -25,6 +25,20 @@ const readReturnToPathFromUrlSearchParams = (): string | null => {
   return value && isValidReturnToPath(value) ? value : null;
 };
 
+const isClerkSessionActive = () => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const clerk = (
+    window as Window & {
+      Clerk?: { session?: { id?: string | null }; user?: { id?: string | null } };
+    }
+  ).Clerk;
+
+  return Boolean(clerk?.session?.id || clerk?.user?.id);
+};
+
 export const usePageChangeEffectNavigateLocation = () => {
   const hasAccessTokenPair = useHasAccessTokenPair();
   const { isOnAWorkspace } = useIsCurrentLocationOnAWorkspace();
@@ -60,6 +74,9 @@ export const usePageChangeEffectNavigateLocation = () => {
       AppPath.ResetPassword,
     ])
   ) {
+    if (isClerkSessionActive()) {
+      return;
+    }
     return AppPath.SignInUp;
   }
 
