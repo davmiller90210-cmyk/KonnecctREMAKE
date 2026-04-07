@@ -191,6 +191,14 @@ export const KonnecctProjectsEmbed = () => {
         : `/${workspaceSlug}${pathSuffix}`
       : '/';
 
+  useEffect(() => {
+    // Plane's "Visit Profile" can navigate to /projects/profile which is not part
+    // of the unified Konnecct Projects surface. Keep users in the CRM profile.
+    if (location.pathname === '/projects/profile') {
+      navigate('/settings/profile', { replace: true });
+    }
+  }, [location.pathname, navigate]);
+
   const planePathSyncPrefix =
     workspaceSlug !== '' ? `${INTERNAL_PLANE_PATH}/${workspaceSlug}` : null;
 
