@@ -16,6 +16,7 @@ import { loadRemote, registerRemotes } from '@module-federation/runtime';
 import {
   REACT_APP_PLANE_EMBED,
   REACT_APP_PLANE_MF_MODULE,
+  REACT_APP_PLANE_WORKSPACE_SLUG,
   REACT_APP_PLANE_WEB_URL,
 } from '~/config';
 
@@ -35,6 +36,7 @@ const USER_PROJECTS_PREFIX = '/projects';
 const INTERNAL_PLANE_PATH = '/_konnecct/plane';
 
 const MF_SESSION_FAIL = 'konnecct.plane.mf.failed.v1';
+const PLANE_WORKSPACE_SLUG_STORAGE_KEY = 'konnecct.plane.workspaceSlug';
 
 const StyledShell = styled.div`
   display: flex;
@@ -147,7 +149,25 @@ export const KonnecctProjectsEmbed = () => {
   const navigate = useNavigate();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const currentWorkspace = useAtomStateValue(currentWorkspaceState);
-  const workspaceSlug = currentWorkspace?.subdomain ?? '';
+  const workspaceSlug = useMemo(() => {
+    const fromEnv = REACT_APP_PLANE_WORKSPACE_SLUG.trim();
+    if (fromEnv) {
+      return fromEnv;
+    }
+
+    try {
+      const fromStorage = localStorage
+        .getItem(PLANE_WORKSPACE_SLUG_STORAGE_KEY)
+        ?.trim();
+      if (fromStorage) {
+        return fromStorage;
+      }
+    } catch {
+      /* storage unavailable */
+    }
+
+    return currentWorkspace?.subdomain ?? '';
+  }, [currentWorkspace?.subdomain]);
 
   const explicit = REACT_APP_PLANE_WEB_URL.trim().replace(/\/$/, '');
   const isLocalhost =

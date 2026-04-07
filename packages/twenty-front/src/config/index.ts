@@ -46,3 +46,9 @@ export const REACT_APP_PLANE_MF_MODULE =
   window._env_?.REACT_APP_PLANE_MF_MODULE ||
   process.env.REACT_APP_PLANE_MF_MODULE ||
   '';
+
+/** Optional explicit Plane workspace slug override. */
+export const REACT_APP_PLANE_WORKSPACE_SLUG =
+  window._env_?.REACT_APP_PLANE_WORKSPACE_SLUG ||
+  process.env.REACT_APP_PLANE_WORKSPACE_SLUG ||
+  '';

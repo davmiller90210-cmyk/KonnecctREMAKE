@@ -17,14 +17,7 @@ export const KonnecctProjectsNavigationSection = () => {
 
   const childRoutes: { label: string; to: string }[] = [
     { label: t`Home`, to: `${AppPath.Projects}` },
-    { label: t`Inbox`, to: `${AppPath.Projects}/notifications` },
-    { label: t`Your work`, to: `${AppPath.Projects}/profile` },
-    { label: t`Stickies`, to: `${AppPath.Projects}/stickies` },
-    { label: t`Drafts`, to: `${AppPath.Projects}/drafts` },
     { label: t`Projects`, to: `${AppPath.Projects}/projects` },
-    { label: t`Views`, to: `${AppPath.Projects}/views` },
-    { label: t`Analytics`, to: `${AppPath.Projects}/analytics` },
-    { label: t`Archives`, to: `${AppPath.Projects}/projects/archives` },
   ];
   const { toggleNavigationSection } = useNavigationSection('KonnecctProjects');
   const isNavigationSectionOpen = useAtomFamilyStateValue(

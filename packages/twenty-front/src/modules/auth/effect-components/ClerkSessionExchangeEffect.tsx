@@ -99,10 +99,24 @@ export const ClerkSessionExchangeEffect = () => {
               return;
             }
 
-            const data = (await bridgeRes.json()) as { bridgeToken?: string };
+            const data = (await bridgeRes.json()) as {
+              bridgeToken?: string;
+              workspaceSlug?: string;
+            };
 
             if (!data.bridgeToken) {
               return;
+            }
+
+            if (data.workspaceSlug) {
+              try {
+                localStorage.setItem(
+                  'konnecct.plane.workspaceSlug',
+                  data.workspaceSlug,
+                );
+              } catch {
+                /* storage unavailable */
+              }
             }
 
             await fetch('/auth/konnecct-bridge/', {
