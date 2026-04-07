@@ -1,37 +1,72 @@
 import {
-  BadRequestException,
   Controller,
   HttpCode,
   HttpStatus,
-  InternalServerErrorException,
   Logger,
   Post,
   Req,
   UnauthorizedException,
   UseFilters,
+  HttpException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { createClerkClient, verifyToken } from '@clerk/backend';
 import { type Request } from 'express';
 import * as jwt from 'jsonwebtoken';
 import { IsNull, Repository } from 'typeorm';
+import { isDefined } from 'twenty-shared/utils';
 
 import {
   KeyValuePairEntity,
   KeyValuePairType,
 } from 'src/engine/core-modules/key-value-pair/key-value-pair.entity';
 import { AuthRestApiExceptionFilter } from 'src/engine/core-modules/auth/filters/auth-rest-api-exception.filter';
+import { UserEntity } from 'src/engine/core-modules/user/user.entity';
+import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user-workspace.entity';
 import { WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
+import { UserRoleService } from 'src/engine/metadata-modules/user-role/user-role.service';
 
 type ClerkTokenClaims = {
   sub?: string;
   org_id?: string;
   orgId?: string;
+  email?: string;
+  email_address?: string;
 };
 
-/**
- * Konnecct ↔ Plane: Clerk session reconciliation and JWT bridge for a single Plane Django session.
- */
+const PLANE_ROLE_ADMIN = 20;
+const PLANE_ROLE_MEMBER = 15;
+const PLANE_RESERVED_WORKSPACE_SLUGS = new Set([
+  'app',
+  'api',
+  'auth',
+  'admin',
+  'projects',
+  'spaces',
+  'live',
+  'static',
+  'uploads',
+  'god-mode',
+]);
+
+const toSafePlaneWorkspaceSlug = (raw: string, fallbackSeed: string) => {
+  const normalized = raw
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 48);
+
+  if (
+    normalized.length >= 2 &&
+    !PLANE_RESERVED_WORKSPACE_SLUGS.has(normalized)
+  ) {
+    return normalized;
+  }
+
+  return `ws-${fallbackSeed.replace(/[^a-z0-9]/gi, '').slice(0, 12).toLowerCase()}`;
+};
+
 @Controller('integrations/plane')
 @UseFilters(AuthRestApiExceptionFilter)
 export class PlaneIntegrationController {
@@ -42,6 +77,11 @@ export class PlaneIntegrationController {
     private readonly keyValuePairRepository: Repository<KeyValuePairEntity>,
     @InjectRepository(WorkspaceEntity)
     private readonly workspaceRepository: Repository<WorkspaceEntity>,
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
+    @InjectRepository(UserWorkspaceEntity)
+    private readonly userWorkspaceRepository: Repository<UserWorkspaceEntity>,
+    private readonly userRoleService: UserRoleService,
   ) {}
 
   @Post('sync')
@@ -92,17 +132,17 @@ export class PlaneIntegrationController {
     };
   }
 
-  /**
-   * Mints a short-lived HS256 JWT for POST /auth/konnecct-bridge/ on the Plane API (same host).
-   */
   @Post('bridge-token')
   @HttpCode(HttpStatus.OK)
   async bridgeToken(@Req() req: Request) {
-    const bridgeSecret = process.env.KONNECCT_BRIDGE_SECRET?.trim();
+    const bridgeSecret =
+      process.env.KONNECCT_BRIDGE_SECRET?.trim() ||
+      process.env.PLANE_KONNECCT_BRIDGE_SECRET?.trim();
 
     if (!bridgeSecret) {
-      throw new InternalServerErrorException(
+      throw new HttpException(
         'KONNECCT_BRIDGE_SECRET is not configured on crm-server',
+        HttpStatus.SERVICE_UNAVAILABLE,
       );
     }
 
@@ -128,13 +168,12 @@ export class PlaneIntegrationController {
       throw new UnauthorizedException('Invalid Clerk session token');
     }
 
-    const clerkUserId = claims.sub;
     const orgHeader = req.headers['x-clerk-org-id'];
     const orgFromHeader = Array.isArray(orgHeader) ? orgHeader[0] : orgHeader;
     const clerkOrgId =
       claims.org_id ?? claims.orgId ?? orgFromHeader?.toString().trim();
 
-    if (!clerkUserId || !clerkOrgId) {
+    if (!claims.sub || !clerkOrgId) {
       throw new UnauthorizedException(
         'Plane bridge requires a Clerk organization (X-Clerk-Org-Id or org_id in JWT).',
       );
@@ -149,9 +188,9 @@ export class PlaneIntegrationController {
       },
     });
 
-    if (!orgMapping?.workspaceId) {
-      throw new BadRequestException(
-        'No Clerk org → workspace mapping yet. Complete Konnecct sign-in once to provision the workspace.',
+    if (!isDefined(orgMapping?.workspaceId)) {
+      throw new UnauthorizedException(
+        'No Twenty workspace mapped for this Clerk organization yet. Complete sign-in first.',
       );
     }
 
@@ -160,7 +199,7 @@ export class PlaneIntegrationController {
     });
 
     if (!workspace) {
-      throw new BadRequestException('Workspace not found for Clerk organization mapping');
+      throw new UnauthorizedException('Mapped workspace not found');
     }
 
     const clerkClient = createClerkClient({ secretKey });
@@ -168,7 +207,7 @@ export class PlaneIntegrationController {
     let clerkUser;
 
     try {
-      clerkUser = await clerkClient.users.getUser(clerkUserId);
+      clerkUser = await clerkClient.users.getUser(claims.sub);
     } catch (error) {
       this.logger.warn(`Plane bridge-token: getUser failed: ${String(error)}`);
       throw new UnauthorizedException('Could not load user from Clerk');
@@ -178,25 +217,65 @@ export class PlaneIntegrationController {
       (e) => e.id === clerkUser.primaryEmailAddressId,
     )?.emailAddress;
 
-    if (!primaryEmail) {
-      throw new BadRequestException('Clerk user has no primary email');
+    const email =
+      primaryEmail ?? claims.email ?? claims.email_address ?? undefined;
+
+    if (!email) {
+      throw new UnauthorizedException('Clerk user email is required');
     }
 
-    const workspaceSlug =
-      process.env.PLANE_KONNECCT_WORKSPACE_SLUG?.trim() || workspace.subdomain;
+    const user = await this.userRepository.findOne({
+      where: { email: email.toLowerCase() },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found in Twenty workspace');
+    }
+
+    const userWorkspace = await this.userWorkspaceRepository.findOne({
+      where: {
+        userId: user.id,
+        workspaceId: workspace.id,
+      },
+    });
+
+    let workspaceRole = PLANE_ROLE_MEMBER;
+
+    if (isDefined(userWorkspace)) {
+      const rolesMap = await this.userRoleService.getRolesByUserWorkspaces({
+        userWorkspaceIds: [userWorkspace.id],
+        workspaceId: workspace.id,
+      });
+      const roles = rolesMap.get(userWorkspace.id) ?? [];
+      const primaryRole = roles[0];
+
+      if (isDefined(primaryRole) && primaryRole.canUpdateAllSettings) {
+        workspaceRole = PLANE_ROLE_ADMIN;
+      }
+    }
+
+    const overrideSlug = process.env.PLANE_KONNECCT_WORKSPACE_SLUG?.trim();
+    const workspaceSlug = toSafePlaneWorkspaceSlug(
+      overrideSlug || workspace.subdomain,
+      workspace.id,
+    );
+    const workspaceName =
+      workspace.displayName?.trim() || workspace.subdomain || 'Workspace';
 
     const bridgeToken = jwt.sign(
       {
-        email: primaryEmail.toLowerCase(),
+        email: email.toLowerCase(),
         first_name: clerkUser.firstName ?? '',
         last_name: clerkUser.lastName ?? '',
-        clerk_user_id: clerkUserId,
+        clerk_user_id: claims.sub,
         workspace_slug: workspaceSlug,
+        workspace_name: workspaceName,
+        workspace_role: workspaceRole,
       },
       bridgeSecret,
-      { expiresIn: '5m', algorithm: 'HS256' },
+      { expiresIn: '5m', algorithm: 'HS256' as const },
     );
 
-    return { bridgeToken };
+    return { bridgeToken, workspaceSlug };
   }
 }

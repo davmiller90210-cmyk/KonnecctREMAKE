@@ -180,6 +180,12 @@ export const KonnecctProjectsEmbed = () => {
   }, [resolved, workspaceSlug, location.pathname]);
 
   const pathSuffix = suffixFromUserProjectsPath(location.pathname);
+  const planePathSuffix =
+    workspaceSlug !== ''
+      ? pathSuffix === '/'
+        ? `/${workspaceSlug}/`
+        : `/${workspaceSlug}${pathSuffix}`
+      : '/';
 
   const planePathSyncPrefix =
     workspaceSlug !== '' ? `${INTERNAL_PLANE_PATH}/${workspaceSlug}` : null;
@@ -336,7 +342,7 @@ export const KonnecctProjectsEmbed = () => {
             }
           >
             <Remote
-              konnecctPathSuffix={pathSuffix}
+              konnecctPathSuffix={planePathSuffix}
               konnecctPlaneBasename={INTERNAL_PLANE_PATH}
             />
           </Suspense>
@@ -360,7 +366,7 @@ export const KonnecctProjectsEmbed = () => {
           }
         >
           <Remote
-            konnecctPathSuffix={pathSuffix}
+            konnecctPathSuffix={planePathSuffix}
             konnecctPlaneBasename={INTERNAL_PLANE_PATH}
           />
         </Suspense>

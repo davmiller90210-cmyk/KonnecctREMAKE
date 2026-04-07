@@ -116,7 +116,7 @@ services:
       # Empty = same-origin https://app.../projects + /_konnecct/plane (fork web image with Vite base).
       REACT_APP_PLANE_WEB_URL: ${REACT_APP_PLANE_WEB_URL:-}
       # auto = try Module Federation then iframe; federation = unified shell only (needs remoteEntry.js).
-      REACT_APP_PLANE_EMBED: ${REACT_APP_PLANE_EMBED:-auto}
+      REACT_APP_PLANE_EMBED: ${REACT_APP_PLANE_EMBED:-federation}
       REACT_APP_PLANE_MF_MODULE: ${REACT_APP_PLANE_MF_MODULE:-}
       PLANE_WEB_URL: ${PLANE_WEB_URL:-https://app.konnecct.com/_konnecct/plane}
       KONNECCT_BRIDGE_SECRET: ${KONNECCT_BRIDGE_SECRET:-}
