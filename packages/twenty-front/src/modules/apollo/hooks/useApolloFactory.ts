@@ -80,16 +80,18 @@ export const useApolloFactory = (options: Partial<Options> = {}) => {
         setTokenPair(tokenPair);
       },
       onUnauthenticatedError: () => {
+        // During Clerk migration, a transient 401 can happen while session exchange
+        // is still settling. Don't wipe app auth state in that case or we cause
+        // welcome<->app redirect ping-pong.
+        if (isClerkSessionActive()) {
+          return;
+        }
+
         setTokenPair(null);
         setCurrentUser(null);
         setCurrentWorkspaceMember(null);
         setCurrentWorkspace(null);
         setCurrentUserWorkspace(null);
-
-        // Avoid redirect ping-pong while Clerk session is active during migration.
-        if (isClerkSessionActive()) {
-          return;
-        }
 
         if (
           !isMatchingLocation(location, AppPath.Verify) &&
