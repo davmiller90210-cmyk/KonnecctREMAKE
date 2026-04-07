@@ -44,6 +44,7 @@ import { SettingsAgentEvalsTab } from './components/SettingsAgentEvalsTab';
 import { SettingsAgentLogsTab } from './components/SettingsAgentLogsTab';
 import { SettingsAgentRoleTab } from './components/SettingsAgentRoleTab';
 import { SettingsAgentSettingsTab } from './components/SettingsAgentSettingsTab';
+import { pickSuperagentLook } from './constants/superagentLooks';
 import { SETTINGS_AGENT_DETAIL_TABS } from './constants/SettingsAgentDetailTabs';
 import { useSettingsAgentFormState } from './hooks/useSettingsAgentFormState';
 
@@ -313,15 +314,29 @@ export const SettingsAgentForm = ({ mode }: { mode: 'create' | 'edit' }) => {
       }
 
       if (isCreateMode) {
+        const assignedLook = pickSuperagentLook(
+          `${formValues.name ?? ''}-${formValues.label}`,
+        );
         const input: CreateAgentInput = {
           name: formValues.name,
           label: formValues.label,
           description: formValues.description,
-          icon: formValues.icon,
+          icon:
+            formValues.icon && formValues.icon !== 'IconRobot'
+              ? formValues.icon
+              : assignedLook.icon,
           modelId: formValues.modelId,
           roleId: formValues.role,
           prompt: formValues.prompt,
-          modelConfiguration: formValues.modelConfiguration,
+          modelConfiguration: {
+            ...(formValues.modelConfiguration ?? {}),
+            superagentProfile: {
+              lookId: assignedLook.id,
+              codename: assignedLook.codename,
+              imageUrl: assignedLook.imageUrl,
+              palette: assignedLook.palette,
+            },
+          },
           responseFormat: formValues.responseFormat,
           evaluationInputs: formValues.evaluationInputs,
         };

@@ -4,6 +4,7 @@ import { type ReactNode, useContext } from 'react';
 import { SettingsItemTypeTag } from '@/settings/components/SettingsItemTypeTag';
 import { TableCell } from '@/ui/layout/table/components/TableCell';
 import { TableRow } from '@/ui/layout/table/components/TableRow';
+import { AvatarOrIcon } from 'twenty-ui/components';
 import { OverflowingTextWithTooltip, useIcons } from 'twenty-ui/display';
 import { ThemeContext, themeCssVariables } from 'twenty-ui/theme-constants';
 import { type Agent } from '~/generated-metadata/graphql';
@@ -29,6 +30,15 @@ export const SettingsAIAgentTableRow = ({
   const { theme } = useContext(ThemeContext);
   const { getIcon } = useIcons();
   const Icon = getIcon(agent.icon || 'IconRobot');
+  const superagentImageUrl =
+    (agent.modelConfiguration as
+      | {
+          superagentProfile?: {
+            imageUrl?: string;
+          };
+        }
+      | null
+      | undefined)?.superagentProfile?.imageUrl ?? '';
 
   return (
     <TableRow
@@ -43,7 +53,14 @@ export const SettingsAIAgentTableRow = ({
         overflow="hidden"
       >
         <StyledIconContainer>
-          <Icon size={theme.icon.size.md} stroke={theme.icon.stroke.sm} />
+          <AvatarOrIcon
+            placeholder={agent.label}
+            avatarUrl={superagentImageUrl}
+            avatarType="rounded"
+            Icon={Icon}
+            size={theme.icon.size.md}
+            iconStroke={theme.icon.stroke.sm}
+          />
         </StyledIconContainer>
         <OverflowingTextWithTooltip text={agent.label} />
       </TableCell>

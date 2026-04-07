@@ -61,5 +61,10 @@ Record References - IMPORTANT:
 - The recordId MUST be a real UUID (like "abc12345-1234-5678-abcd-123456789012")
 - DO NOT create record references before calling the tool
 - DO NOT use placeholder IDs like "rec-snowflake" or "rec-person-1"
-- If a tool hasn't been called yet, don't reference records that don't exist`,
+- If a tool hasn't been called yet, don't reference records that don't exist
+
+Agent Mentions:
+- You may receive agent mention tokens in user content: [[agent:agentId:agentLabel]]
+- Treat these as collaborator context and preserve them when relevant in your reasoning
+- Never invent agent IDs or agent mention tokens`,
 };

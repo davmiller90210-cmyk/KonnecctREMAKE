@@ -1,5 +1,5 @@
 import { Logger, UseGuards } from '@nestjs/common';
-import { Args, Mutation, Query } from '@nestjs/graphql';
+import { Args, Int, Mutation, Query } from '@nestjs/graphql';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { msg } from '@lingui/core/macro';
@@ -20,6 +20,7 @@ import { WorkspaceAuthGuard } from 'src/engine/guards/workspace-auth.guard';
 import { AgentTurnDTO } from 'src/engine/metadata-modules/ai/ai-agent-execution/dtos/agent-turn.dto';
 import { AgentTurnEntity } from 'src/engine/metadata-modules/ai/ai-agent-execution/entities/agent-turn.entity';
 import { AgentTurnEvaluationDTO } from 'src/engine/metadata-modules/ai/ai-agent-monitor/dtos/agent-turn-evaluation.dto';
+import { AgentTurnEvaluationEntity } from 'src/engine/metadata-modules/ai/ai-agent-monitor/entities/agent-turn-evaluation.entity';
 import { RunEvaluationInputJob } from 'src/engine/metadata-modules/ai/ai-agent-monitor/jobs/run-evaluation-input.job';
 import { AgentTurnGraderService } from 'src/engine/metadata-modules/ai/ai-agent-monitor/services/agent-turn-grader.service';
 import { AgentChatThreadEntity } from 'src/engine/metadata-modules/ai/ai-chat/entities/agent-chat-thread.entity';
@@ -34,6 +35,8 @@ export class AgentTurnResolver {
     private readonly turnRepository: Repository<AgentTurnEntity>,
     @InjectRepository(AgentChatThreadEntity)
     private readonly threadRepository: Repository<AgentChatThreadEntity>,
+    @InjectRepository(AgentTurnEvaluationEntity)
+    private readonly evaluationRepository: Repository<AgentTurnEvaluationEntity>,
     @InjectMessageQueue(MessageQueue.aiQueue)
     private readonly messageQueueService: MessageQueueService,
     private readonly graderService: AgentTurnGraderService,
@@ -57,6 +60,29 @@ export class AgentTurnResolver {
     const evaluation = await this.graderService.evaluateTurn(turnId);
 
     return evaluation;
+  }
+
+  @Mutation(() => AgentTurnEvaluationDTO)
+  async createManualAgentTurnEvaluation(
+    @Args('turnId', { type: () => UUIDScalarType }) turnId: string,
+    @Args('score', { type: () => Int }) score: number,
+    @Args('comment', { type: () => String, nullable: true }) comment?: string,
+  ): Promise<AgentTurnEvaluationDTO> {
+    const turn = await this.turnRepository.findOne({ where: { id: turnId } });
+
+    if (!turn) {
+      throw new NotFoundError('Turn not found', {
+        userFriendlyMessage: msg`The selected turn no longer exists.`,
+      });
+    }
+
+    const evaluation = this.evaluationRepository.create({
+      turnId,
+      score,
+      comment: comment ?? null,
+    });
+
+    return await this.evaluationRepository.save(evaluation);
   }
 
   @Mutation(() => AgentTurnDTO)

@@ -197,7 +197,7 @@ const useSettingsNavigationItems = (): SettingsNavigationSection[] => {
           modifier: 'new',
         },
         {
-          label: t`AI`,
+          label: t`Konnecct Agents`,
           path: SettingsPath.AI,
           Icon: IconSparkles,
           isHidden:

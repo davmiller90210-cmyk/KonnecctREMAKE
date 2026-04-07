@@ -9,6 +9,13 @@ export const MentionTag = Node.create({
   atom: true,
 
   addAttributes: () => ({
+    mentionType: {
+      default: 'record',
+      parseHTML: (element) => element.getAttribute('data-mention-type'),
+      renderHTML: (attributes) => ({
+        'data-mention-type': attributes.mentionType,
+      }),
+    },
     recordId: {
       default: null,
       parseHTML: (element) => element.getAttribute('data-record-id'),
@@ -55,7 +62,11 @@ export const MentionTag = Node.create({
   },
 
   renderText: ({ node }) => {
-    const { objectNameSingular, recordId, label } = node.attrs;
+    const { mentionType, objectNameSingular, recordId, label } = node.attrs;
+
+    if (mentionType === 'agent') {
+      return `[[agent:${recordId}:${label}]]`;
+    }
 
     return `[[record:${objectNameSingular}:${recordId}:${label}]]`;
   },

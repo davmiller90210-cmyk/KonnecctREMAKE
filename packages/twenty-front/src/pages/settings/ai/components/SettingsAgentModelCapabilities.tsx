@@ -35,6 +35,7 @@ const StyledCheckboxLabel = styled.div`
 `;
 
 type ModelConfiguration = {
+  [key: string]: unknown;
   webSearch?: {
     enabled: boolean;
     configuration?: Record<string, unknown>;

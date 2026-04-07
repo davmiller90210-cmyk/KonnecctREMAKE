@@ -18,11 +18,28 @@ import { Section } from 'twenty-ui/layout';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 import { type Agent } from '~/generated-metadata/graphql';
 import { SettingsAgentDeleteConfirmationModal } from '~/pages/settings/ai/components/SettingsAgentDeleteConfirmationModal';
+import {
+  SettingsAgentOrchestrationProfile,
+  type AgentRuntimeProfile,
+} from '~/pages/settings/ai/components/SettingsAgentOrchestrationProfile';
 import { SettingsAgentResponseFormat } from '~/pages/settings/ai/components/SettingsAgentResponseFormat';
 import { computeMetadataNameFromLabel } from '~/pages/settings/data-model/utils/computeMetadataNameFromLabel';
 import { SettingsAgentModelCapabilities } from '~/pages/settings/ai/components/SettingsAgentModelCapabilities';
 import { type SettingsAIAgentFormValues } from '~/pages/settings/ai/hooks/useSettingsAgentFormState';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+
+type ModelConfiguration = {
+  webSearch?: {
+    enabled: boolean;
+    configuration?: Record<string, unknown>;
+  };
+  twitterSearch?: {
+    enabled: boolean;
+    configuration?: Record<string, unknown>;
+  };
+  runtimeProfile?: AgentRuntimeProfile;
+  [key: string]: unknown;
+};
 
 const StyledFormContainer = styled.div`
   display: flex;
@@ -85,6 +102,8 @@ export const SettingsAgentSettingsTab = ({
     : activeModelOptions;
 
   const noModelsAvailable = modelOptions.length === 0;
+  const modelConfiguration = (formValues.modelConfiguration ??
+    {}) as ModelConfiguration;
 
   const fillNameFromLabel = (label: string) => {
     if (isDefined(label)) {
@@ -149,7 +168,7 @@ export const SettingsAgentSettingsTab = ({
         <StyledFormContainer>
           <SettingsAgentModelCapabilities
             selectedModelId={formValues.modelId}
-            modelConfiguration={formValues.modelConfiguration || {}}
+            modelConfiguration={modelConfiguration}
             onConfigurationChange={(configuration) =>
               onFieldChange('modelConfiguration', configuration)
             }
@@ -157,6 +176,18 @@ export const SettingsAgentSettingsTab = ({
           />
         </StyledFormContainer>
       )}
+      <StyledFormContainer>
+        <SettingsAgentOrchestrationProfile
+          value={modelConfiguration.runtimeProfile ?? {}}
+          onChange={(runtimeProfile) =>
+            onFieldChange('modelConfiguration', {
+              ...modelConfiguration,
+              runtimeProfile,
+            })
+          }
+          disabled={disabled}
+        />
+      </StyledFormContainer>
       <StyledFormContainer>
         <TextArea
           textAreaId="agent-prompt-textarea"

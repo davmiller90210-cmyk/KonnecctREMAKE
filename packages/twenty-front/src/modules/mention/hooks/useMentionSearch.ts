@@ -8,7 +8,9 @@ import {
   type SearchQuery,
   type SearchQueryVariables,
 } from '~/generated/graphql';
+import { FindManyAgentsDocument } from '~/generated-metadata/graphql';
 import type { MentionSearchResult } from '@/mention/types/MentionSearchResult';
+import { normalizeSearchText } from '~/utils/normalizeSearchText';
 
 const MENTION_SEARCH_LIMIT = 50;
 
@@ -46,14 +48,46 @@ export const useMentionSearch = () => {
       });
 
       const searchRecords = data?.search.edges.map((edge) => edge.node) ?? [];
+      const { data: agentsData } = await apolloCoreClient.query({
+        query: FindManyAgentsDocument,
+      });
 
-      return searchRecords.map((searchRecord) => ({
-        recordId: searchRecord.recordId,
-        objectNameSingular: searchRecord.objectNameSingular,
-        objectLabelSingular: searchRecord.objectLabelSingular,
-        label: searchRecord.label,
-        imageUrl: searchRecord.imageUrl ?? '',
-      }));
+      const normalizedQuery = normalizeSearchText(query);
+      const matchedAgents = (agentsData?.findManyAgents ?? [])
+        .filter(
+          (agent) =>
+            normalizeSearchText(agent.label).includes(normalizedQuery) ||
+            normalizeSearchText(agent.name).includes(normalizedQuery),
+        )
+        .map((agent) => ({
+          // Keep exact assigned Superagent portrait in mention chips.
+          imageUrl:
+            (agent.modelConfiguration as
+              | {
+                  superagentProfile?: {
+                    imageUrl?: string;
+                  };
+                }
+              | null
+              | undefined)?.superagentProfile?.imageUrl ?? '',
+          mentionType: 'agent' as const,
+          recordId: agent.id,
+          objectNameSingular: 'agent',
+          objectLabelSingular: 'Agent',
+          label: agent.label,
+        }));
+
+      return [
+        ...matchedAgents,
+        ...searchRecords.map((searchRecord) => ({
+          mentionType: 'record' as const,
+          recordId: searchRecord.recordId,
+          objectNameSingular: searchRecord.objectNameSingular,
+          objectLabelSingular: searchRecord.objectLabelSingular,
+          label: searchRecord.label,
+          imageUrl: searchRecord.imageUrl ?? '',
+        })),
+      ];
     },
     [apolloCoreClient, objectsToSearch],
   );

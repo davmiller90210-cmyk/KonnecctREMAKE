@@ -13,6 +13,7 @@ import { ImportRecordsNoSelectionRecordCommand } from '@/command-menu-item/recor
 import { SeeDeletedRecordsNoSelectionRecordCommand } from '@/command-menu-item/record/no-selection/components/SeeDeletedRecordsNoSelectionRecordCommand';
 import { NoSelectionRecordCommandKeys } from '@/command-menu-item/record/no-selection/types/NoSelectionRecordCommandKeys';
 import { AddToFavoritesSingleRecordCommand } from '@/command-menu-item/record/single-record/components/AddToFavoritesSingleRecordCommand';
+import { AskKonnecctAgentSingleRecordCommand } from '@/command-menu-item/record/single-record/components/AskKonnecctAgentSingleRecordCommand';
 import { DeleteSingleRecordCommand } from '@/command-menu-item/record/single-record/components/DeleteSingleRecordCommand';
 import { DestroySingleRecordCommand } from '@/command-menu-item/record/single-record/components/DestroySingleRecordCommand';
 import { ExportNoteSingleRecordCommand } from '@/command-menu-item/record/single-record/components/ExportNoteSingleRecordCommand';
@@ -60,6 +61,7 @@ import {
   IconRotate2,
   IconSettings,
   IconSettingsAutomation,
+  IconRobot,
   IconTargetArrow,
   IconTrash,
   IconTrashX,
@@ -322,6 +324,26 @@ export const DEFAULT_RECORD_COMMAND_MENU_ITEMS_CONFIG: Record<
     ],
     component: <AddToFavoritesSingleRecordCommand />,
   },
+  [SingleRecordCommandKeys.ASK_KONNECCT_AGENT]: {
+    type: CommandMenuItemType.Standard,
+    scope: CommandMenuItemScope.RecordSelection,
+    key: SingleRecordCommandKeys.ASK_KONNECCT_AGENT,
+    label: msg`Ask Konnecct Agent`,
+    shortLabel: msg`Ask Agent`,
+    position: 11,
+    isPinned: true,
+    Icon: IconRobot,
+    shouldBeRegistered: ({ selectedRecord, objectMetadataItem }) =>
+      !objectMetadataItem?.isSystem &&
+      isDefined(selectedRecord) &&
+      !selectedRecord.isRemote &&
+      !isDefined(selectedRecord?.deletedAt),
+    availableOn: [
+      CommandMenuItemViewType.INDEX_PAGE_SINGLE_RECORD_SELECTION,
+      CommandMenuItemViewType.SHOW_PAGE,
+    ],
+    component: <AskKonnecctAgentSingleRecordCommand />,
+  },
   [SingleRecordCommandKeys.REMOVE_FROM_FAVORITES]: {
     type: CommandMenuItemType.Standard,
     scope: CommandMenuItemScope.RecordSelection,
@@ -329,7 +351,7 @@ export const DEFAULT_RECORD_COMMAND_MENU_ITEMS_CONFIG: Record<
     label: msg`Remove from favorites`,
     shortLabel: msg`Remove from favorites`,
     isPinned: true,
-    position: 10,
+    position: 12,
     Icon: IconHeartOff,
     shouldBeRegistered: ({
       selectedRecord,
@@ -356,7 +378,7 @@ export const DEFAULT_RECORD_COMMAND_MENU_ITEMS_CONFIG: Record<
     key: SingleRecordCommandKeys.EXPORT_NOTE_TO_PDF,
     label: msg`Export to PDF`,
     shortLabel: msg`Export`,
-    position: 11,
+    position: 13,
     isPinned: false,
     Icon: IconFileExport,
     shouldBeRegistered: ({ selectedRecord, isNoteOrTask }) =>
@@ -372,7 +394,7 @@ export const DEFAULT_RECORD_COMMAND_MENU_ITEMS_CONFIG: Record<
     key: SingleRecordCommandKeys.EXPORT_FROM_RECORD_INDEX,
     label: msg`Export`,
     shortLabel: msg`Export`,
-    position: 12,
+    position: 14,
     Icon: IconFileExport,
     accent: 'default',
     isPinned: false,
@@ -388,7 +410,7 @@ export const DEFAULT_RECORD_COMMAND_MENU_ITEMS_CONFIG: Record<
     key: SingleRecordCommandKeys.EXPORT_FROM_RECORD_SHOW,
     label: msg`Export`,
     shortLabel: msg`Export`,
-    position: 13,
+    position: 15,
     Icon: IconFileExport,
     accent: 'default',
     isPinned: false,
@@ -404,7 +426,7 @@ export const DEFAULT_RECORD_COMMAND_MENU_ITEMS_CONFIG: Record<
     key: MultipleRecordsCommandKeys.UPDATE,
     label: msg`Update records`,
     shortLabel: msg`Update`,
-    position: 14,
+    position: 16,
     Icon: IconEdit,
     accent: 'default',
     isPinned: true,
@@ -421,7 +443,7 @@ export const DEFAULT_RECORD_COMMAND_MENU_ITEMS_CONFIG: Record<
     key: MultipleRecordsCommandKeys.MERGE,
     label: msg`Merge records`,
     shortLabel: msg`Merge`,
-    position: 15,
+    position: 17,
     Icon: IconArrowMerge,
     accent: 'default',
     isPinned: false,
@@ -444,7 +466,7 @@ export const DEFAULT_RECORD_COMMAND_MENU_ITEMS_CONFIG: Record<
     key: MultipleRecordsCommandKeys.EXPORT,
     label: msg`Export records`,
     shortLabel: msg`Export`,
-    position: 16,
+    position: 18,
     Icon: IconFileExport,
     accent: 'default',
     isPinned: false,
@@ -459,7 +481,7 @@ export const DEFAULT_RECORD_COMMAND_MENU_ITEMS_CONFIG: Record<
     key: NoSelectionRecordCommandKeys.IMPORT_RECORDS,
     label: msg`Import records`,
     shortLabel: msg`Import`,
-    position: 17,
+    position: 19,
     Icon: IconFileImport,
     accent: 'default',
     isPinned: false,
@@ -477,7 +499,7 @@ export const DEFAULT_RECORD_COMMAND_MENU_ITEMS_CONFIG: Record<
     key: NoSelectionRecordCommandKeys.EXPORT_VIEW,
     label: msg`Export view`,
     shortLabel: msg`Export`,
-    position: 18,
+    position: 20,
     Icon: IconFileExport,
     accent: 'default',
     isPinned: false,
@@ -492,7 +514,7 @@ export const DEFAULT_RECORD_COMMAND_MENU_ITEMS_CONFIG: Record<
     key: NoSelectionRecordCommandKeys.SEE_DELETED_RECORDS,
     label: msg`See deleted records`,
     shortLabel: msg`Deleted records`,
-    position: 19,
+    position: 21,
     Icon: IconRotate2,
     accent: 'default',
     isPinned: false,
@@ -507,7 +529,7 @@ export const DEFAULT_RECORD_COMMAND_MENU_ITEMS_CONFIG: Record<
     key: NoSelectionRecordCommandKeys.CREATE_NEW_VIEW,
     label: msg`Create View`,
     shortLabel: msg`Create View`,
-    position: 20,
+    position: 22,
     Icon: IconLayout,
     accent: 'default',
     isPinned: false,
@@ -522,7 +544,7 @@ export const DEFAULT_RECORD_COMMAND_MENU_ITEMS_CONFIG: Record<
     key: NoSelectionRecordCommandKeys.HIDE_DELETED_RECORDS,
     label: msg`Hide deleted records`,
     shortLabel: msg`Hide deleted`,
-    position: 21,
+    position: 23,
     Icon: IconEyeOff,
     accent: 'default',
     isPinned: false,
@@ -537,7 +559,7 @@ export const DEFAULT_RECORD_COMMAND_MENU_ITEMS_CONFIG: Record<
     key: NoSelectionRecordCommandKeys.GO_TO_WORKFLOWS,
     label: msg`Go to Workflows`,
     shortLabel: msg`See Workflows`,
-    position: 22,
+    position: 24,
     Icon: IconSettingsAutomation,
     accent: 'default',
     isPinned: false,
@@ -570,7 +592,7 @@ export const DEFAULT_RECORD_COMMAND_MENU_ITEMS_CONFIG: Record<
     key: NoSelectionRecordCommandKeys.GO_TO_PEOPLE,
     label: msg`Go to People`,
     shortLabel: msg`People`,
-    position: 23,
+    position: 25,
     Icon: IconUser,
     isPinned: false,
     availableOn: [
@@ -602,7 +624,7 @@ export const DEFAULT_RECORD_COMMAND_MENU_ITEMS_CONFIG: Record<
     key: NoSelectionRecordCommandKeys.GO_TO_COMPANIES,
     label: msg`Go to Companies`,
     shortLabel: msg`Companies`,
-    position: 24,
+    position: 26,
     Icon: IconBuildingSkyscraper,
     isPinned: false,
     availableOn: [
@@ -634,7 +656,7 @@ export const DEFAULT_RECORD_COMMAND_MENU_ITEMS_CONFIG: Record<
     key: NoSelectionRecordCommandKeys.GO_TO_DASHBOARDS,
     label: msg`Go to Dashboards`,
     shortLabel: msg`Dashboards`,
-    position: 25,
+    position: 27,
     Icon: IconLayoutDashboard,
     isPinned: false,
     availableOn: [
@@ -665,7 +687,7 @@ export const DEFAULT_RECORD_COMMAND_MENU_ITEMS_CONFIG: Record<
     key: NoSelectionRecordCommandKeys.GO_TO_OPPORTUNITIES,
     label: msg`Go to Opportunities`,
     shortLabel: msg`Opportunities`,
-    position: 26,
+    position: 28,
     Icon: IconTargetArrow,
     isPinned: false,
     availableOn: [
@@ -698,7 +720,7 @@ export const DEFAULT_RECORD_COMMAND_MENU_ITEMS_CONFIG: Record<
     key: NoSelectionRecordCommandKeys.GO_TO_SETTINGS,
     label: msg`Go to Settings`,
     shortLabel: msg`Settings`,
-    position: 27,
+    position: 29,
     Icon: IconSettings,
     isPinned: false,
     availableOn: [
@@ -724,7 +746,7 @@ export const DEFAULT_RECORD_COMMAND_MENU_ITEMS_CONFIG: Record<
     key: NoSelectionRecordCommandKeys.GO_TO_TASKS,
     label: msg`Go to Tasks`,
     shortLabel: msg`Tasks`,
-    position: 28,
+    position: 30,
     Icon: IconCheckbox,
     isPinned: false,
     availableOn: [
@@ -756,7 +778,7 @@ export const DEFAULT_RECORD_COMMAND_MENU_ITEMS_CONFIG: Record<
     key: NoSelectionRecordCommandKeys.GO_TO_NOTES,
     label: msg`Go to Notes`,
     shortLabel: msg`Notes`,
-    position: 29,
+    position: 31,
     Icon: IconCheckbox,
     isPinned: false,
     availableOn: [
@@ -788,7 +810,7 @@ export const DEFAULT_RECORD_COMMAND_MENU_ITEMS_CONFIG: Record<
     label: msg`Edit Layout`,
     shortLabel: msg`Edit Layout`,
     isPinned: false,
-    position: 30,
+    position: 32,
     Icon: IconPencil,
     type: CommandMenuItemType.Standard,
     scope: CommandMenuItemScope.RecordSelection,

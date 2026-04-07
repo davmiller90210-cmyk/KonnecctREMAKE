@@ -6,6 +6,7 @@ import { AIChatEmptyState } from '@/ai/components/AIChatEmptyState';
 import { AIChatStandaloneError } from '@/ai/components/AIChatStandaloneError';
 import { AgentChatContextPreview } from '@/ai/components/internal/AgentChatContextPreview';
 import { AgentChatFileUploadButton } from '@/ai/components/internal/AgentChatFileUploadButton';
+import { AgentRoutingIndicator } from '@/ai/components/internal/AgentRoutingIndicator';
 import { AIChatContextUsageButton } from '@/ai/components/internal/AIChatContextUsageButton';
 import { AIChatEditorFocusEffect } from '@/ai/components/internal/AIChatEditorFocusEffect';
 import { AIChatSkeletonLoader } from '@/ai/components/internal/AIChatSkeletonLoader';
@@ -158,6 +159,7 @@ export const AIChatEditorSection = () => {
       <AIChatSkeletonLoader />
 
       <StyledInputArea isMobile={isMobile}>
+        <AgentRoutingIndicator />
         <AgentChatContextPreview />
         <StyledInputBox>
           <StyledEditorWrapper>

@@ -30,6 +30,7 @@ import {
 } from 'src/engine/core-modules/tool-provider/tools';
 import { type WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
 import { AgentActorContextService } from 'src/engine/metadata-modules/ai/ai-agent-execution/services/agent-actor-context.service';
+import { AgentService } from 'src/engine/metadata-modules/ai/ai-agent/agent.service';
 import { AGENT_CONFIG } from 'src/engine/metadata-modules/ai/ai-agent/constants/agent-config.const';
 import { type BrowsingContextType } from 'src/engine/metadata-modules/ai/ai-agent/types/browsingContext.type';
 import { repairToolCall } from 'src/engine/metadata-modules/ai/ai-agent/utils/repair-tool-call.util';
@@ -78,6 +79,7 @@ export class ChatExecutionService {
     private readonly aiModelRegistryService: AiModelRegistryService,
     private readonly aiBillingService: AiBillingService,
     private readonly agentActorContextService: AgentActorContextService,
+    private readonly agentService: AgentService,
     private readonly workspaceDomainsService: WorkspaceDomainsService,
     private readonly systemPromptBuilder: SystemPromptBuilderService,
     private readonly exceptionHandlerService: ExceptionHandlerService,
@@ -92,15 +94,22 @@ export class ChatExecutionService {
     onCodeExecutionUpdate,
     modelId,
   }: ChatExecutionOptions): Promise<ChatExecutionResult> {
+    const selectedAgentId = this.extractMentionedAgentId(messages);
+    const selectedAgent = isDefined(selectedAgentId)
+      ? await this.resolveSelectedAgent(selectedAgentId, workspace.id)
+      : null;
+
     const { actorContext, roleId, userId, userContext } =
       await this.agentActorContextService.buildUserAndAgentActorContext(
         userWorkspaceId,
         workspace.id,
       );
 
+    const effectiveRoleId = selectedAgent?.roleId ?? roleId;
+
     const toolContext = {
       workspaceId: workspace.id,
-      roleId,
+      roleId: effectiveRoleId,
       actorContext,
       userId,
       userWorkspaceId,
@@ -113,7 +122,7 @@ export class ChatExecutionService {
 
     const toolCatalog = await this.toolRegistry.buildToolIndex(
       workspace.id,
-      roleId,
+      effectiveRoleId,
       { userId, userWorkspaceId },
     );
 
@@ -130,7 +139,10 @@ export class ChatExecutionService {
       toolContext,
     );
 
-    const resolvedModelId = modelId ?? workspace.smartModel;
+    const selectedAgentModelId =
+      selectedAgent?.modelId === 'auto' ? undefined : selectedAgent?.modelId;
+    const resolvedModelId =
+      modelId ?? selectedAgentModelId ?? workspace.smartModel;
 
     this.aiModelRegistryService.validateModelAvailability(
       resolvedModelId,
@@ -194,11 +206,18 @@ export class ChatExecutionService {
       );
     }
 
+    const agentContextString = isDefined(selectedAgent)
+      ? this.buildSelectedAgentContext(selectedAgent)
+      : '';
+    const mergedContextString =
+      [contextString, agentContextString].filter(Boolean).join('\n\n') ||
+      undefined;
+
     const systemPrompt = this.systemPromptBuilder.buildFullPrompt(
       toolCatalog,
       skillCatalog,
       preloadedToolNames,
-      contextString,
+      mergedContextString,
       storedFiles,
       workspace.aiAdditionalInstructions ?? undefined,
       userContext,
@@ -284,6 +303,65 @@ export class ChatExecutionService {
     }
 
     return '';
+  }
+
+  private extractMentionedAgentId(
+    messages: UIMessage<unknown, UIDataTypes, UITools>[],
+  ): string | null {
+    const userMessages = messages.filter((message) => message.role === 'user');
+    const lastUserMessage = userMessages[userMessages.length - 1];
+
+    if (!isDefined(lastUserMessage)) {
+      return null;
+    }
+
+    const textPart = lastUserMessage.parts.find((part) => part.type === 'text');
+    const text = textPart?.text;
+
+    if (!isDefined(text)) {
+      return null;
+    }
+
+    const match = text.match(/\[\[agent:([0-9a-fA-F-]{36}):[^\]]*]]/);
+
+    return match?.[1] ?? null;
+  }
+
+  private async resolveSelectedAgent(agentId: string, workspaceId: string) {
+    try {
+      return await this.agentService.findOneAgentById({
+        id: agentId,
+        workspaceId,
+      });
+    } catch {
+      return null;
+    }
+  }
+
+  private buildSelectedAgentContext(selectedAgent: {
+    id: string;
+    label: string;
+    prompt: string;
+    modelConfiguration: unknown;
+  }) {
+    const runtimeProfile =
+      typeof selectedAgent.modelConfiguration === 'object' &&
+      selectedAgent.modelConfiguration !== null &&
+      'runtimeProfile' in selectedAgent.modelConfiguration
+        ? (selectedAgent.modelConfiguration as { runtimeProfile?: unknown })
+            .runtimeProfile
+        : undefined;
+
+    return [
+      `The user explicitly mentioned agent "${selectedAgent.label}" (id: ${selectedAgent.id}).`,
+      `Prioritize this agent's instruction set when planning and responding.`,
+      `Agent instructions: ${selectedAgent.prompt}`,
+      isDefined(runtimeProfile)
+        ? `Agent runtime profile: ${JSON.stringify(runtimeProfile)}`
+        : undefined,
+    ]
+      .filter(Boolean)
+      .join('\n');
   }
 
   private buildRecordPageContext(

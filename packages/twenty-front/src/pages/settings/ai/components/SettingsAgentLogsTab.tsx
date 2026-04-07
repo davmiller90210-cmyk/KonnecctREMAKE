@@ -1,4 +1,5 @@
 import { useSnackBar } from '@/ui/feedback/snack-bar-manager/hooks/useSnackBar';
+import { CREATE_MANUAL_AGENT_TURN_EVALUATION } from '@/ai/graphql/mutations/createManualAgentTurnEvaluation';
 import { Table } from '@/ui/layout/table/components/Table';
 import { TableCell } from '@/ui/layout/table/components/TableCell';
 import { TableHeader } from '@/ui/layout/table/components/TableHeader';
@@ -32,6 +33,35 @@ const StyledTableContainer = styled.div`
 
 const StyledTableHeaderRowContainer = styled.div`
   margin-bottom: ${themeCssVariables.spacing[2]};
+`;
+
+const StyledGuardrailCard = styled.div`
+  align-items: center;
+  background: ${themeCssVariables.background.secondary};
+  border: 1px solid ${themeCssVariables.border.color.medium};
+  border-radius: ${themeCssVariables.border.radius.md};
+  display: grid;
+  gap: ${themeCssVariables.spacing[2]};
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: ${themeCssVariables.spacing[3]};
+  padding: ${themeCssVariables.spacing[3]};
+`;
+
+const StyledGuardrailMetric = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${themeCssVariables.spacing[1]};
+`;
+
+const StyledGuardrailLabel = styled.span`
+  color: ${themeCssVariables.font.color.tertiary};
+  font-size: ${themeCssVariables.font.size.xs};
+`;
+
+const StyledGuardrailValue = styled.span`
+  color: ${themeCssVariables.font.color.primary};
+  font-size: ${themeCssVariables.font.size.md};
+  font-weight: ${themeCssVariables.font.weight.medium};
 `;
 
 type SettingsAgentLogsTabProps = {
@@ -94,6 +124,16 @@ export const SettingsAgentLogsTab = ({
 
   const turns = data?.agentTurns || [];
   const backgroundEvaluatingTurnIds = computeBackgroundEvaluatingTurnIds(turns);
+  const evaluatedTurnsCount = turns.filter(
+    (turn: any) => turn.evaluations.length > 0,
+  ).length;
+  const pendingReviewCount = turns.length - evaluatedTurnsCount;
+  const averageScore =
+    turns
+      .map((turn: any) => getLatestEvaluation(turn.evaluations)?.score)
+      .filter(isDefined)
+      .reduce((total, score) => total + score, 0) /
+      Math.max(evaluatedTurnsCount, 1);
 
   const [evaluateTurn, { loading: evaluating }] = useMutation(
     EvaluateAgentTurnDocument,
@@ -114,6 +154,8 @@ export const SettingsAgentLogsTab = ({
       },
     },
   );
+  const [createManualEvaluation, { loading: isCreatingManualEvaluation }] =
+    useMutation(CREATE_MANUAL_AGENT_TURN_EVALUATION);
 
   const handleEvaluateTurn = (turnId: string) => {
     setEvaluatingTurnIds((prev) => new Set(prev).add(turnId));
@@ -127,6 +169,48 @@ export const SettingsAgentLogsTab = ({
         message: t`Failed to evaluate turn`,
       });
     });
+  };
+
+  const handleApproveTurn = (turnId: string) => {
+    createManualEvaluation({
+      variables: {
+        turnId,
+        score: 100,
+        comment: '[approval] approved for autonomous execution',
+      },
+    })
+      .then(() => {
+        enqueueSuccessSnackBar({
+          message: t`Turn approved for autonomous use`,
+        });
+        refetch();
+      })
+      .catch(() => {
+        enqueueErrorSnackBar({
+          message: t`Failed to save approval decision`,
+        });
+      });
+  };
+
+  const handleRequestChangesForTurn = (turnId: string) => {
+    createManualEvaluation({
+      variables: {
+        turnId,
+        score: 20,
+        comment: '[approval] changes requested before autonomous execution',
+      },
+    })
+      .then(() => {
+        enqueueErrorSnackBar({
+          message: t`Changes requested before autonomous execution`,
+        });
+        refetch();
+      })
+      .catch(() => {
+        enqueueErrorSnackBar({
+          message: t`Failed to save approval decision`,
+        });
+      });
   };
 
   const getScoreColor = (score: number) => {
@@ -184,6 +268,26 @@ export const SettingsAgentLogsTab = ({
 
   return (
     <StyledTableContainer>
+      <StyledGuardrailCard>
+        <StyledGuardrailMetric>
+          <StyledGuardrailLabel>{t`Total turns`}</StyledGuardrailLabel>
+          <StyledGuardrailValue>{turns.length}</StyledGuardrailValue>
+        </StyledGuardrailMetric>
+        <StyledGuardrailMetric>
+          <StyledGuardrailLabel>{t`Reviewed`}</StyledGuardrailLabel>
+          <StyledGuardrailValue>{evaluatedTurnsCount}</StyledGuardrailValue>
+        </StyledGuardrailMetric>
+        <StyledGuardrailMetric>
+          <StyledGuardrailLabel>{t`Pending review`}</StyledGuardrailLabel>
+          <StyledGuardrailValue>{pendingReviewCount}</StyledGuardrailValue>
+        </StyledGuardrailMetric>
+        <StyledGuardrailMetric>
+          <StyledGuardrailLabel>{t`Avg score`}</StyledGuardrailLabel>
+          <StyledGuardrailValue>
+            {Number.isFinite(averageScore) ? averageScore.toFixed(0) : '-'}
+          </StyledGuardrailValue>
+        </StyledGuardrailMetric>
+      </StyledGuardrailCard>
       <Table>
         <StyledTableHeaderRowContainer>
           <TableRow gridTemplateColumns="140px 80px 1fr 40px">
@@ -196,6 +300,12 @@ export const SettingsAgentLogsTab = ({
         {turns.map((turn: any) => {
           const latestEvaluation = getLatestEvaluation(turn.evaluations);
           const userInput = getUserMessageInput(turn.messages);
+          const latestEvaluationComment = latestEvaluation?.comment ?? '';
+          const isApproved =
+            latestEvaluationComment.startsWith('[approval] approved');
+          const needsChanges = latestEvaluationComment.startsWith(
+            '[approval] changes requested',
+          );
 
           return (
             <TableRow key={turn.id} gridTemplateColumns="140px 80px 1fr 40px">
@@ -209,10 +319,40 @@ export const SettingsAgentLogsTab = ({
               </TableCell>
               <TableCell gap={themeCssVariables.spacing[2]}>
                 {latestEvaluation ? (
-                  <Status
-                    color={getScoreColor(latestEvaluation.score)}
-                    text={`${latestEvaluation.score}`}
-                  />
+                  <>
+                    <Status
+                      color={getScoreColor(latestEvaluation.score)}
+                      text={`${latestEvaluation.score}`}
+                    />
+                    {latestEvaluation.score < 70 && (
+                      <>
+                        {needsChanges && (
+                          <Status color="orange" text={t`Needs changes`} />
+                        )}
+                        {isApproved && <Status color="green" text={t`Approved`} />}
+                        {!isApproved && !needsChanges && (
+                          <>
+                            <Button
+                              size="small"
+                              variant="secondary"
+                              onClick={() => handleApproveTurn(turn.id)}
+                              title={t`Approve`}
+                              disabled={isCreatingManualEvaluation}
+                            />
+                            <Button
+                              size="small"
+                              variant="secondary"
+                              onClick={() =>
+                                handleRequestChangesForTurn(turn.id)
+                              }
+                              title={t`Request changes`}
+                              disabled={isCreatingManualEvaluation}
+                            />
+                          </>
+                        )}
+                      </>
+                    )}
+                  </>
                 ) : evaluatingTurnIds.has(turn.id) ||
                   backgroundEvaluatingTurnIds.has(turn.id) ? (
                   <Status color="blue" text={t`Evaluating`} isLoaderVisible />

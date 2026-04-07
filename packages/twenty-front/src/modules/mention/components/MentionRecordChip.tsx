@@ -1,6 +1,8 @@
 import { getLinkToShowPage } from '@/object-metadata/utils/getLinkToShowPage';
 import { t } from '@lingui/core/macro';
 import { isNonEmptyString } from '@sniptt/guards';
+import { SettingsPath } from 'twenty-shared/types';
+import { getSettingsPath } from 'twenty-shared/utils';
 import {
   AvatarOrIcon,
   Chip,
@@ -39,6 +41,26 @@ export const MentionRecordChip = ({
         label={t`Deleted record`}
         variant={ChipVariant.Transparent}
         disabled
+      />
+    );
+  }
+
+  if (objectNameSingular === 'agent') {
+    return (
+      <LinkChip
+        label={label}
+        emptyLabel={t`Untitled`}
+        to={getSettingsPath(SettingsPath.AIAgentDetail, { agentId: recordId })}
+        variant={ChipVariant.Highlighted}
+        className={className}
+        leftComponent={
+          <AvatarOrIcon
+            placeholder={label}
+            placeholderColorSeed={recordId}
+            avatarType="rounded"
+            avatarUrl={imageUrl}
+          />
+        }
       />
     );
   }
