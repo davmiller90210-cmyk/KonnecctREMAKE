@@ -164,6 +164,10 @@ export const KonnecctProjectsEmbed = () => {
   const mfModuleId =
     REACT_APP_PLANE_MF_MODULE.trim() ||
     `${KONNECCT_PLANE_REMOTE_NAME}/./KonnecctShell`;
+  const mfModuleIdFallback =
+    mfModuleId === `${KONNECCT_PLANE_REMOTE_NAME}/./KonnecctShell`
+      ? `${KONNECCT_PLANE_REMOTE_NAME}/KonnecctShell`
+      : '';
 
   const remoteEntryUrl = resolved
     ? `${resolved.iframeBase.replace(/\/$/, '')}/remoteEntry.js`
@@ -230,9 +234,25 @@ export const KonnecctProjectsEmbed = () => {
           ],
           { force: true },
         );
-        const mod = await loadRemote<
-          ComponentType<FederatedPlaneProps> | { default: ComponentType<FederatedPlaneProps> }
-        >(mfModuleId);
+        let mod:
+          | ComponentType<FederatedPlaneProps>
+          | { default: ComponentType<FederatedPlaneProps> }
+          | null = null;
+
+        try {
+          mod = await loadRemote<
+            | ComponentType<FederatedPlaneProps>
+            | { default: ComponentType<FederatedPlaneProps> }
+          >(mfModuleId);
+        } catch (primaryError) {
+          if (!mfModuleIdFallback) {
+            throw primaryError;
+          }
+          mod = await loadRemote<
+            | ComponentType<FederatedPlaneProps>
+            | { default: ComponentType<FederatedPlaneProps> }
+          >(mfModuleIdFallback);
+        }
         if (cancelled) {
           return;
         }
@@ -274,6 +294,7 @@ export const KonnecctProjectsEmbed = () => {
     federated,
     remoteEntryUrl,
     mfModuleId,
+    mfModuleIdFallback,
     embedMode,
   ]);
 
