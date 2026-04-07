@@ -49,6 +49,12 @@ const CommunicationHub = lazy(() =>
   })),
 );
 
+const SuperagentsPage = lazy(() =>
+  import('~/pages/ai/SuperagentsPage').then((module) => ({
+    default: module.SuperagentsPage,
+  })),
+);
+
 const KonnecctProjectsEmbed = lazy(() =>
   import('@/projects/components/KonnecctProjectsEmbed').then((module) => ({
     default: module.KonnecctProjectsEmbed,
@@ -143,6 +149,14 @@ export const useCreateAppRouter = (
             element={
               <LazyRoute>
                 <CommunicationHub />
+              </LazyRoute>
+            }
+          />
+          <Route
+            path="/superagents"
+            element={
+              <LazyRoute>
+                <SuperagentsPage />
               </LazyRoute>
             }
           />

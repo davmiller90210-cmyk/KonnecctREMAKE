@@ -4,7 +4,7 @@ import { styled } from '@linaria/react';
 import { lazy, Suspense } from 'react';
 
 import { themeCssVariables } from 'twenty-ui/theme-constants';
-import { IconMessage } from 'twenty-ui/display';
+import { IconMessage, IconSparkles } from 'twenty-ui/display';
 
 
 import { NavigationDrawerOpenedSection } from '@/navigation-menu-item/display/sections/components/NavigationDrawerOpenedSection';
@@ -52,6 +52,12 @@ export const MainNavigationDrawerScrollableItems = () => {
         to="/chat"
         Icon={IconMessage}
         active={location.pathname.startsWith('/chat')}
+      />
+      <NavigationDrawerItem
+        label={t`Superagents`}
+        to="/superagents"
+        Icon={IconSparkles}
+        active={location.pathname.startsWith('/superagents')}
       />
       <KonnecctProjectsNavigationSection />
 
