@@ -24,6 +24,13 @@ export class FeatureFlagService {
     private readonly workspaceCacheService: WorkspaceCacheService,
   ) {}
 
+  private applyMandatoryFeatureFlags(map: FeatureFlagMap): FeatureFlagMap {
+    return {
+      ...map,
+      [FeatureFlagKey.IS_AI_ENABLED]: true,
+    };
+  }
+
   public async isFeatureEnabled(
     key: FeatureFlagKey,
     workspaceId: string,
@@ -41,7 +48,9 @@ export class FeatureFlagService {
         'featureFlagsMap',
       ]);
 
-    return Object.entries(workspaceFeatureFlagsMap).map(([key, value]) => ({
+    const mergedMap = this.applyMandatoryFeatureFlags(workspaceFeatureFlagsMap);
+
+    return Object.entries(mergedMap).map(([key, value]) => ({
       key: key as FeatureFlagKey,
       value,
     }));
@@ -55,7 +64,7 @@ export class FeatureFlagService {
         'featureFlagsMap',
       ]);
 
-    return workspaceFeatureFlagsMap;
+    return this.applyMandatoryFeatureFlags(workspaceFeatureFlagsMap);
   }
 
   public async enableFeatureFlags(
@@ -103,6 +112,13 @@ export class FeatureFlagService {
           'Invalid feature flag key, flag is not public',
           FeatureFlagExceptionCode.INVALID_FEATURE_FLAG_KEY,
         ),
+      );
+    }
+
+    if (featureFlag === FeatureFlagKey.IS_AI_ENABLED && value === false) {
+      throw new FeatureFlagException(
+        'The AI feature cannot be disabled for this workspace.',
+        FeatureFlagExceptionCode.CANNOT_DISABLE_MANDATORY_FEATURE_FLAG,
       );
     }
 

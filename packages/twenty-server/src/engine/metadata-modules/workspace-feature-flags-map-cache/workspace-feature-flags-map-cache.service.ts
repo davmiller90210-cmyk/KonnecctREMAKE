@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
+import { FeatureFlagKey } from 'twenty-shared/types';
 import { Repository } from 'typeorm';
 
 import { WorkspaceCacheProvider } from 'src/engine/workspace-cache/interfaces/workspace-cache-provider.service';
@@ -33,6 +34,9 @@ export class WorkspaceFeatureFlagsMapCacheService extends WorkspaceCacheProvider
       {} as FeatureFlagMap,
     );
 
-    return workspaceFeatureFlagsMap;
+    return {
+      ...workspaceFeatureFlagsMap,
+      [FeatureFlagKey.IS_AI_ENABLED]: true,
+    };
   }
 }

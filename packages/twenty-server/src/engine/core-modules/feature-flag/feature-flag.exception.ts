@@ -6,6 +6,7 @@ import { CustomException } from 'src/utils/custom-exception';
 
 export enum FeatureFlagExceptionCode {
   INVALID_FEATURE_FLAG_KEY = 'INVALID_FEATURE_FLAG_KEY',
+  CANNOT_DISABLE_MANDATORY_FEATURE_FLAG = 'CANNOT_DISABLE_MANDATORY_FEATURE_FLAG',
 }
 
 const getFeatureFlagExceptionUserFriendlyMessage = (
@@ -14,6 +15,8 @@ const getFeatureFlagExceptionUserFriendlyMessage = (
   switch (code) {
     case FeatureFlagExceptionCode.INVALID_FEATURE_FLAG_KEY:
       return msg`Invalid feature flag key.`;
+    case FeatureFlagExceptionCode.CANNOT_DISABLE_MANDATORY_FEATURE_FLAG:
+      return msg`This feature cannot be disabled.`;
     default:
       assertUnreachable(code);
   }

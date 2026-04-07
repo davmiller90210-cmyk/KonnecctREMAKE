@@ -38,6 +38,7 @@ describe('FeatureFlagService', () => {
 
   const workspaceId = 'workspace-id';
   const featureFlag = FeatureFlagKey.IS_AI_ENABLED;
+  const optionalFeatureFlag = FeatureFlagKey.IS_UNIQUE_INDEXES_ENABLED;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -95,7 +96,10 @@ describe('FeatureFlagService', () => {
       });
 
       // Act
-      const result = await service.isFeatureEnabled(featureFlag, workspaceId);
+      const result = await service.isFeatureEnabled(
+        optionalFeatureFlag,
+        workspaceId,
+      );
 
       // Assert
       expect(result).toBe(false);
@@ -103,16 +107,35 @@ describe('FeatureFlagService', () => {
 
     it('should return false when feature flag value is false', async () => {
       // Prepare
-      mockFeatureFlagRepository.findOneBy.mockResolvedValue({
-        key: featureFlag,
-        value: false,
+      mockWorkspaceCacheService.getOrRecompute.mockResolvedValue({
+        featureFlagsMap: {
+          [optionalFeatureFlag]: false,
+        },
       });
 
       // Act
-      const result = await service.isFeatureEnabled(featureFlag, workspaceId);
+      const result = await service.isFeatureEnabled(
+        optionalFeatureFlag,
+        workspaceId,
+      );
 
       // Assert
       expect(result).toBe(false);
+    });
+
+    it('should always treat IS_AI_ENABLED as enabled', async () => {
+      mockWorkspaceCacheService.getOrRecompute.mockResolvedValue({
+        featureFlagsMap: {
+          [FeatureFlagKey.IS_AI_ENABLED]: false,
+        },
+      });
+
+      const result = await service.isFeatureEnabled(
+        FeatureFlagKey.IS_AI_ENABLED,
+        workspaceId,
+      );
+
+      expect(result).toBe(true);
     });
   });
 
@@ -125,7 +148,7 @@ describe('FeatureFlagService', () => {
         },
       });
       const mockFeatureFlags = [
-        { key: FeatureFlagKey.IS_AI_ENABLED, value: false },
+        { key: FeatureFlagKey.IS_AI_ENABLED, value: true },
       ];
 
       // Act
@@ -142,19 +165,16 @@ describe('FeatureFlagService', () => {
 
   describe('getWorkspaceFeatureFlagsMap', () => {
     it('should return a map of feature flags for a workspace', async () => {
-      // Prepare
-      const mockFeatureFlags = [
-        { key: FeatureFlagKey.IS_AI_ENABLED, value: false, workspaceId },
-      ];
+      mockWorkspaceCacheService.getOrRecompute.mockResolvedValue({
+        featureFlagsMap: {
+          [FeatureFlagKey.IS_AI_ENABLED]: false,
+        },
+      });
 
-      mockFeatureFlagRepository.find.mockResolvedValue(mockFeatureFlags);
-
-      // Act
       const result = await service.getWorkspaceFeatureFlagsMap(workspaceId);
 
-      // Assert
       expect(result).toEqual({
-        [FeatureFlagKey.IS_AI_ENABLED]: false,
+        [FeatureFlagKey.IS_AI_ENABLED]: true,
       });
     });
   });
@@ -251,6 +271,20 @@ describe('FeatureFlagService', () => {
           FeatureFlagExceptionCode.INVALID_FEATURE_FLAG_KEY,
         ),
       );
+    });
+
+    it('should throw when disabling IS_AI_ENABLED', async () => {
+      (
+        featureFlagValidator.assertIsFeatureFlagKey as jest.Mock
+      ).mockImplementation(() => true);
+
+      await expect(
+        service.upsertWorkspaceFeatureFlag({
+          workspaceId,
+          featureFlag: FeatureFlagKey.IS_AI_ENABLED,
+          value: false,
+        }),
+      ).rejects.toThrow('The AI feature cannot be disabled for this workspace.');
     });
 
     it('should throw an exception when non-public feature flag is used with shouldBePublic=true', async () => {
