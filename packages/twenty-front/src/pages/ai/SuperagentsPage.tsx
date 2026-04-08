@@ -40,11 +40,11 @@ const StyledChatArea = styled.div`
 
 const StyledResetButton = styled.button`
   align-self: flex-end;
-  border: 1px solid ${themeCssVariables.border.color.medium};
-  border-radius: ${themeCssVariables.border.radius.sm};
-  background: ${themeCssVariables.background.secondary};
-  color: ${themeCssVariables.font.color.primary};
-  padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[3]};
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: ${themeCssVariables.font.color.light};
+  padding: ${themeCssVariables.spacing[1]} ${themeCssVariables.spacing[2]};
   cursor: pointer;
 `;
 
@@ -57,7 +57,7 @@ const StyledHero = styled.div`
 
 const StyledHeroTitle = styled.h1`
   color: ${themeCssVariables.font.color.primary};
-  font-size: 42px;
+  font-size: 48px;
   font-weight: ${themeCssVariables.font.weight.medium};
   margin: 0;
 `;
@@ -87,11 +87,23 @@ const StyledModeTab = styled.button<{ active: boolean }>`
 `;
 
 const StyledPromptBox = styled.div`
-  border: 1px solid ${themeCssVariables.border.color.medium};
-  border-radius: 20px;
-  background: ${themeCssVariables.background.secondary};
+  border-radius: 22px;
+  background: linear-gradient(
+    130deg,
+    #4063ff 0%,
+    #6a4bff 25%,
+    #c74bff 50%,
+    #ff5a6b 75%,
+    #ff9c42 100%
+  );
   max-width: 860px;
   width: 100%;
+  padding: 2px;
+`;
+
+const StyledPromptInner = styled.div`
+  border-radius: 20px;
+  background: ${themeCssVariables.background.secondary};
   padding: ${themeCssVariables.spacing[2]};
 `;
 
@@ -120,7 +132,7 @@ const StyledHint = styled.div`
 const StyledQuestion = styled.div`
   border: 1px solid ${themeCssVariables.border.color.medium};
   border-radius: ${themeCssVariables.border.radius.sm};
-  background: ${themeCssVariables.background.secondary};
+  background: ${themeCssVariables.background.transparent.light};
   color: ${themeCssVariables.font.color.secondary};
   max-width: 860px;
   width: 100%;
@@ -246,6 +258,14 @@ export const SuperagentsPage = () => {
     submitBuilderAnswer();
   };
 
+  const handleStartFromScratch = () => {
+    setMode('agents');
+    setDraft('');
+    setBuilderAnswers(null);
+    setBuilderStep(0);
+    switchToNewChat();
+  };
+
   const handleCreateByPrompt = async () => {
     if (!builderAnswers || !isBuilderReady || isCreating) {
       return;
@@ -333,29 +353,31 @@ export const SuperagentsPage = () => {
             </StyledModeTab>
           </StyledModeTabs>
           <StyledPromptBox>
-            <StyledTextArea
-              placeholder={
-                mode === 'agents'
-                  ? t`Share the repetitive work you'd love to delegate...`
-                  : t`Ask, search, or create anything...`
-              }
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-            />
-            <StyledPromptActions>
-              <StyledHint>
-                {mode === 'agents'
-                  ? isBuilderReady
-                    ? t`Ready to create your superagent`
-                    : t`Talk to AI to define your superagent`
-                  : t`Press send to chat`}
-              </StyledHint>
-              <Button
-                title={t`Send`}
-                onClick={handleSubmitPrompt}
-                disabled={!canSend}
+            <StyledPromptInner>
+              <StyledTextArea
+                placeholder={
+                  mode === 'agents'
+                    ? t`Share the repetitive work you'd love to delegate...`
+                    : t`Ask, search, or create anything...`
+                }
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
               />
-            </StyledPromptActions>
+              <StyledPromptActions>
+                <StyledHint>
+                  {mode === 'agents'
+                    ? isBuilderReady
+                      ? t`Ready to create your superagent`
+                      : t`Talk to AI to define your superagent`
+                    : t`Press send to chat`}
+                </StyledHint>
+                <Button
+                  title={t`Send`}
+                  onClick={handleSubmitPrompt}
+                  disabled={!canSend}
+                />
+              </StyledPromptActions>
+            </StyledPromptInner>
           </StyledPromptBox>
           {mode === 'agents' && builderQuestion && (
             <StyledQuestion>{builderQuestion}</StyledQuestion>
@@ -384,8 +406,8 @@ export const SuperagentsPage = () => {
             </StyledChips>
           )}
         </StyledHero>
-        <StyledResetButton type="button" onClick={switchToNewChat}>
-          {t`New prompt`}
+        <StyledResetButton type="button" onClick={handleStartFromScratch}>
+          {t`Start from scratch`}
         </StyledResetButton>
       </StyledPageTopBar>
       <StyledChatArea>
