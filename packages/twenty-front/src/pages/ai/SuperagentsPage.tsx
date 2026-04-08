@@ -1,8 +1,9 @@
+/* oxlint-disable twenty/no-hardcoded-colors */
 import { styled } from '@linaria/react';
 import { useLingui } from '@lingui/react/macro';
+import { type ErrorLike } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
 import { type KeyboardEvent, useCallback, useMemo, useState } from 'react';
-import { themeCssVariables } from 'twenty-ui/theme-constants';
 import { type ExtendedUIMessage } from 'twenty-shared/ai';
 import { isDefined } from 'twenty-shared/utils';
 
@@ -25,7 +26,6 @@ import { useAtomState } from '@/ui/utilities/state/jotai/hooks/useAtomState';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { useAtomComponentFamilyStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentFamilyStateValue';
 import { useSnackBar } from '@/ui/feedback/snack-bar-manager/hooks/useSnackBar';
-import { Button } from 'twenty-ui/input';
 import {
   CreateOneAgentDocument,
   type CreateAgentInput,
@@ -33,170 +33,208 @@ import {
 import { pickSuperagentLook } from '~/pages/settings/ai/constants/superagentLooks';
 import { computeMetadataNameFromLabel } from '~/pages/settings/data-model/utils/computeMetadataNameFromLabel';
 import {
-  IconArrowUp,
+  IconArrowRight,
   IconPlus,
   IconSettingsAutomation,
   IconSparkles,
 } from 'twenty-ui/display';
 import { turnIntoEmptyStringIfWhitespacesOnly } from '~/utils/string/turnIntoEmptyStringIfWhitespacesOnly';
 
-const GRADIENT_TEXT = `
-  background: linear-gradient(90deg, #ff5a6b 0%, #c74bff 35%, #4063ff 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-`;
+/* Reference palette (Tailwind-inspired) */
+const C = {
+  page: '#131315',
+  surface: '#18181B',
+  surface2: '#1E1E22',
+  surface3: '#27272A',
+  border: '#27272A',
+  borderMuted: '#374151',
+  text: '#ffffff',
+  textMuted: '#9ca3af',
+  textSoft: '#6b7280',
+  textTitle: '#f3f4f6',
+  tabActive: '#1A56DB',
+  green: '#16a34a',
+  red: '#ef4444',
+  pink: '#ec4899',
+  yellow: '#ca8a04',
+  pillActiveBg: '#e5e7eb',
+  pillActiveText: '#111827',
+} as const;
 
 const StyledPage = styled.div`
+  background: ${C.page};
+  color: ${C.text};
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
   min-height: 0;
-  background: ${themeCssVariables.background.primary};
-`;
-
-const StyledShell = styled.div`
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  margin: 0 auto;
-  max-width: 920px;
-  min-height: 0;
-  padding: 0 ${themeCssVariables.spacing[3]};
+  min-height: 100%;
+  overflow: hidden;
   position: relative;
-  width: 100%;
 `;
 
 const StyledStartOver = styled.button`
   background: transparent;
-  border: 1px solid ${themeCssVariables.border.color.medium};
+  border: 1px solid ${C.borderMuted};
   border-radius: 999px;
-  color: ${themeCssVariables.font.color.light};
+  color: #d1d5db;
   cursor: pointer;
-  font-size: ${themeCssVariables.font.size.sm};
-  padding: ${themeCssVariables.spacing[1]} ${themeCssVariables.spacing[2]};
+  font-size: 12px;
+  padding: 6px 16px;
   position: absolute;
-  right: 0;
-  top: 0;
-  z-index: 1;
+  right: 24px;
+  top: 24px;
+  transition: background 0.15s ease;
+  z-index: 2;
+
+  &:hover {
+    background: #1f2937;
+  }
 `;
 
-const StyledHero = styled.div`
+const StyledMain = styled.div`
   align-items: center;
   display: flex;
+  flex: 1;
   flex-direction: column;
-  gap: ${themeCssVariables.spacing[3]};
-  padding: ${themeCssVariables.spacing[6]} 0 ${themeCssVariables.spacing[2]};
+  margin: 0 auto;
+  max-width: 1024px;
+  min-height: 0;
+  padding: 32px 32px 24px;
+  position: relative;
+  width: 100%;
 `;
 
 const StyledBrandRow = styled.div`
   align-items: center;
   display: flex;
-  gap: ${themeCssVariables.spacing[2]};
+  gap: 12px;
+  margin-bottom: 24px;
 `;
 
-const StyledBrandMark = styled.div`
-  align-items: center;
-  background: linear-gradient(
-    135deg,
-    #ff5a6b 0%,
-    #c74bff 45%,
-    #4063ff 100%
-  );
-  border-radius: ${themeCssVariables.border.radius.sm};
+const StyledLogoSplit = styled.div`
+  border-radius: 999px;
   display: flex;
-  height: 40px;
-  justify-content: center;
+  height: 20px;
+  overflow: hidden;
   width: 40px;
 `;
 
+const StyledLogoHalf = styled.div<{ side: 'l' | 'r' }>`
+  background: ${({ side }) => (side === 'l' ? C.red : '#3b82f6')};
+  height: 100%;
+  width: 50%;
+  ${({ side }) =>
+    side === 'l'
+      ? 'border-radius: 9999px 0 0 9999px;'
+      : 'border-radius: 0 9999px 9999px 0;'}
+`;
+
 const StyledHeroTitle = styled.h1`
-  font-size: 40px;
-  font-weight: ${themeCssVariables.font.weight.semiBold};
-  letter-spacing: -0.02em;
+  align-items: flex-start;
+  color: ${C.textTitle};
+  display: flex;
+  font-size: 36px;
+  font-weight: 500;
+  gap: 4px;
+  letter-spacing: -0.025em;
   line-height: 1.1;
   margin: 0;
-  ${GRADIENT_TEXT}
 `;
 
-const StyledPromptShell = styled.div`
-  position: relative;
-  width: 100%;
+const StyledTm = styled.span`
+  color: ${C.textSoft};
+  font-size: 12px;
+  margin-top: 4px;
 `;
 
-const StyledModeTabs = styled.div`
-  bottom: 100%;
+const StyledTabsRow = styled.div`
+  background: ${C.surface2};
+  border-radius: 999px;
   display: flex;
-  gap: ${themeCssVariables.spacing[1]};
-  left: 50%;
-  margin-bottom: -14px;
-  position: absolute;
-  transform: translateX(-50%);
-  z-index: 2;
+  gap: 0;
+  margin-bottom: 24px;
+  padding: 4px;
+  position: relative;
+  z-index: 10;
 `;
 
 const StyledModeTab = styled.button<{ active: boolean }>`
   align-items: center;
-  background: ${({ active }) =>
-    active
-      ? themeCssVariables.background.primary
-      : themeCssVariables.background.transparent.medium};
-  border: 1px solid
-    ${({ active }) =>
-      active
-        ? themeCssVariables.color.blue
-        : themeCssVariables.border.color.medium};
+  background: ${({ active }) => (active ? C.tabActive : 'transparent')};
+  border: none;
   border-radius: 999px;
   box-shadow: ${({ active }) =>
-    active ? `0 0 0 1px ${themeCssVariables.color.blue}` : 'none'};
-  color: ${themeCssVariables.font.color.primary};
+    active ? '0 1px 2px rgba(0, 0, 0, 0.2)' : 'none'};
+  color: ${({ active }) => (active ? '#ffffff' : C.textMuted)};
   cursor: pointer;
   display: flex;
-  font-size: ${themeCssVariables.font.size.sm};
-  gap: ${themeCssVariables.spacing[1]};
-  padding: ${themeCssVariables.spacing[1]} ${themeCssVariables.spacing[2]};
+  font-size: 14px;
+  gap: 8px;
+  padding: 6px 20px;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
+
+  &:hover {
+    color: ${({ active }) => (active ? '#ffffff' : '#e5e7eb')};
+  }
 `;
 
-const StyledPromptBox = styled.div`
-  border-radius: 24px;
+const StyledPromptGradient = styled.div`
   background: linear-gradient(
-    145deg,
-    #3b5bff 0%,
-    #7a4cff 28%,
-    #d24bff 55%,
-    #ff4f6a 78%,
-    #ffb04a 100%
+    90deg,
+    #3b82f6 0%,
+    #8b5cf6 50%,
+    #f97316 100%
   );
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.06) inset,
-    0 12px 48px rgba(80, 60, 200, 0.35);
+  border-radius: 24px;
+  box-shadow: 0 0 40px rgba(139, 92, 246, 0.15);
+  margin-bottom: 16px;
+  margin-top: -12px;
   padding: 2px;
   width: 100%;
+  z-index: 0;
 `;
 
 const StyledPromptInner = styled.div`
-  background: ${themeCssVariables.background.secondary};
+  background: ${C.surface};
   border-radius: 22px;
   display: flex;
   flex-direction: column;
-  min-height: 168px;
-  padding: ${themeCssVariables.spacing[3]};
+  height: 192px;
+  padding: 16px 16px 12px;
+  padding-top: 32px;
+  position: relative;
 `;
 
 const StyledTextArea = styled.textarea`
   background: transparent;
   border: none;
-  color: ${themeCssVariables.font.color.primary};
+  color: #e5e7eb;
   flex: 1;
-  font-size: ${themeCssVariables.font.size.md};
-  line-height: 1.45;
-  min-height: 96px;
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
+  font-size: 14px;
+  line-height: 1.625;
   outline: none;
   resize: none;
   width: 100%;
 
   &::placeholder {
-    color: ${themeCssVariables.font.color.light};
+    color: #6b7280;
   }
 `;
 
@@ -204,23 +242,31 @@ const StyledPromptFooter = styled.div`
   align-items: center;
   display: flex;
   justify-content: space-between;
-  margin-top: ${themeCssVariables.spacing[2]};
+  margin-top: auto;
+  padding: 4px 4px 0;
+  width: 100%;
 `;
 
-const StyledIconCircleButton = styled.button<{ accent?: 'primary' }>`
+const StyledRoundIconBtn = styled.button`
   align-items: center;
-  background: ${({ accent }) =>
-    accent === 'primary'
-      ? themeCssVariables.background.primary
-      : themeCssVariables.background.transparent.medium};
-  border: 1px solid ${themeCssVariables.border.color.medium};
+  background: ${C.surface3};
+  border: none;
   border-radius: 999px;
-  color: ${themeCssVariables.font.color.primary};
+  color: #9ca3af;
   cursor: pointer;
   display: flex;
-  height: 36px;
+  flex-shrink: 0;
+  height: 32px;
   justify-content: center;
-  width: 36px;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+  width: 32px;
+
+  &:hover:not(:disabled) {
+    background: #3f3f46;
+    color: #ffffff;
+  }
 
   &:disabled {
     cursor: not-allowed;
@@ -228,85 +274,139 @@ const StyledIconCircleButton = styled.button<{ accent?: 'primary' }>`
   }
 `;
 
-const StyledHint = styled.div`
-  color: ${themeCssVariables.font.color.light};
+const StyledHint = styled.span`
+  color: ${C.textSoft};
   flex: 1;
-  font-size: ${themeCssVariables.font.size.xs};
-  padding: 0 ${themeCssVariables.spacing[2]};
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
+  font-size: 12px;
+  padding: 0 12px;
   text-align: center;
 `;
 
-const StyledCreateRow = styled.div`
-  display: flex;
-  justify-content: center;
-  margin-top: ${themeCssVariables.spacing[2]};
+const StyledCreateBtn = styled.button`
+  background: ${C.surface};
+  border: 1px solid ${C.surface3};
+  border-radius: 8px;
+  color: #d1d5db;
+  cursor: pointer;
+  font-size: 14px;
+  margin-bottom: 40px;
+  padding: 8px 20px;
+  transition: background 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: ${C.surface3};
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
 `;
 
 const StyledCardsGrid = styled.div`
   display: grid;
-  gap: ${themeCssVariables.spacing[2]};
+  gap: 16px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-top: ${themeCssVariables.spacing[2]};
+  margin-bottom: 64px;
   width: 100%;
 
-  @media (min-width: 720px) {
+  @media (min-width: 900px) {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 `;
 
 const StyledSuggestCard = styled.button`
-  background: ${themeCssVariables.background.secondary};
-  border: 1px solid ${themeCssVariables.border.color.medium};
-  border-radius: ${themeCssVariables.border.radius.md};
-  color: ${themeCssVariables.font.color.primary};
+  background: ${C.surface};
+  border: 1px solid ${C.surface3};
+  border-radius: 12px;
+  color: ${C.text};
   cursor: pointer;
-  padding: ${themeCssVariables.spacing[2]};
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
   text-align: left;
-  transition: border-color 0.15s ease;
+  transition: background 0.15s ease;
 
   &:hover {
-    border-color: ${themeCssVariables.color.blue};
+    background: ${C.surface2};
   }
 `;
 
-const StyledSuggestTitle = styled.div`
-  font-size: ${themeCssVariables.font.size.sm};
-  font-weight: ${themeCssVariables.font.weight.medium};
-  margin-bottom: ${themeCssVariables.spacing['0.5']};
+const StyledCardDot = styled.div<{ color: string }>`
+  background: ${({ color }) => color};
+  border: 2px solid ${C.surface};
+  border-radius: 999px;
+  height: 24px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  width: 24px;
 `;
 
-const StyledSuggestSub = styled.div`
-  color: ${themeCssVariables.font.color.light};
-  font-size: ${themeCssVariables.font.size.xs};
-  line-height: 1.35;
-`;
-
-const StyledPillsRow = styled.div`
-  display: flex;
-  gap: ${themeCssVariables.spacing[1]};
-  margin-top: ${themeCssVariables.spacing[3]};
-  overflow-x: auto;
-  padding-bottom: ${themeCssVariables.spacing[1]};
+const StyledCardDotInner = styled.div`
+  background: rgba(255, 255, 255, 0.2);
+  height: 100%;
   width: 100%;
 `;
 
-const StyledPill = styled.span`
-  background: ${themeCssVariables.background.tertiary};
-  border: 1px solid ${themeCssVariables.border.color.medium};
+const StyledSuggestTitle = styled.h3`
+  color: #e5e7eb;
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0 0 4px;
+`;
+
+const StyledSuggestSub = styled.p`
+  color: ${C.textSoft};
+  font-size: 12px;
+  line-height: 1.35;
+  margin: 0;
+`;
+
+const StyledTagsWrap = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  max-width: 896px;
+  padding: 0 16px;
+  width: 100%;
+`;
+
+const StyledTag = styled.button<{ active: boolean }>`
+  background: ${({ active }) => (active ? C.pillActiveBg : 'transparent')};
+  border: ${({ active }) =>
+    active ? 'none' : `1px solid ${C.borderMuted}`};
   border-radius: 999px;
-  color: ${themeCssVariables.font.color.secondary};
-  flex-shrink: 0;
-  font-size: ${themeCssVariables.font.size.xs};
-  padding: ${themeCssVariables.spacing[1]} ${themeCssVariables.spacing[2]};
+  color: ${({ active }) => (active ? C.pillActiveText : C.textMuted)};
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: ${({ active }) => (active ? 500 : 400)};
+  padding: 6px 16px;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
+
+  &:hover {
+    border-color: #6b7280;
+    color: #e5e7eb;
+  }
 `;
 
 const StyledChatArea = styled.div`
-  border-top: 1px solid ${themeCssVariables.border.color.medium};
+  border-top: 1px solid ${C.surface3};
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  margin-top: ${themeCssVariables.spacing[2]};
+  margin-top: 8px;
   min-height: 0;
+  width: 100%;
 `;
 
 const extractUserTextFromMessages = (messages: ExtendedUIMessage[]): string => {
@@ -349,17 +449,23 @@ const getFallbackLabelFromPrompt = (prompt: string) => {
     : firstLine;
 };
 
-const CATEGORY_PILLS = [
+const TAG_LABELS = [
   'Apps',
   'Projects',
   'Personal',
+  'Certified',
   'Tasks',
   'Exec',
   'Scheduling',
   'Software',
   'Meetings',
+  'Intelligence',
   'Research',
+  'Updates',
   'Writing',
+  'C-Suite',
+  'Teams',
+  'Design',
 ] as const;
 
 export const SuperagentsPage = () => {
@@ -371,12 +477,15 @@ export const SuperagentsPage = () => {
     useAtomState(agentChatDraftsByThreadIdState);
   const [agentChatInput] = useAtomState(agentChatInputState);
   const currentAIChatThread = useAtomStateValue(currentAIChatThreadState);
-  const displayedThread = useAtomStateValue(agentChatDisplayedThreadState);
+  const agentChatDisplayedThread = useAtomStateValue(
+    agentChatDisplayedThreadState,
+  );
   const agentChatIsLoading = useAtomStateValue(agentChatIsLoadingState);
   const [createAgent] = useMutation(CreateOneAgentDocument);
 
   const [mode, setMode] = useState<'ask' | 'agents'>('agents');
   const [isCreating, setIsCreating] = useState(false);
+  const [activeTag, setActiveTag] = useState<string>('Apps');
 
   const draftKey = currentAIChatThread ?? AGENT_CHAT_NEW_THREAD_DRAFT_KEY;
 
@@ -388,21 +497,24 @@ export const SuperagentsPage = () => {
       return currentAIChatThread;
     }
 
-    if (displayedThread && displayedThread !== '') {
-      return displayedThread;
+    if (
+      agentChatDisplayedThread &&
+      agentChatDisplayedThread !== ''
+    ) {
+      return agentChatDisplayedThread;
     }
 
     return AGENT_CHAT_NEW_THREAD_DRAFT_KEY;
-  }, [currentAIChatThread, displayedThread]);
+  }, [currentAIChatThread, agentChatDisplayedThread]);
 
-  const threadMessages = useAtomComponentFamilyStateValue(
+  const agentChatMessages = useAtomComponentFamilyStateValue(
     agentChatMessagesComponentFamilyState,
     { threadId: threadIdForMessages },
   );
 
   const conversationPrompt = useMemo(
-    () => extractUserTextFromMessages(threadMessages),
-    [threadMessages],
+    () => extractUserTextFromMessages(agentChatMessages),
+    [agentChatMessages],
   );
 
   const heroText = useMemo(() => {
@@ -521,7 +633,7 @@ export const SuperagentsPage = () => {
       });
     } catch (error) {
       enqueueErrorSnackBar({
-        apolloError: error,
+        apolloError: error as ErrorLike,
       });
     } finally {
       setIsCreating(false);
@@ -533,145 +645,158 @@ export const SuperagentsPage = () => {
     switchToNewChat();
   };
 
-  const suggestions = [
+  const suggestions: {
+    title: string;
+    sub: string;
+    prefill: string;
+    color: string;
+  }[] = [
     {
       title: t`Support Triage`,
       sub: t`Categorizes support tickets`,
       prefill: t`Categorize and triage support tickets by urgency and topic`,
+      color: C.green,
     },
     {
       title: t`Refund Policy`,
       sub: t`Applies refund guidelines`,
       prefill: t`Apply our refund policy consistently and draft customer replies`,
+      color: C.red,
     },
     {
       title: t`Sensitive Content`,
       sub: t`Flags inappropriate messages`,
       prefill: t`Flag sensitive or inappropriate messages and escalate when needed`,
+      color: C.pink,
     },
     {
       title: t`Account Troubleshooter`,
       sub: t`Diagnoses access issues`,
       prefill: t`Diagnose account and login access issues step by step`,
+      color: C.yellow,
     },
   ];
 
   return (
     <StyledPage>
-      <StyledShell>
-        <StyledStartOver type="button" onClick={handleStartFromScratch}>
-          {t`Start from scratch`}
-        </StyledStartOver>
+      <StyledStartOver type="button" onClick={handleStartFromScratch}>
+        {t`Start from scratch`}
+      </StyledStartOver>
 
-        <StyledHero>
-          <StyledBrandRow>
-            <StyledBrandMark>
-              <IconSparkles size={22} color="#fff" />
-            </StyledBrandMark>
-            <StyledHeroTitle>{t`Super Agents`}</StyledHeroTitle>
-          </StyledBrandRow>
+      <StyledMain>
+        <StyledBrandRow>
+          <StyledLogoSplit>
+            <StyledLogoHalf side="l" />
+            <StyledLogoHalf side="r" />
+          </StyledLogoSplit>
+          <StyledHeroTitle>
+            {t`Super Agents`}
+            <StyledTm>TM</StyledTm>
+          </StyledHeroTitle>
+        </StyledBrandRow>
 
-          <StyledPromptShell>
-            <StyledModeTabs>
-              <StyledModeTab
-                active={mode === 'ask'}
+        <StyledTabsRow>
+          <StyledModeTab
+            active={mode === 'ask'}
+            type="button"
+            onClick={() => setMode('ask')}
+          >
+            <IconSparkles size={16} />
+            {t`Ask`}
+          </StyledModeTab>
+          <StyledModeTab
+            active={mode === 'agents'}
+            type="button"
+            onClick={() => setMode('agents')}
+          >
+            <IconSettingsAutomation size={16} />
+            {t`Agents`}
+          </StyledModeTab>
+        </StyledTabsRow>
+
+        <StyledPromptGradient>
+          <StyledPromptInner>
+            <StyledTextArea
+              spellCheck={false}
+              placeholder={
+                mode === 'agents'
+                  ? t`Share the repetitive work you'd love to delegate...`
+                  : t`Ask, search, or create anything...`
+              }
+              value={heroText}
+              onChange={(event) => syncDraft(event.target.value)}
+              onKeyDown={handleTextareaKeyDown}
+            />
+            <StyledPromptFooter>
+              <StyledRoundIconBtn type="button" title={t`Add`} disabled>
+                <IconPlus size={16} />
+              </StyledRoundIconBtn>
+              <StyledHint>
+                {mode === 'agents'
+                  ? t`Chat with the AI below, then tap Create when you are ready`
+                  : t`Enter to send · Shift+Enter for new line`}
+              </StyledHint>
+              <StyledRoundIconBtn
                 type="button"
-                onClick={() => setMode('ask')}
+                title={t`Send`}
+                onClick={handleSend}
+                disabled={!canSend}
               >
-                <IconSparkles size={14} />
-                {t`Ask`}
-              </StyledModeTab>
-              <StyledModeTab
-                active={mode === 'agents'}
+                <IconArrowRight size={16} />
+              </StyledRoundIconBtn>
+            </StyledPromptFooter>
+          </StyledPromptInner>
+        </StyledPromptGradient>
+
+        {mode === 'agents' && (
+          <StyledCreateBtn
+            type="button"
+            onClick={handleCreateSuperagent}
+            disabled={isCreating || agentChatIsLoading}
+          >
+            {isCreating
+              ? t`Creating...`
+              : t`Create superagent from conversation`}
+          </StyledCreateBtn>
+        )}
+
+        {mode === 'agents' && (
+          <StyledCardsGrid>
+            {suggestions.map((s) => (
+              <StyledSuggestCard
+                key={s.title}
                 type="button"
-                onClick={() => setMode('agents')}
+                onClick={() => syncDraft(s.prefill)}
               >
-                <IconSettingsAutomation size={14} />
-                {t`Agents`}
-              </StyledModeTab>
-            </StyledModeTabs>
+                <StyledCardDot color={s.color}>
+                  <StyledCardDotInner />
+                </StyledCardDot>
+                <StyledSuggestTitle>{s.title}</StyledSuggestTitle>
+                <StyledSuggestSub>{s.sub}</StyledSuggestSub>
+              </StyledSuggestCard>
+            ))}
+          </StyledCardsGrid>
+        )}
 
-            <StyledPromptBox>
-              <StyledPromptInner>
-                <StyledTextArea
-                  placeholder={
-                    mode === 'agents'
-                      ? t`Share the repetitive work you'd love to delegate...`
-                      : t`Ask, search, or create anything...`
-                  }
-                  value={heroText}
-                  onChange={(event) => syncDraft(event.target.value)}
-                  onKeyDown={handleTextareaKeyDown}
-                />
-                <StyledPromptFooter>
-                  <StyledIconCircleButton
-                    type="button"
-                    title={t`Add`}
-                    disabled
-                  >
-                    <IconPlus size={18} />
-                  </StyledIconCircleButton>
-                  <StyledHint>
-                    {mode === 'agents'
-                      ? t`Chat with the AI below, then tap Create when you are ready`
-                      : t`Enter to send · Shift+Enter for new line`}
-                  </StyledHint>
-                  <StyledIconCircleButton
-                    accent="primary"
-                    type="button"
-                    title={t`Send`}
-                    onClick={handleSend}
-                    disabled={!canSend}
-                  >
-                    <IconArrowUp size={18} />
-                  </StyledIconCircleButton>
-                </StyledPromptFooter>
-              </StyledPromptInner>
-            </StyledPromptBox>
-          </StyledPromptShell>
-
-          {mode === 'agents' && (
-            <StyledCreateRow>
-              <Button
-                title={
-                  isCreating
-                    ? t`Creating...`
-                    : t`Create superagent from conversation`
-                }
-                onClick={handleCreateSuperagent}
-                disabled={isCreating || agentChatIsLoading}
-              />
-            </StyledCreateRow>
-          )}
-
-          {mode === 'agents' && (
-            <StyledCardsGrid>
-              {suggestions.map((s) => (
-                <StyledSuggestCard
-                  key={s.title}
-                  type="button"
-                  onClick={() => syncDraft(s.prefill)}
-                >
-                  <StyledSuggestTitle>{s.title}</StyledSuggestTitle>
-                  <StyledSuggestSub>{s.sub}</StyledSuggestSub>
-                </StyledSuggestCard>
-              ))}
-            </StyledCardsGrid>
-          )}
-
-          {mode === 'agents' && (
-            <StyledPillsRow>
-              {CATEGORY_PILLS.map((pill) => (
-                <StyledPill key={pill}>{pill}</StyledPill>
-              ))}
-            </StyledPillsRow>
-          )}
-        </StyledHero>
+        {mode === 'agents' && (
+          <StyledTagsWrap>
+            {TAG_LABELS.map((tag) => (
+              <StyledTag
+                key={tag}
+                active={activeTag === tag}
+                type="button"
+                onClick={() => setActiveTag(tag)}
+              >
+                {tag}
+              </StyledTag>
+            ))}
+          </StyledTagsWrap>
+        )}
 
         <StyledChatArea>
           <AIChatTab hideComposer />
         </StyledChatArea>
-      </StyledShell>
+      </StyledMain>
     </StyledPage>
   );
 };
