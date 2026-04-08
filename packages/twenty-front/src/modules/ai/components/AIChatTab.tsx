@@ -4,6 +4,8 @@ import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 import { DropZone } from '@/activities/files/components/DropZone';
 import { AIChatEditorSection } from '@/ai/components/AIChatEditorSection';
+import { AIChatStandaloneError } from '@/ai/components/AIChatStandaloneError';
+import { AIChatSkeletonLoader } from '@/ai/components/internal/AIChatSkeletonLoader';
 import { useAIChatFileUpload } from '@/ai/hooks/useAIChatFileUpload';
 import { AGENT_CHAT_NEW_THREAD_DRAFT_KEY } from '@/ai/states/agentChatDraftsByThreadIdState';
 import { currentAIChatThreadState } from '@/ai/states/currentAIChatThreadState';
@@ -22,7 +24,12 @@ const StyledContainer = styled.div<{ isDraggingFile: boolean }>`
     isDraggingFile ? themeCssVariables.spacing[3] : '0'};
 `;
 
-export const AIChatTab = () => {
+type AIChatTabProps = {
+  /** When true, only the message list + status UI is shown (no bottom composer). */
+  hideComposer?: boolean;
+};
+
+export const AIChatTab = ({ hideComposer = false }: AIChatTabProps) => {
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const currentAIChatThread = useAtomStateValue(currentAIChatThreadState);
   const threadIdCreatedFromDraft = useAtomStateValue(
@@ -50,8 +57,18 @@ export const AIChatTab = () => {
       )}
       {!isDraggingFile && (
         <>
-          <AIChatTabMessageList />
-          <AIChatEditorSection key={editorSectionKey} />
+          {hideComposer ? (
+            <>
+              <AIChatStandaloneError />
+              <AIChatSkeletonLoader />
+              <AIChatTabMessageList />
+            </>
+          ) : (
+            <>
+              <AIChatTabMessageList />
+              <AIChatEditorSection key={editorSectionKey} />
+            </>
+          )}
         </>
       )}
     </StyledContainer>

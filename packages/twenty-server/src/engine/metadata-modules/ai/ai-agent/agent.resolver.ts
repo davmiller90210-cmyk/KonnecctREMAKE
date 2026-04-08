@@ -69,7 +69,6 @@ export class AgentResolver {
 
   @Mutation(() => AgentDTO)
   @RequireFeatureFlag(FeatureFlagKey.IS_AI_ENABLED)
-  @UseGuards(SettingsPermissionGuard(PermissionFlagType.AI_SETTINGS))
   async createOneAgent(
     @Args('input') input: CreateAgentInput,
     @AuthWorkspace() workspace: WorkspaceEntity,

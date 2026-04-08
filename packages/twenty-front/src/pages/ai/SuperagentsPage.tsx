@@ -1,21 +1,37 @@
 import { styled } from '@linaria/react';
 import { useLingui } from '@lingui/react/macro';
-import { useState } from 'react';
-import { themeCssVariables } from 'twenty-ui/theme-constants';
 import { useMutation } from '@apollo/client/react';
+import { useCallback, useMemo, useState } from 'react';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
+import { type ExtendedUIMessage } from 'twenty-shared/ai';
 
 import { AIChatTab } from '@/ai/components/AIChatTab';
 import { useSwitchToNewAIChat } from '@/ai/hooks/useSwitchToNewAIChat';
 import { buildMentionedAgentToken } from '@/ai/utils/extractMentionedAgentToken';
 import { agentChatInputState } from '@/ai/states/agentChatInputState';
+import {
+  AGENT_CHAT_NEW_THREAD_DRAFT_KEY,
+  agentChatDraftsByThreadIdState,
+} from '@/ai/states/agentChatDraftsByThreadIdState';
+import { currentAIChatThreadState } from '@/ai/states/currentAIChatThreadState';
+import { agentChatIsLoadingState } from '@/ai/states/agentChatIsLoadingState';
+import { agentChatMessagesComponentFamilyState } from '@/ai/states/agentChatMessagesComponentFamilyState';
+import { dispatchAgentChatEnsureThreadForDraftEvent } from '@/ai/utils/dispatchAgentChatEnsureThreadForDraftEvent';
+import { dispatchAgentChatSendMessageEvent } from '@/ai/utils/dispatchAgentChatSendMessageEvent';
 import { useSetAtomState } from '@/ui/utilities/state/jotai/hooks/useSetAtomState';
+import { useAtomState } from '@/ui/utilities/state/jotai/hooks/useAtomState';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+import { useAtomComponentFamilyStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentFamilyStateValue';
 import { useSnackBar } from '@/ui/feedback/snack-bar-manager/hooks/useSnackBar';
 import { Button } from 'twenty-ui/input';
-import { CreateOneAgentDocument, type CreateAgentInput } from '~/generated-metadata/graphql';
+import {
+  CreateOneAgentDocument,
+  type CreateAgentInput,
+} from '~/generated-metadata/graphql';
 import { pickSuperagentLook } from '~/pages/settings/ai/constants/superagentLooks';
 import { computeMetadataNameFromLabel } from '~/pages/settings/data-model/utils/computeMetadataNameFromLabel';
-import { dispatchAgentChatSendMessageEvent } from '@/ai/utils/dispatchAgentChatSendMessageEvent';
 import { IconSettingsAutomation, IconSparkles } from 'twenty-ui/display';
+import { turnIntoEmptyStringIfWhitespacesOnly } from '~/utils/string/turnIntoEmptyStringIfWhitespacesOnly';
 
 const StyledPage = styled.div`
   display: flex;
@@ -131,16 +147,6 @@ const StyledHint = styled.div`
   font-size: ${themeCssVariables.font.size.sm};
 `;
 
-const StyledQuestion = styled.div`
-  border: 1px solid ${themeCssVariables.border.color.medium};
-  border-radius: ${themeCssVariables.border.radius.sm};
-  background: ${themeCssVariables.background.transparent.light};
-  color: ${themeCssVariables.font.color.secondary};
-  max-width: 860px;
-  width: 100%;
-  padding: ${themeCssVariables.spacing[2]};
-`;
-
 const StyledChips = styled.div`
   display: flex;
   gap: ${themeCssVariables.spacing[1]};
@@ -174,6 +180,24 @@ const StyledSendButton = styled.button`
   padding: 0 ${themeCssVariables.spacing[2]};
 `;
 
+const extractUserTextFromMessages = (messages: ExtendedUIMessage[]): string => {
+  const chunks: string[] = [];
+
+  for (const message of messages) {
+    if (message.role !== 'user') {
+      continue;
+    }
+
+    for (const part of message.parts ?? []) {
+      if (part.type === 'text' && 'text' in part) {
+        chunks.push(String((part as { text: string }).text));
+      }
+    }
+  }
+
+  return chunks.join('\n\n').trim();
+};
+
 const getFallbackLabelFromPrompt = (prompt: string) => {
   const firstLine = (prompt.split('\n')[0] ?? '').trim();
 
@@ -181,125 +205,105 @@ const getFallbackLabelFromPrompt = (prompt: string) => {
     return 'New Superagent';
   }
 
-  return firstLine.length > 40 ? `${firstLine.slice(0, 40).trim()}...` : firstLine;
-};
-
-const AGENT_BUILDER_QUESTIONS = [
-  'What scope should this agent handle?',
-  'Any strict rules or forbidden actions?',
-  'When should it escalate to you instead of acting?',
-] as const;
-
-type BuilderAnswers = {
-  goal: string;
-  scope: string;
-  rules: string;
-  escalation: string;
+  return firstLine.length > 40
+    ? `${firstLine.slice(0, 40).trim()}...`
+    : firstLine;
 };
 
 export const SuperagentsPage = () => {
   const { t } = useLingui();
   const { switchToNewChat } = useSwitchToNewAIChat();
-  const { enqueueErrorSnackBar } = useSnackBar();
+  const { enqueueErrorSnackBar, enqueueSuccessSnackBar } = useSnackBar();
   const setAgentChatInput = useSetAtomState(agentChatInputState);
+  const [agentChatDraftsByThreadId, setAgentChatDraftsByThreadId] =
+    useAtomState(agentChatDraftsByThreadIdState);
+  const [agentChatInput] = useAtomState(agentChatInputState);
+  const currentAIChatThread = useAtomStateValue(currentAIChatThreadState);
+  const agentChatIsLoading = useAtomStateValue(agentChatIsLoadingState);
   const [createAgent] = useMutation(CreateOneAgentDocument);
+
   const [mode, setMode] = useState<'ask' | 'agents'>('agents');
-  const [draft, setDraft] = useState('');
-  const [builderAnswers, setBuilderAnswers] = useState<BuilderAnswers | null>(null);
-  const [builderStep, setBuilderStep] = useState(0);
   const [isCreating, setIsCreating] = useState(false);
 
-  const hasGoal = builderAnswers !== null;
-  const isBuilderReady = hasGoal && builderStep >= AGENT_BUILDER_QUESTIONS.length;
-  const canSend = draft.trim().length > 0 && !isCreating;
-  const builderQuestion =
-    hasGoal && !isBuilderReady ? AGENT_BUILDER_QUESTIONS[builderStep] : null;
+  const draftKey = currentAIChatThread ?? AGENT_CHAT_NEW_THREAD_DRAFT_KEY;
 
-  const submitAskModePrompt = () => {
-    const text = draft.trim();
+  const threadIdForMessages =
+    currentAIChatThread ?? AGENT_CHAT_NEW_THREAD_DRAFT_KEY;
 
-    if (!text) {
-      return;
-    }
+  const threadMessages = useAtomComponentFamilyStateValue(
+    agentChatMessagesComponentFamilyState,
+    { threadId: threadIdForMessages },
+  );
 
-    switchToNewChat();
-    setAgentChatInput(text);
-    dispatchAgentChatSendMessageEvent();
-    setDraft('');
+  const conversationPrompt = useMemo(
+    () => extractUserTextFromMessages(threadMessages),
+    [threadMessages],
+  );
+
+  const heroText = useMemo(() => {
+    const draft =
+      draftKey === AGENT_CHAT_NEW_THREAD_DRAFT_KEY
+        ? (agentChatDraftsByThreadId[AGENT_CHAT_NEW_THREAD_DRAFT_KEY] ??
+          agentChatInput)
+        : (agentChatDraftsByThreadId[draftKey] ?? agentChatInput);
+
+    return draft;
+  }, [agentChatDraftsByThreadId, agentChatInput, draftKey]);
+
+  const syncDraft = useCallback(
+    (raw: string) => {
+      const text = turnIntoEmptyStringIfWhitespacesOnly(raw);
+
+      setAgentChatInput(text);
+      setAgentChatDraftsByThreadId((prev) => ({
+        ...prev,
+        [draftKey]: text,
+      }));
+
+      if (
+        draftKey === AGENT_CHAT_NEW_THREAD_DRAFT_KEY &&
+        text.trim() !== ''
+      ) {
+        dispatchAgentChatEnsureThreadForDraftEvent();
+      }
+    },
+    [draftKey, setAgentChatDraftsByThreadId, setAgentChatInput],
+  );
+
+  const handleHeroChange = (value: string) => {
+    syncDraft(value);
   };
 
-  const submitBuilderAnswer = () => {
-    const text = draft.trim();
+  const canSend =
+    heroText.trim().length > 0 && !agentChatIsLoading && !isCreating;
 
-    if (!text) {
-      return;
-    }
-
-    if (!builderAnswers) {
-      setBuilderAnswers({
-        goal: text,
-        scope: '',
-        rules: '',
-        escalation: '',
-      });
-      setBuilderStep(0);
-      setDraft('');
-      return;
-    }
-
-    const nextAnswers = { ...builderAnswers };
-
-    if (builderStep === 0) {
-      nextAnswers.scope = text;
-    } else if (builderStep === 1) {
-      nextAnswers.rules = text;
-    } else if (builderStep === 2) {
-      nextAnswers.escalation = text;
-    }
-
-    setBuilderAnswers(nextAnswers);
-    setBuilderStep((prev) => prev + 1);
-    setDraft('');
-  };
-
-  const handleSubmitPrompt = () => {
+  const handleSend = () => {
     if (!canSend) {
       return;
     }
 
-    if (mode === 'ask') {
-      submitAskModePrompt();
+    dispatchAgentChatSendMessageEvent();
+  };
+
+  const handleCreateSuperagent = async () => {
+    const promptSource =
+      conversationPrompt.length > 0
+        ? conversationPrompt
+        : heroText.trim();
+
+    if (!promptSource) {
+      enqueueErrorSnackBar({
+        message: t`Chat with the assistant first, or describe your superagent in the prompt box.`,
+      });
+
       return;
     }
 
-    submitBuilderAnswer();
-  };
-
-  const handleStartFromScratch = () => {
-    setMode('agents');
-    setDraft('');
-    setBuilderAnswers(null);
-    setBuilderStep(0);
-    switchToNewChat();
-  };
-
-  const handleCreateByPrompt = async () => {
-    if (!builderAnswers || !isBuilderReady || isCreating) {
-      return;
-    }
-
-    const normalizedLabel = getFallbackLabelFromPrompt(builderAnswers.goal);
+    const normalizedLabel = getFallbackLabelFromPrompt(promptSource);
     const normalizedName = computeMetadataNameFromLabel(normalizedLabel);
-    const assignedLook = pickSuperagentLook(`${normalizedName}-${normalizedLabel}`);
-
-    const augmentedPrompt = [
-      builderAnswers.goal,
-      builderAnswers.scope ? `\nScope details:\n${builderAnswers.scope}` : '',
-      builderAnswers.rules ? `\nRules and constraints:\n${builderAnswers.rules}` : '',
-      builderAnswers.escalation
-        ? `\nEscalation policy:\n${builderAnswers.escalation}`
-        : '',
-    ].join('\n');
+    const assignedLook = pickSuperagentLook(
+      `${normalizedName}-${normalizedLabel}`,
+    );
 
     const input: CreateAgentInput = {
       name: normalizedName,
@@ -307,7 +311,7 @@ export const SuperagentsPage = () => {
       description: null,
       icon: assignedLook.icon,
       modelId: 'auto',
-      prompt: augmentedPrompt,
+      prompt: promptSource,
       modelConfiguration: {
         superagentProfile: {
           lookId: assignedLook.id,
@@ -338,13 +342,13 @@ export const SuperagentsPage = () => {
 
       switchToNewChat();
       setAgentChatInput(
-        `${mentionToken} Help me get started. Ask me 3 focused questions before you execute.`,
+        `${mentionToken} You are live. Introduce yourself in one short message and ask what I want to do first.`,
       );
       dispatchAgentChatSendMessageEvent();
 
-      setDraft('');
-      setBuilderAnswers(null);
-      setBuilderStep(0);
+      enqueueSuccessSnackBar({
+        message: t`Superagent created`,
+      });
     } catch (error) {
       enqueueErrorSnackBar({
         apolloError: error,
@@ -354,17 +358,30 @@ export const SuperagentsPage = () => {
     }
   };
 
+  const handleStartFromScratch = () => {
+    setMode('agents');
+    switchToNewChat();
+  };
+
   return (
     <StyledPage>
       <StyledPageTopBar>
         <StyledHero>
           <StyledHeroTitle>{t`Super Agents`}</StyledHeroTitle>
           <StyledModeTabs>
-            <StyledModeTab active={mode === 'ask'} onClick={() => setMode('ask')}>
+            <StyledModeTab
+              active={mode === 'ask'}
+              type="button"
+              onClick={() => setMode('ask')}
+            >
               <IconSparkles size={14} />
               {t`Ask`}
             </StyledModeTab>
-            <StyledModeTab active={mode === 'agents'} onClick={() => setMode('agents')}>
+            <StyledModeTab
+              active={mode === 'agents'}
+              type="button"
+              onClick={() => setMode('agents')}
+            >
               <IconSettingsAutomation size={14} />
               {t`Agents`}
             </StyledModeTab>
@@ -377,45 +394,64 @@ export const SuperagentsPage = () => {
                     ? t`Share the repetitive work you'd love to delegate...`
                     : t`Ask, search, or create anything...`
                 }
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
+                value={heroText}
+                onChange={(event) => handleHeroChange(event.target.value)}
               />
               <StyledPromptActions>
                 <StyledHint>
                   {mode === 'agents'
-                    ? isBuilderReady
-                      ? t`Ready to create your superagent`
-                      : t`Talk to AI to define your superagent`
+                    ? t`Message the AI above — then create your superagent when ready`
                     : t`Press send to chat`}
                 </StyledHint>
-                <StyledSendButton onClick={handleSubmitPrompt} disabled={!canSend}>
+                <StyledSendButton
+                  type="button"
+                  onClick={handleSend}
+                  disabled={!canSend}
+                >
                   {t`Send`}
                 </StyledSendButton>
               </StyledPromptActions>
             </StyledPromptInner>
           </StyledPromptBox>
-          {mode === 'agents' && builderQuestion && (
-            <StyledQuestion>{builderQuestion}</StyledQuestion>
-          )}
-          {mode === 'agents' && isBuilderReady && (
+          {mode === 'agents' && (
             <Button
-              title={isCreating ? t`Creating...` : t`Create superagent`}
-              onClick={handleCreateByPrompt}
-              disabled={isCreating}
+              title={
+                isCreating ? t`Creating...` : t`Create superagent from chat`
+              }
+              onClick={handleCreateSuperagent}
+              disabled={isCreating || agentChatIsLoading}
             />
           )}
-          {mode === 'agents' && !hasGoal && (
+          {mode === 'agents' && heroText.trim() === '' && (
             <StyledChips>
-              <StyledChip onClick={() => setDraft('Qualify inbound leads and book demos')}>
+              <StyledChip
+                type="button"
+                onClick={() =>
+                  syncDraft('Qualify inbound leads and book demos')
+                }
+              >
                 {t`Support Triage`}
               </StyledChip>
-              <StyledChip onClick={() => setDraft('Handle refund policy checks and responses')}>
+              <StyledChip
+                type="button"
+                onClick={() =>
+                  syncDraft('Handle refund policy checks and responses')
+                }
+              >
                 {t`Refund Policy`}
               </StyledChip>
-              <StyledChip onClick={() => setDraft('Flag sensitive content and escalate incidents')}>
+              <StyledChip
+                type="button"
+                onClick={() =>
+                  syncDraft('Flag sensitive content and escalate incidents')
+                }
+              >
                 {t`Sensitive Content`}
               </StyledChip>
-              <StyledChip onClick={() => setDraft('Diagnose account access issues')}>
+              <StyledChip
+                type="button"
+                onClick={() => syncDraft('Diagnose account access issues')}
+              >
                 {t`Account Troubleshooter`}
               </StyledChip>
             </StyledChips>
@@ -426,9 +462,8 @@ export const SuperagentsPage = () => {
         </StyledResetButton>
       </StyledPageTopBar>
       <StyledChatArea>
-        <AIChatTab />
+        <AIChatTab hideComposer />
       </StyledChatArea>
     </StyledPage>
   );
 };
-
