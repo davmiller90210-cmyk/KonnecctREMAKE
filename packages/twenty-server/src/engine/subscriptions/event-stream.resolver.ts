@@ -136,10 +136,9 @@ export class EventStreamResolver {
     );
 
     if (!isDefined(streamData)) {
-      throw new EventStreamException(
-        'Event stream does not exist',
-        EventStreamExceptionCode.EVENT_STREAM_DOES_NOT_EXIST,
-      );
+      // Idempotent behavior for client-side race conditions:
+      // a query can be registered right after stream teardown/reconnect.
+      return true;
     }
     const isAuthorized = await this.eventStreamService.isAuthorized({
       streamData,
@@ -182,10 +181,8 @@ export class EventStreamResolver {
     );
 
     if (!isDefined(streamData)) {
-      throw new EventStreamException(
-        'Event stream does not exist',
-        EventStreamExceptionCode.EVENT_STREAM_DOES_NOT_EXIST,
-      );
+      // Stream may already be gone during teardown; treat as success.
+      return true;
     }
 
     const isAuthorized = await this.eventStreamService.isAuthorized({
