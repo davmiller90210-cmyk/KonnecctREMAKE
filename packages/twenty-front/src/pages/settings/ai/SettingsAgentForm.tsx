@@ -39,6 +39,7 @@ import { useAtomFamilyStateValue } from '@/ui/utilities/state/jotai/hooks/useAto
 import { useSetAtomFamilyState } from '@/ui/utilities/state/jotai/hooks/useSetAtomFamilyState';
 import { useEffect, useState } from 'react';
 import { isDeeplyEqual } from '~/utils/isDeeplyEqual';
+import { computeMetadataNameFromLabel } from '~/pages/settings/data-model/utils/computeMetadataNameFromLabel';
 import { SettingsAgentDetailSkeletonLoader } from './components/SettingsAgentDetailSkeletonLoader';
 import { SettingsAgentEvalsTab } from './components/SettingsAgentEvalsTab';
 import { SettingsAgentLogsTab } from './components/SettingsAgentLogsTab';
@@ -59,6 +60,22 @@ const StyledContentContainer = styled.div`
 const StyledTabListContainer = styled.div`
   margin-bottom: ${themeCssVariables.spacing[8]};
 `;
+
+const buildAgentLabelFromPrompt = (prompt: string) => {
+  const trimmedPrompt = prompt.trim();
+
+  if (!trimmedPrompt) {
+    return t`New Superagent`;
+  }
+
+  const firstLine = trimmedPrompt.split('\n')[0]?.trim() ?? '';
+
+  if (!firstLine) {
+    return t`New Superagent`;
+  }
+
+  return firstLine.length > 40 ? `${firstLine.slice(0, 40).trim()}...` : firstLine;
+};
 
 export const SettingsAgentForm = ({ mode }: { mode: 'create' | 'edit' }) => {
   const { agentId = '' } = useParams<{ agentId: string }>();
@@ -322,18 +339,23 @@ export const SettingsAgentForm = ({ mode }: { mode: 'create' | 'edit' }) => {
       }
 
       if (isCreateMode) {
+        const fallbackLabel = buildAgentLabelFromPrompt(formValues.prompt);
+        const normalizedLabel = (formValues.label || '').trim() || fallbackLabel;
+        const normalizedName =
+          (formValues.name || '').trim() || computeMetadataNameFromLabel(normalizedLabel);
         const assignedLook = pickSuperagentLook(
-          `${formValues.name ?? ''}-${formValues.label}`,
+          `${normalizedName}-${normalizedLabel}`,
         );
         const input: CreateAgentInput = {
-          name: formValues.name,
-          label: formValues.label,
+          name: normalizedName,
+          label: normalizedLabel,
           description: formValues.description,
           icon:
             formValues.icon && formValues.icon !== 'IconRobot'
               ? formValues.icon
               : assignedLook.icon,
-          modelId: formValues.modelId,
+          // Keep new-agent creation resilient across workspace model constraints.
+          modelId: 'auto',
           roleId: formValues.role,
           prompt: formValues.prompt,
           modelConfiguration: {

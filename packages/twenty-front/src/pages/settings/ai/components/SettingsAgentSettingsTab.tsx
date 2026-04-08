@@ -152,22 +152,24 @@ export const SettingsAgentSettingsTab = ({
           />
         </StyledFormContainer>
       )}
-      <StyledFormContainer>
-        {noModelsAvailable ? (
-          <StyledErrorMessage>
-            {t`No models available. Please configure AI models in your workspace settings.`}
-          </StyledErrorMessage>
-        ) : (
-          <Select
-            dropdownId="ai-model-select"
-            label={t`AI Model`}
-            value={formValues.modelId}
-            onChange={(value) => onFieldChange('modelId', value)}
-            options={modelOptions}
-            disabled={noModelsAvailable || disabled}
-          />
-        )}
-      </StyledFormContainer>
+      {!simplified && (
+        <StyledFormContainer>
+          {noModelsAvailable ? (
+            <StyledErrorMessage>
+              {t`No models available. Please configure AI models in your workspace settings.`}
+            </StyledErrorMessage>
+          ) : (
+            <Select
+              dropdownId="ai-model-select"
+              label={t`AI Model`}
+              value={formValues.modelId}
+              onChange={(value) => onFieldChange('modelId', value)}
+              options={modelOptions}
+              disabled={noModelsAvailable || disabled}
+            />
+          )}
+        </StyledFormContainer>
+      )}
       {!simplified && formValues.modelId && (
         <StyledFormContainer>
           <SettingsAgentModelCapabilities
