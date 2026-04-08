@@ -73,6 +73,7 @@ type SettingsAgentSettingsTabProps = {
   ) => void;
   disabled: boolean;
   agent?: Agent;
+  simplified?: boolean;
 };
 
 export const SettingsAgentSettingsTab = ({
@@ -80,6 +81,7 @@ export const SettingsAgentSettingsTab = ({
   onFieldChange,
   disabled,
   agent,
+  simplified = false,
 }: SettingsAgentSettingsTabProps) => {
   const { t } = useLingui();
   const { openModal } = useModal();
@@ -138,16 +140,18 @@ export const SettingsAgentSettingsTab = ({
           </StyledNameContainer>
         </StyledIconNameRow>
       </StyledFormContainer>
-      <StyledFormContainer>
-        <TextArea
-          textAreaId="agent-description-textarea"
-          placeholder={t`Write a description for this agent`}
-          minRows={3}
-          value={formValues.description || ''}
-          onChange={(value) => onFieldChange('description', value)}
-          disabled={disabled}
-        />
-      </StyledFormContainer>
+      {!simplified && (
+        <StyledFormContainer>
+          <TextArea
+            textAreaId="agent-description-textarea"
+            placeholder={t`Write a description for this agent`}
+            minRows={3}
+            value={formValues.description || ''}
+            onChange={(value) => onFieldChange('description', value)}
+            disabled={disabled}
+          />
+        </StyledFormContainer>
+      )}
       <StyledFormContainer>
         {noModelsAvailable ? (
           <StyledErrorMessage>
@@ -164,7 +168,7 @@ export const SettingsAgentSettingsTab = ({
           />
         )}
       </StyledFormContainer>
-      {formValues.modelId && (
+      {!simplified && formValues.modelId && (
         <StyledFormContainer>
           <SettingsAgentModelCapabilities
             selectedModelId={formValues.modelId}
@@ -176,23 +180,29 @@ export const SettingsAgentSettingsTab = ({
           />
         </StyledFormContainer>
       )}
-      <StyledFormContainer>
-        <SettingsAgentOrchestrationProfile
-          value={modelConfiguration.runtimeProfile ?? {}}
-          onChange={(runtimeProfile) =>
-            onFieldChange('modelConfiguration', {
-              ...modelConfiguration,
-              runtimeProfile,
-            })
-          }
-          disabled={disabled}
-        />
-      </StyledFormContainer>
+      {!simplified && (
+        <StyledFormContainer>
+          <SettingsAgentOrchestrationProfile
+            value={modelConfiguration.runtimeProfile ?? {}}
+            onChange={(runtimeProfile) =>
+              onFieldChange('modelConfiguration', {
+                ...modelConfiguration,
+                runtimeProfile,
+              })
+            }
+            disabled={disabled}
+          />
+        </StyledFormContainer>
+      )}
       <StyledFormContainer>
         <TextArea
           textAreaId="agent-prompt-textarea"
-          label={t`System Prompt`}
-          placeholder={t`Enter the system prompt that defines this agent's behavior and capabilities`}
+          label={simplified ? t`What should this superagent do?` : t`System Prompt`}
+          placeholder={
+            simplified
+              ? t`Describe the superagent in plain language. Example: "Qualify inbound leads, ask for budget/timeline, and create follow-up tasks."`
+              : t`Enter the system prompt that defines this agent's behavior and capabilities`
+          }
           minRows={6}
           maxRows={15}
           value={formValues.prompt}
@@ -200,15 +210,17 @@ export const SettingsAgentSettingsTab = ({
           disabled={disabled}
         />
       </StyledFormContainer>
-      <StyledFormContainer>
-        <SettingsAgentResponseFormat
-          responseFormat={formValues.responseFormat}
-          onResponseFormatChange={(format) =>
-            onFieldChange('responseFormat', format)
-          }
-          disabled={disabled}
-        />
-      </StyledFormContainer>
+      {!simplified && (
+        <StyledFormContainer>
+          <SettingsAgentResponseFormat
+            responseFormat={formValues.responseFormat}
+            onResponseFormatChange={(format) =>
+              onFieldChange('responseFormat', format)
+            }
+            disabled={disabled}
+          />
+        </StyledFormContainer>
+      )}
       {!disabled && agent && formValues.isCustom && (
         <Section>
           <H2Title title={t`Danger zone`} description={t`Delete this agent`} />

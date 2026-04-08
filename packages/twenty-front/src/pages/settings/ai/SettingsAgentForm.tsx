@@ -258,28 +258,36 @@ export const SettingsAgentForm = ({ mode }: { mode: 'create' | 'edit' }) => {
 
   const canSave = !isReadonlyMode && validateForm() && !isSubmitting;
 
-  const tabs = [
-    {
-      id: SETTINGS_AGENT_DETAIL_TABS.TABS_IDS.SETTINGS,
-      title: t`Settings`,
-      Icon: IconSettings,
-    },
-    {
-      id: SETTINGS_AGENT_DETAIL_TABS.TABS_IDS.ROLE,
-      title: t`Role`,
-      Icon: IconLock,
-    },
-    {
-      id: SETTINGS_AGENT_DETAIL_TABS.TABS_IDS.EVALS,
-      title: t`Evals`,
-      Icon: IconListCheck,
-    },
-    {
-      id: SETTINGS_AGENT_DETAIL_TABS.TABS_IDS.LOGS,
-      title: t`Logs`,
-      Icon: IconList,
-    },
-  ];
+  const tabs = isCreateMode
+    ? [
+        {
+          id: SETTINGS_AGENT_DETAIL_TABS.TABS_IDS.SETTINGS,
+          title: t`Settings`,
+          Icon: IconSettings,
+        },
+      ]
+    : [
+        {
+          id: SETTINGS_AGENT_DETAIL_TABS.TABS_IDS.SETTINGS,
+          title: t`Settings`,
+          Icon: IconSettings,
+        },
+        {
+          id: SETTINGS_AGENT_DETAIL_TABS.TABS_IDS.ROLE,
+          title: t`Role`,
+          Icon: IconLock,
+        },
+        {
+          id: SETTINGS_AGENT_DETAIL_TABS.TABS_IDS.EVALS,
+          title: t`Evals`,
+          Icon: IconListCheck,
+        },
+        {
+          id: SETTINGS_AGENT_DETAIL_TABS.TABS_IDS.LOGS,
+          title: t`Logs`,
+          Icon: IconList,
+        },
+      ];
 
   const handleSave = async () => {
     if (isReadonlyMode) {
@@ -401,9 +409,10 @@ export const SettingsAgentForm = ({ mode }: { mode: 'create' | 'edit' }) => {
       : agent?.label
     : t`New Agent`;
 
-  const isRoleTab = activeTabId === SETTINGS_AGENT_DETAIL_TABS.TABS_IDS.ROLE;
+  const isRoleTab =
+    !isCreateMode && activeTabId === SETTINGS_AGENT_DETAIL_TABS.TABS_IDS.ROLE;
   const isSettingsTab =
-    activeTabId === SETTINGS_AGENT_DETAIL_TABS.TABS_IDS.SETTINGS;
+    isCreateMode || activeTabId === SETTINGS_AGENT_DETAIL_TABS.TABS_IDS.SETTINGS;
   const isEvalsTab = activeTabId === SETTINGS_AGENT_DETAIL_TABS.TABS_IDS.EVALS;
   const isLogsTab = activeTabId === SETTINGS_AGENT_DETAIL_TABS.TABS_IDS.LOGS;
 
@@ -443,13 +452,15 @@ export const SettingsAgentForm = ({ mode }: { mode: 'create' | 'edit' }) => {
               <SettingsAgentDetailSkeletonLoader />
             ) : (
               <>
-                <StyledTabListContainer>
-                  <TabList
-                    tabs={tabs}
-                    className="tab-list"
-                    componentInstanceId={tabListComponentId}
-                  />
-                </StyledTabListContainer>
+                {!isCreateMode && (
+                  <StyledTabListContainer>
+                    <TabList
+                      tabs={tabs}
+                      className="tab-list"
+                      componentInstanceId={tabListComponentId}
+                    />
+                  </StyledTabListContainer>
+                )}
                 <StyledContentContainer>
                   {isRoleTab && (
                     <SettingsAgentRoleTab
@@ -466,6 +477,7 @@ export const SettingsAgentForm = ({ mode }: { mode: 'create' | 'edit' }) => {
                       onFieldChange={handleFieldChange}
                       disabled={isFormDisabled}
                       agent={agent}
+                      simplified={isCreateMode}
                     />
                   )}
                   {isEvalsTab && (
