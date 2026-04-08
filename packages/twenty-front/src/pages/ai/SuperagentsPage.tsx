@@ -29,7 +29,7 @@ const StyledPageTopBar = styled.div`
   display: flex;
   flex-direction: column;
   gap: ${themeCssVariables.spacing[2]};
-  padding: ${themeCssVariables.spacing[3]} ${themeCssVariables.spacing[3]} 0;
+  padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[3]} 0;
 `;
 
 const StyledChatArea = styled.div`
@@ -46,18 +46,19 @@ const StyledResetButton = styled.button`
   color: ${themeCssVariables.font.color.light};
   padding: ${themeCssVariables.spacing[1]} ${themeCssVariables.spacing[2]};
   cursor: pointer;
+  margin-bottom: ${themeCssVariables.spacing[1]};
 `;
 
 const StyledHero = styled.div`
   align-items: center;
   display: flex;
   flex-direction: column;
-  gap: ${themeCssVariables.spacing[2]};
+  gap: ${themeCssVariables.spacing[1]};
 `;
 
 const StyledHeroTitle = styled.h1`
   color: ${themeCssVariables.font.color.primary};
-  font-size: 48px;
+  font-size: 46px;
   font-weight: ${themeCssVariables.font.weight.medium};
   margin: 0;
 `;
@@ -99,6 +100,7 @@ const StyledPromptBox = styled.div`
   max-width: 860px;
   width: 100%;
   padding: 2px;
+  box-shadow: 0 0 32px rgba(115, 87, 255, 0.25);
 `;
 
 const StyledPromptInner = styled.div`
@@ -114,7 +116,7 @@ const StyledTextArea = styled.textarea`
   width: 100%;
   outline: none;
   font-size: ${themeCssVariables.font.size.md};
-  min-height: 120px;
+  min-height: 108px;
   resize: vertical;
 `;
 
@@ -145,6 +147,7 @@ const StyledChips = styled.div`
   max-width: 860px;
   width: 100%;
   overflow-x: auto;
+  margin-top: ${themeCssVariables.spacing[1]};
 `;
 
 const StyledChip = styled.button`
@@ -155,6 +158,20 @@ const StyledChip = styled.button`
   cursor: pointer;
   padding: ${themeCssVariables.spacing[1]} ${themeCssVariables.spacing[2]};
   white-space: nowrap;
+`;
+
+const StyledSendButton = styled.button`
+  align-items: center;
+  background: ${themeCssVariables.background.tertiary};
+  border: 1px solid ${themeCssVariables.border.color.medium};
+  border-radius: 999px;
+  color: ${themeCssVariables.font.color.primary};
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  min-height: 34px;
+  min-width: 34px;
+  padding: 0 ${themeCssVariables.spacing[2]};
 `;
 
 const getFallbackLabelFromPrompt = (prompt: string) => {
@@ -371,11 +388,9 @@ export const SuperagentsPage = () => {
                       : t`Talk to AI to define your superagent`
                     : t`Press send to chat`}
                 </StyledHint>
-                <Button
-                  title={t`Send`}
-                  onClick={handleSubmitPrompt}
-                  disabled={!canSend}
-                />
+                <StyledSendButton onClick={handleSubmitPrompt} disabled={!canSend}>
+                  {t`Send`}
+                </StyledSendButton>
               </StyledPromptActions>
             </StyledPromptInner>
           </StyledPromptBox>
