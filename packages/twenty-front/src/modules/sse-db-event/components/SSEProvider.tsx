@@ -1,7 +1,3 @@
-import { MetadataStoreSSEEffect } from '@/metadata-store/effect-components/MetadataStoreSSEEffect';
-import { SSEClientEffect } from '@/sse-db-event/components/SSEClientEffect';
-import { SSEEventStreamEffect } from '@/sse-db-event/components/SSEEventStreamEffect';
-import { SSEQuerySubscribeEffect } from '@/sse-db-event/components/SSEQuerySubscribeEffect';
 import { type ReactNode } from 'react';
 
 type SSEProviderProps = {
@@ -11,10 +7,10 @@ type SSEProviderProps = {
 export const SSEProvider = ({ children }: SSEProviderProps) => {
   return (
     <>
-      <SSEClientEffect />
-      <SSEEventStreamEffect />
-      <SSEQuerySubscribeEffect />
-      <MetadataStoreSSEEffect />
+      {/* Temporary production hotfix:
+          disable SSE subscription lifecycle to avoid
+          EventStreamException(EVENT_STREAM_DOES_NOT_EXIST)
+          cascading into runtime failures. */}
       {children}
     </>
   );
