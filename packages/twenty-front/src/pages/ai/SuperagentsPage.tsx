@@ -46,6 +46,7 @@ const C = {
   surface: '#18181B',
   surface2: '#1E1E22',
   surface3: '#27272A',
+  surface4: '#111318',
   border: '#27272A',
   borderMuted: '#374151',
   text: '#ffffff',
@@ -76,8 +77,20 @@ const StyledPage = styled.div`
     sans-serif;
   min-height: 0;
   min-height: 100%;
-  overflow: hidden;
+  overflow: auto;
   position: relative;
+
+  &::before {
+    background: radial-gradient(
+      circle at 50% -20%,
+      rgba(59, 130, 246, 0.22),
+      transparent 48%
+    );
+    content: '';
+    inset: 0;
+    pointer-events: none;
+    position: absolute;
+  }
 `;
 
 const StyledStartOver = styled.button`
@@ -105,18 +118,19 @@ const StyledMain = styled.div`
   flex: 1;
   flex-direction: column;
   margin: 0 auto;
-  max-width: 1024px;
+  max-width: 1120px;
   min-height: 0;
-  padding: 32px 32px 24px;
+  padding: 72px 32px 28px;
   position: relative;
   width: 100%;
+  z-index: 1;
 `;
 
 const StyledBrandRow = styled.div`
   align-items: center;
   display: flex;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: 14px;
+  margin-bottom: 18px;
 `;
 
 const StyledLogoSplit = styled.div`
@@ -141,7 +155,7 @@ const StyledHeroTitle = styled.h1`
   align-items: flex-start;
   color: ${C.textTitle};
   display: flex;
-  font-size: 36px;
+  font-size: 44px;
   font-weight: 500;
   gap: 4px;
   letter-spacing: -0.025em;
@@ -157,6 +171,7 @@ const StyledTm = styled.span`
 
 const StyledTabsRow = styled.div`
   background: ${C.surface2};
+  border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: 999px;
   display: flex;
   gap: 0;
@@ -195,21 +210,23 @@ const StyledPromptGradient = styled.div`
     #8b5cf6 50%,
     #f97316 100%
   );
-  border-radius: 24px;
-  box-shadow: 0 0 40px rgba(139, 92, 246, 0.15);
-  margin-bottom: 16px;
-  margin-top: -12px;
+  border-radius: 22px;
+  box-shadow:
+    0 22px 50px rgba(15, 20, 34, 0.45),
+    0 0 46px rgba(139, 92, 246, 0.2);
+  margin-bottom: 14px;
+  margin-top: -2px;
   padding: 2px;
   width: 100%;
   z-index: 0;
 `;
 
 const StyledPromptInner = styled.div`
-  background: ${C.surface};
-  border-radius: 22px;
+  background: linear-gradient(180deg, #181b20 0%, #14161c 100%);
+  border-radius: 20px;
   display: flex;
   flex-direction: column;
-  height: 192px;
+  height: 228px;
   padding: 16px 16px 12px;
   padding-top: 32px;
   position: relative;
@@ -227,8 +244,8 @@ const StyledTextArea = styled.textarea`
     Monaco,
     Consolas,
     monospace;
-  font-size: 14px;
-  line-height: 1.625;
+  font-size: 15px;
+  line-height: 1.7;
   outline: none;
   resize: none;
   width: 100%;
@@ -290,18 +307,22 @@ const StyledHint = styled.span`
 `;
 
 const StyledCreateBtn = styled.button`
-  background: ${C.surface};
-  border: 1px solid ${C.surface3};
-  border-radius: 8px;
-  color: #d1d5db;
+  background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+  border: none;
+  border-radius: 10px;
+  color: #111827;
   cursor: pointer;
   font-size: 14px;
-  margin-bottom: 40px;
-  padding: 8px 20px;
-  transition: background 0.15s ease;
+  font-weight: 600;
+  margin-bottom: 38px;
+  padding: 10px 22px;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 
   &:hover:not(:disabled) {
-    background: ${C.surface3};
+    box-shadow: 0 8px 26px rgba(148, 163, 184, 0.26);
+    transform: translateY(-1px);
   }
 
   &:disabled {
@@ -314,7 +335,7 @@ const StyledCardsGrid = styled.div`
   display: grid;
   gap: 16px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-bottom: 64px;
+  margin-bottom: 26px;
   width: 100%;
 
   @media (min-width: 900px) {
@@ -323,8 +344,8 @@ const StyledCardsGrid = styled.div`
 `;
 
 const StyledSuggestCard = styled.button`
-  background: ${C.surface};
-  border: 1px solid ${C.surface3};
+  background: linear-gradient(180deg, #161922 0%, #13151c 100%);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 12px;
   color: ${C.text};
   cursor: pointer;
@@ -332,10 +353,15 @@ const StyledSuggestCard = styled.button`
   flex-direction: column;
   padding: 16px;
   text-align: left;
-  transition: background 0.15s ease;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease,
+    border-color 0.15s ease;
 
   &:hover {
-    background: ${C.surface2};
+    background: #1a1f2a;
+    border-color: rgba(148, 163, 184, 0.5);
+    transform: translateY(-2px);
   }
 `;
 
@@ -374,6 +400,7 @@ const StyledTagsWrap = styled.div`
   flex-wrap: wrap;
   gap: 12px;
   justify-content: center;
+  margin-bottom: 26px;
   max-width: 896px;
   padding: 0 16px;
   width: 100%;
@@ -388,7 +415,7 @@ const StyledTag = styled.button<{ active: boolean }>`
   cursor: pointer;
   font-size: 12px;
   font-weight: ${({ active }) => (active ? 500 : 400)};
-  padding: 6px 16px;
+  padding: 6px 14px;
   transition:
     border-color 0.15s ease,
     color 0.15s ease;
@@ -400,13 +427,28 @@ const StyledTag = styled.button<{ active: boolean }>`
 `;
 
 const StyledChatArea = styled.div`
-  border-top: 1px solid ${C.surface3};
+  background: ${C.surface4};
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  box-shadow: 0 24px 40px rgba(3, 7, 18, 0.36);
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  margin-top: 8px;
-  min-height: 0;
+  margin-top: 6px;
+  min-height: 220px;
+  overflow: hidden;
+  padding-top: 8px;
   width: 100%;
+`;
+
+const StyledChatPlaceholder = styled.div`
+  align-items: center;
+  color: ${C.textSoft};
+  display: flex;
+  font-size: 13px;
+  height: 220px;
+  justify-content: center;
+  text-align: center;
 `;
 
 const extractUserTextFromMessages = (messages: ExtendedUIMessage[]): string => {
@@ -516,6 +558,7 @@ export const SuperagentsPage = () => {
     () => extractUserTextFromMessages(agentChatMessages),
     [agentChatMessages],
   );
+  const hasConversation = agentChatMessages.length > 0;
 
   const heroText = useMemo(() => {
     const draft =
@@ -794,7 +837,13 @@ export const SuperagentsPage = () => {
         )}
 
         <StyledChatArea>
-          <AIChatTab hideComposer />
+          {mode === 'ask' || hasConversation ? (
+            <AIChatTab hideComposer />
+          ) : (
+            <StyledChatPlaceholder>
+              {t`Send your first message to start the conversation preview.`}
+            </StyledChatPlaceholder>
+          )}
         </StyledChatArea>
       </StyledMain>
     </StyledPage>
