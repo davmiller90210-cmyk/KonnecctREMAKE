@@ -8,8 +8,8 @@ import {
   ConversationList,
   MainContainer,
   Message,
-  MessageInput,
-  MessageList,
+  MessageInput as CsMessageInput,
+  MessageList as CsMessageList,
   Sidebar,
   TypingIndicator,
 } from '@chatscope/chat-ui-kit-react';
@@ -21,16 +21,6 @@ import {
   StreamVideoClient,
   type Call,
 } from '@stream-io/video-react-sdk';
-import {
-  Channel,
-  ChannelHeader,
-  ChannelList,
-  Chat,
-  MessageInput,
-  MessageList,
-  Thread,
-  Window,
-} from 'stream-chat-react';
 import {
   StreamChat,
   type Channel as StreamChannel,
@@ -561,7 +551,7 @@ export const CommunicationHub = () => {
                   ) : null}
                 </StyledTopActions>
               </StyledTopBar>
-              <MessageList
+              <CsMessageList
                 typingIndicator={
                   typingText ? (
                     <TypingIndicator content={typingText} />
@@ -596,8 +586,8 @@ export const CommunicationHub = () => {
                     </Message>
                   );
                 })}
-              </MessageList>
-              <MessageInput
+              </CsMessageList>
+              <CsMessageInput
                 attachButton={false}
                 placeholder="Type your message"
                 value={draft}

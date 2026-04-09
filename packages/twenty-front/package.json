@@ -123,7 +123,6 @@
     "react-textarea-autosize": "^8.4.1",
     "remark-gfm": "^4.0.1",
     "stream-chat": "^9.41.0",
-    "stream-chat-react": "^13.14.3",
     "transliteration": "^2.3.5",
     "twenty-sdk": "workspace:*",
     "twenty-shared": "workspace:*",
