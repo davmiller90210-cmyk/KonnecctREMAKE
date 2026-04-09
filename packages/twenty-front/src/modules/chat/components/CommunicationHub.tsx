@@ -186,15 +186,21 @@ export const CommunicationHub = () => {
   const activeChannelRef = useRef<StreamChannel<DefaultGenerics> | undefined>(
     undefined,
   );
+  /** Bumps on effect cleanup so async init can bail before setState after disconnect (Strict Mode / fast navigation). */
+  const streamInitGenerationRef = useRef(0);
 
   const fallbackUid = useMemo(
     () => clerkUserId ?? 'stream-uid-1',
     [clerkUserId],
   );
 
+  /** Pass `client` — do not read `streamClient` state here or `toSummary` changes after connect and re-triggers the init effect (disconnect loop). */
   const toSummary = useCallback(
-    (channel: StreamChannel<DefaultGenerics>): ConversationSummary => {
-      const selfId = streamClient?.userID;
+    (
+      channel: StreamChannel<DefaultGenerics>,
+      client: StreamChat,
+    ): ConversationSummary => {
+      const selfId = client.userID ?? fallbackUid;
       const members = Object.values(channel.state.members ?? {});
       const otherMember = members.find((member) => member.user?.id !== selfId);
       const fallbackTitle = channel.data?.name ?? otherMember?.user?.name;
@@ -218,7 +224,7 @@ export const CommunicationHub = () => {
         unreadCount: channel.countUnread() ?? 0,
       };
     },
-    [streamClient?.userID],
+    [fallbackUid],
   );
 
   const refreshConversations = useCallback(
@@ -233,7 +239,7 @@ export const CommunicationHub = () => {
         { presence: true, state: true, watch: true },
       );
 
-      const next = channels.map(toSummary);
+      const next = channels.map((ch) => toSummary(ch, client));
 
       setConversationSummaries(next);
 
@@ -247,9 +253,11 @@ export const CommunicationHub = () => {
   );
 
   useEffect(() => {
-    let mounted = true;
+    const initGeneration = ++streamInitGenerationRef.current;
     let chatClientForCleanup: StreamChat | null = null;
     let videoClientForCleanup: StreamVideoClient | null = null;
+
+    const isInitStale = () => initGeneration !== streamInitGenerationRef.current;
 
     const init = async () => {
       setStatus('loading');
@@ -259,6 +267,10 @@ export const CommunicationHub = () => {
 
         if (!bearer) {
           throw new Error('Missing auth token for Stream session bootstrap.');
+        }
+
+        if (isInitStale()) {
+          return;
         }
 
         const response = await fetch('/stream/token', {
@@ -298,7 +310,17 @@ export const CommunicationHub = () => {
 
         await chatClient.connectUser(user, token);
 
+        if (isInitStale()) {
+          await chatClient.disconnectUser();
+          return;
+        }
+
         await refreshConversations(chatClient);
+
+        if (isInitStale()) {
+          await chatClient.disconnectUser();
+          return;
+        }
 
         const videoClient = StreamVideoClient.getOrCreateInstance({
           apiKey: resolvedApiKey,
@@ -307,7 +329,7 @@ export const CommunicationHub = () => {
         });
         videoClientForCleanup = videoClient;
 
-        if (!mounted) {
+        if (isInitStale()) {
           await chatClient.disconnectUser();
           videoClient.disconnectUser();
           return;
@@ -317,7 +339,7 @@ export const CommunicationHub = () => {
         setStreamVideoClient(videoClient);
         setStatus('ready');
       } catch (error) {
-        if (!mounted) {
+        if (isInitStale()) {
           return;
         }
 
@@ -329,7 +351,7 @@ export const CommunicationHub = () => {
     void init();
 
     return () => {
-      mounted = false;
+      streamInitGenerationRef.current += 1;
       setIsCallPanelOpen(false);
       setActiveCall(undefined);
       activeChannelRef.current = undefined;
@@ -356,7 +378,9 @@ export const CommunicationHub = () => {
     }
 
     setChannelMessages([...activeChannel.state.messages]);
-    void activeChannel.markRead();
+    void activeChannel.markRead().catch(() => {
+      /* ignore if client disconnected between render and markRead */
+    });
   }, [activeChannel]);
 
   useEffect(() => {
