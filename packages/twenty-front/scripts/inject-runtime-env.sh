@@ -12,18 +12,18 @@ CONFIG_BLOCK=$(cat << EOF
         STREAM_API_KEY: "$STREAM_API_KEY"
       };
     </script>
-    <!-- END: Twenty Config -->
+    <!-- END: Konnecct Config -->
 EOF
 )
 # Use sed to replace the config block in index.html
 # Using pattern space to match across multiple lines
 echo "$CONFIG_BLOCK" | sed -i.bak '
-  /<!-- BEGIN: Twenty Config -->/,/<!-- END: Twenty Config -->/{
-    /<!-- BEGIN: Twenty Config -->/!{
-      /<!-- END: Twenty Config -->/!d
+  /<!-- BEGIN: .* Config -->/,/<!-- END: .* Config -->/{
+    /<!-- BEGIN: .* Config -->/!{
+      /<!-- END: .* Config -->/!d
     }
-    /<!-- BEGIN: Twenty Config -->/r /dev/stdin
-    /<!-- END: Twenty Config -->/d
+    /<!-- BEGIN: .* Config -->/r /dev/stdin
+    /<!-- END: .* Config -->/d
   }
 ' build/index.html
 rm -f build/index.html.bak
