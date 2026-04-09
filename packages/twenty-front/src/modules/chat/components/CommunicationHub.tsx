@@ -124,16 +124,6 @@ export const CommunicationHub = () => {
     let mounted = true;
 
     const init = async () => {
-      if (
-        !REACT_APP_STREAM_API_KEY
-      ) {
-        setStatus('error');
-        setErrorMessage(
-          'Stream is not configured. Missing REACT_APP_STREAM_API_KEY.',
-        );
-        return;
-      }
-
       setStatus('loading');
 
       try {
@@ -156,17 +146,26 @@ export const CommunicationHub = () => {
           throw new Error(raw || `Token endpoint failed with ${response.status}`);
         }
 
-        const { token, userId } = (await response.json()) as {
+        const { apiKey, token, userId } = (await response.json()) as {
+          apiKey?: string;
           token: string;
           userId: string;
         };
+        const resolvedApiKey =
+          REACT_APP_STREAM_API_KEY || apiKey;
+
+        if (!resolvedApiKey) {
+          throw new Error(
+            'Stream API key missing from frontend config and token response.',
+          );
+        }
 
         const user = {
           id: userId,
           name: userId,
         };
 
-        const chatClient = StreamChat.getInstance(REACT_APP_STREAM_API_KEY);
+        const chatClient = StreamChat.getInstance(resolvedApiKey);
 
         await chatClient.connectUser(user, token);
 
@@ -182,7 +181,7 @@ export const CommunicationHub = () => {
         await generalChannel.watch();
 
         const videoClient = StreamVideoClient.getOrCreateInstance({
-          apiKey: REACT_APP_STREAM_API_KEY,
+          apiKey: resolvedApiKey,
           token,
           user,
         });
