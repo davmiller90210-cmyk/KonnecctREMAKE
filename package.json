@@ -199,7 +199,8 @@
     "dev:infra": "docker compose -f docker-compose.yml up -d db redis",
     "dev:front": "nx run twenty-front:start",
     "dev:server": "nx run twenty-server:start",
-    "install:skip-native": "yarn install --mode=skip-build"
+    "install:skip-native": "yarn install --mode=skip-build",
+    "dev:vite-cache-clear": "npx rimraf node_modules/.vite/packages/twenty-front"
   },
   "workspaces": {
     "packages": [

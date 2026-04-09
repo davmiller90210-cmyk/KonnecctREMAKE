@@ -133,11 +133,22 @@ export default defineConfig(({ mode }) => {
     ],
 
     optimizeDeps: {
+      // Wyw-in-js resolves imports to Vite's pre-bundle paths under cacheDir/deps/.
+      // If esbuild OOMs or the cache is partial, Linaria throws ENOENT on react.js — pin these first.
+      include: [
+        'react',
+        'react-dom',
+        'react/jsx-runtime',
+        'react-dom/client',
+      ],
       exclude: [
         '../../node_modules/.vite',
         '../../node_modules/.cache',
         '../../node_modules/twenty-ui',
       ],
+      esbuildOptions: {
+        target: 'es2022',
+      },
     },
 
     build: {
