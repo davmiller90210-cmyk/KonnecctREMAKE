@@ -42,19 +42,30 @@ const StyledShell = styled.div`
   background: ${themeCssVariables.background.primary};
   display: flex;
   flex: 1 1 auto;
+  height: 100%;
   min-height: 0;
 `;
 
-const StyledSidebar = styled.div`
-  border-right: 1px solid ${themeCssVariables.border.color.medium};
-  display: flex;
-  min-width: 320px;
-  width: 360px;
-`;
-
-const StyledThread = styled.div`
+const StyledLayout = styled.div`
   display: flex;
   flex: 1 1 auto;
+  height: 100%;
+  min-width: 0;
+`;
+
+const StyledSidebar = styled.aside`
+  border-right: 1px solid ${themeCssVariables.border.color.medium};
+  display: flex;
+  flex: 0 0 320px;
+  height: 100%;
+  min-width: 320px;
+  width: 320px;
+`;
+
+const StyledThread = styled.section`
+  display: flex;
+  flex: 1 1 auto;
+  height: 100%;
   min-width: 0;
 `;
 
@@ -76,27 +87,36 @@ const StyledError = styled(StyledCenterState)`
 
 const StyledTopActions = styled.div`
   align-items: center;
-  border-bottom: 1px solid ${themeCssVariables.border.color.medium};
   display: flex;
   gap: 8px;
   justify-content: flex-end;
-  padding: 10px 12px;
+  padding: 8px 0;
 `;
 
 const StyledActionButton = styled.button`
-  background: ${themeCssVariables.color.blue5};
-  border: none;
-  border-radius: 6px;
-  color: ${themeCssVariables.font.color.inverted};
+  background: ${themeCssVariables.background.transparent.light};
+  border: 1px solid ${themeCssVariables.border.color.medium};
+  border-radius: 8px;
+  color: ${themeCssVariables.font.color.primary};
   cursor: pointer;
   font-family: ${themeCssVariables.font.family};
   font-size: ${themeCssVariables.font.size.sm};
-  padding: 6px 10px;
+  font-weight: ${themeCssVariables.font.weight.medium};
+  padding: 6px 12px;
 `;
 
 const StyledCallWrapper = styled.div`
   border-top: 1px solid ${themeCssVariables.border.color.medium};
-  height: 340px;
+  height: 300px;
+`;
+
+const StyledThreadContent = styled.div`
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  padding: 12px;
 `;
 
 export const CommunicationHub = () => {
@@ -267,52 +287,56 @@ export const CommunicationHub = () => {
   return (
     <StyledShell>
       <Chat client={streamClient} theme="str-chat__theme-dark">
-        <StyledSidebar>
-          <ChannelList
-            filters={{
-              members: { $in: [streamClient.userID ?? fallbackUid] },
-              type: 'messaging',
-            }}
-            onSelect={(channel) => setActiveChannel(channel)}
-            sort={{ last_message_at: -1 }}
-          />
-        </StyledSidebar>
-        <StyledThread>
-          {activeChannel ? (
-            <Channel channel={activeChannel}>
-              <Window>
-                <StyledTopActions>
-                  <StyledActionButton type="button" onClick={handleStartCall}>
-                    Start call
-                  </StyledActionButton>
-                  {isCallPanelOpen && (
-                    <StyledActionButton type="button" onClick={handleEndCall}>
-                      End call
+        <StyledLayout className="konnecct-stream-layout">
+          <StyledSidebar>
+            <ChannelList
+              filters={{
+                members: { $in: [streamClient.userID ?? fallbackUid] },
+                type: 'messaging',
+              }}
+              onSelect={(channel) => setActiveChannel(channel)}
+              sort={{ last_message_at: -1 }}
+            />
+          </StyledSidebar>
+          <StyledThread>
+            {activeChannel ? (
+              <Channel channel={activeChannel}>
+                <StyledThreadContent>
+                  <StyledTopActions>
+                    <StyledActionButton type="button" onClick={handleStartCall}>
+                      Start call
                     </StyledActionButton>
-                  )}
-                </StyledTopActions>
-                <ChannelHeader />
-                <MessageList />
-                <MessageInput />
-              </Window>
-              <Thread />
-              {isCallPanelOpen && activeCall && streamVideoClient ? (
-                <StyledCallWrapper>
-                  <StreamVideo client={streamVideoClient}>
-                    <StreamCall call={activeCall}>
-                      <SpeakerLayout />
-                      <CallControls />
-                    </StreamCall>
-                  </StreamVideo>
-                </StyledCallWrapper>
-              ) : null}
-            </Channel>
-          ) : (
-            <StyledCenterState>
-              Select a conversation to start messaging or calling.
-            </StyledCenterState>
-          )}
-        </StyledThread>
+                    {isCallPanelOpen && (
+                      <StyledActionButton type="button" onClick={handleEndCall}>
+                        End call
+                      </StyledActionButton>
+                    )}
+                  </StyledTopActions>
+                  <Window>
+                    <ChannelHeader />
+                    <MessageList />
+                    <MessageInput />
+                  </Window>
+                  {isCallPanelOpen && activeCall && streamVideoClient ? (
+                    <StyledCallWrapper>
+                      <StreamVideo client={streamVideoClient}>
+                        <StreamCall call={activeCall}>
+                          <SpeakerLayout />
+                          <CallControls />
+                        </StreamCall>
+                      </StreamVideo>
+                    </StyledCallWrapper>
+                  ) : null}
+                </StyledThreadContent>
+                <Thread />
+              </Channel>
+            ) : (
+              <StyledCenterState>
+                Select a conversation to start messaging or calling.
+              </StyledCenterState>
+            )}
+          </StyledThread>
+        </StyledLayout>
       </Chat>
     </StyledShell>
   );

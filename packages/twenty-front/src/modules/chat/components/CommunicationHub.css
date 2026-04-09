@@ -1,13 +1,58 @@
-.konnecct-cometchat-thread {
+.konnecct-stream-layout .str-chat {
+  flex: 1 1 auto;
+}
+
+.konnecct-stream-layout .str-chat-channel {
+  display: flex;
+  flex: 1 1 auto;
+}
+
+.konnecct-stream-layout .str-chat__container {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 0;
+  height: 100%;
+}
+
+.konnecct-stream-layout .str-chat__list {
+  background: transparent;
+}
+
+.konnecct-stream-layout .str-chat__main-panel {
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  min-width: 0;
+  min-width: 0 !important;
+  width: 100%;
 }
 
-.str-chat,
-.str-chat-channel,
-.str-chat__container,
-.str-chat-channel-list {
+.konnecct-stream-layout .str-chat__channel-list {
+  border-right: none;
+  width: 100%;
+}
+
+.konnecct-stream-layout .str-chat__channel-list-messenger {
+  height: 100%;
+  width: 100%;
+}
+
+.konnecct-stream-layout .str-chat__channel-list-messenger-react__main {
+  background: transparent;
+}
+
+.konnecct-stream-layout .str-chat__channel-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.konnecct-stream-layout .str-chat__message-input {
+  background: transparent;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.konnecct-stream-layout .str-chat__virtual-list,
+.konnecct-stream-layout .str-chat__thread {
   height: 100%;
 }
