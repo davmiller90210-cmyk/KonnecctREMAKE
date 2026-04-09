@@ -49,6 +49,11 @@ RUN yarn workspaces focus --production twenty-emails twenty-shared twenty-sdk tw
 FROM common-deps AS twenty-front-build
 
 ARG REACT_APP_SERVER_BASE_URL
+ARG REACT_APP_STREAM_API_KEY
+ARG STREAM_API_KEY
+
+ENV REACT_APP_STREAM_API_KEY=$REACT_APP_STREAM_API_KEY
+ENV STREAM_API_KEY=$STREAM_API_KEY
 
 COPY ./packages/twenty-front /app/packages/twenty-front
 COPY ./packages/twenty-ui /app/packages/twenty-ui
