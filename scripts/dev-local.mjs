@@ -1,6 +1,6 @@
 /**
  * Cross-platform dev server: Nest (3000) + Vite HMR (3001) + worker after API is up.
- * Avoids shell-specific quoting issues (Windows cmd/PowerShell vs bash).
+ * Windows: use one shell string — spawn(npx, [array], { shell: true }) breaks `nx run …`.
  */
 import { spawn } from 'node:child_process';
 import path from 'node:path';
@@ -9,25 +9,27 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-const proc = spawn(
-  'npx',
-  [
-    'concurrently',
-    '--kill-others',
-    '-n',
-    'server,front,worker',
-    'nx run twenty-server:start',
-    'nx run twenty-front:start',
-    'wait-on tcp:3000 && nx run twenty-server:worker',
-  ],
-  {
-    cwd: repoRoot,
-    stdio: 'inherit',
-    // Needed so `wait-on … && nx …` runs in a shell (Windows + Unix).
-    shell: true,
-    env: process.env,
-  },
-);
+const env = { ...process.env };
+if (!/\bmax-old-space-size=/.test(env.NODE_OPTIONS ?? '')) {
+  env.NODE_OPTIONS = [env.NODE_OPTIONS, '--max-old-space-size=8192']
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+}
+
+const command = [
+  'npx concurrently --kill-others -n server,front,worker',
+  '"npx nx run twenty-server:start"',
+  '"npx nx run twenty-front:start"',
+  '"npx wait-on tcp:3000 && npx nx run twenty-server:worker"',
+].join(' ');
+
+const proc = spawn(command, {
+  cwd: repoRoot,
+  stdio: 'inherit',
+  shell: true,
+  env,
+});
 
 proc.on('exit', (code, signal) => {
   if (signal) {

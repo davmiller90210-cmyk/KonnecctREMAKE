@@ -171,7 +171,7 @@
     "wait-on": "^7.2.0"
   },
   "engines": {
-    "node": "^18.20.0 || ^20.0.0 || ^22.0.0",
+    "node": "^18.20.0 || ^20.0.0 || ^22.0.0 || ^24.0.0 || ^25.0.0",
     "npm": "please-use-yarn",
     "yarn": ">=4.0.2"
   },
@@ -198,7 +198,8 @@
     "dev": "node scripts/dev-local.mjs",
     "dev:infra": "docker compose -f docker-compose.yml up -d db redis",
     "dev:front": "nx run twenty-front:start",
-    "dev:server": "nx run twenty-server:start"
+    "dev:server": "nx run twenty-server:start",
+    "install:skip-native": "yarn install --mode=skip-build"
   },
   "workspaces": {
     "packages": [
