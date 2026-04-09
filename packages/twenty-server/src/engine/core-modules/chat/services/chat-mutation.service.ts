@@ -17,6 +17,7 @@ import { RoleEntity } from 'src/engine/metadata-modules/role/role.entity';
 import { UserRoleService } from 'src/engine/metadata-modules/user-role/user-role.service';
 import { AgoraAuthService } from 'src/modules/agora/agora-auth.service';
 import { AgoraChatGroupService } from 'src/modules/agora/agora-chat-group.service';
+import { StreamAuthService } from 'src/modules/stream/stream-auth.service';
 
 const slugify = (raw: string): string => {
   const slug = raw
@@ -49,6 +50,7 @@ export class ChatMutationService {
     private readonly userRoleService: UserRoleService,
     private readonly agoraAuthService: AgoraAuthService,
     private readonly agoraChatGroupService: AgoraChatGroupService,
+    private readonly streamAuthService: StreamAuthService,
   ) {}
 
   async createWorkspaceCategory(input: {
@@ -170,16 +172,76 @@ export class ChatMutationService {
       }
     }
 
+    const scopedMemberIds = await this.resolveScopedMemberIdsForChatChannel({
+      workspaceId: input.workspaceId,
+      visibility: input.visibility,
+      creatorUserWorkspaceId: input.creatorUserWorkspaceId,
+      inviteUserWorkspaceIds: [...inviteSet],
+    });
+
     await this.provisionAgoraGroupForChannel({
       workspaceId: input.workspaceId,
       channel,
       creatorUserId: input.creatorUserId,
       visibility: input.visibility,
-      inviteUserWorkspaceIds: [...inviteSet],
-      creatorUserWorkspaceId: input.creatorUserWorkspaceId,
+      scopedMemberIds,
+    });
+
+    const creatorScoped = this.agoraAuthService.scopedUserIdFor(
+      input.creatorUserId,
+      input.workspaceId,
+    );
+
+    await this.streamAuthService.provisionMessagingChannel({
+      channelId: channel.id,
+      name: channel.name,
+      creatorScopedUserId: creatorScoped,
+      memberScopedUserIds: scopedMemberIds,
     });
 
     return { id: channel.id, slug: channel.slug };
+  }
+
+  private async resolveScopedMemberIdsForChatChannel(params: {
+    workspaceId: string;
+    visibility: 'public' | 'private';
+    creatorUserWorkspaceId: string;
+    inviteUserWorkspaceIds: string[];
+  }): Promise<string[]> {
+    const scopedSet = new Set<string>();
+
+    if (params.visibility === 'public') {
+      const allUws = await this.userWorkspaceRepository.find({
+        where: { workspaceId: params.workspaceId },
+      });
+
+      for (const uw of allUws) {
+        scopedSet.add(
+          this.agoraAuthService.scopedUserIdFor(uw.userId, params.workspaceId),
+        );
+      }
+    } else {
+      const uwsIds = [
+        params.creatorUserWorkspaceId,
+        ...params.inviteUserWorkspaceIds,
+      ];
+
+      for (const uwId of new Set(uwsIds)) {
+        const uw = await this.userWorkspaceRepository.findOne({
+          where: { id: uwId, workspaceId: params.workspaceId },
+        });
+
+        if (!uw) {
+          continue;
+        }
+
+        scopedSet.add(
+          this.agoraAuthService.scopedUserIdFor(uw.userId, params.workspaceId),
+        );
+      }
+    }
+
+    return [...scopedSet];
   }
 
   private async provisionAgoraGroupForChannel(params: {
@@ -187,59 +249,25 @@ export class ChatMutationService {
     channel: ChatChannelEntity;
     creatorUserId: string;
     visibility: 'public' | 'private';
-    inviteUserWorkspaceIds: string[];
-    creatorUserWorkspaceId: string;
+    scopedMemberIds: string[];
   }): Promise<void> {
     if (!this.agoraChatGroupService.isConfigured) {
       return;
     }
 
-    const {
-      workspaceId,
-      channel,
-      creatorUserId,
-      visibility,
-      inviteUserWorkspaceIds,
-      creatorUserWorkspaceId,
-    } = params;
+    const { workspaceId, channel, creatorUserId, visibility, scopedMemberIds } =
+      params;
 
     const ownerScoped = this.agoraAuthService.scopedUserIdFor(
       creatorUserId,
       workspaceId,
     );
-    await this.agoraAuthService.ensureChatUserRegistered(ownerScoped);
 
-    const scopedSet = new Set<string>();
-
-    if (visibility === 'public') {
-      const allUws = await this.userWorkspaceRepository.find({
-        where: { workspaceId },
-      });
-
-      for (const uw of allUws) {
-        const sid = this.agoraAuthService.scopedUserIdFor(uw.userId, workspaceId);
-        await this.agoraAuthService.ensureChatUserRegistered(sid);
-        scopedSet.add(sid);
-      }
-    } else {
-      const uwsIds = [creatorUserWorkspaceId, ...inviteUserWorkspaceIds];
-
-      for (const uwId of new Set(uwsIds)) {
-        const uw = await this.userWorkspaceRepository.findOne({
-          where: { id: uwId, workspaceId },
-        });
-
-        if (!uw) {
-          continue;
-        }
-
-        const sid = this.agoraAuthService.scopedUserIdFor(uw.userId, workspaceId);
-        await this.agoraAuthService.ensureChatUserRegistered(sid);
-        scopedSet.add(sid);
-      }
+    for (const sid of scopedMemberIds) {
+      await this.agoraAuthService.ensureChatUserRegistered(sid);
     }
 
-    const memberScopedIds = [...scopedSet].filter((id) => id !== ownerScoped);
+    const memberScopedIds = scopedMemberIds.filter((id) => id !== ownerScoped);
 
     const groupName = `${workspaceId.replace(/-/g, '').slice(0, 8)}-${channel.slug}`
       .slice(0, 128);

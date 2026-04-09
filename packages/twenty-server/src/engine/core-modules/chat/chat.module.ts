@@ -16,6 +16,7 @@ import { UserEntity } from 'src/engine/core-modules/user/user.entity';
 import { RoleEntity } from 'src/engine/metadata-modules/role/role.entity';
 import { UserRoleModule } from 'src/engine/metadata-modules/user-role/user-role.module';
 import { AgoraModule } from 'src/modules/agora/agora.module';
+import { StreamModule } from 'src/modules/stream/stream.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { AgoraModule } from 'src/modules/agora/agora.module';
     JwtModule.register({}),
     UserRoleModule,
     AgoraModule,
+    StreamModule,
   ],
   controllers: [ChatController],
   providers: [

@@ -45,6 +45,8 @@ export type ChatWorkspaceMemberRowDTO = {
   firstName: string;
   lastName: string;
   email: string;
+  /** Stream / Agora-scoped user id (matches `GET /stream/token` user id for this user in this workspace). */
+  streamUserId: string;
 };
 
 export type ChatLayoutResponse = {
@@ -95,6 +97,10 @@ export class ChatLayoutService {
         firstName: uw.user?.firstName ?? '',
         lastName: uw.user?.lastName ?? '',
         email: uw.user?.email ?? '',
+        streamUserId: this.agoraAuthService.scopedUserIdFor(
+          uw.userId,
+          workspaceId,
+        ),
       }));
   }
 

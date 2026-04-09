@@ -32,7 +32,7 @@
   "targetDefaults": {
     "build": {
       "cache": true,
-      "inputs": ["^production", "production"],
+      "inputs": ["^default", "default"],
       "dependsOn": ["^build"]
     },
     "start": {

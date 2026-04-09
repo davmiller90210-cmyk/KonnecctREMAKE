@@ -38,4 +38,6 @@ export type ChatWorkspaceMemberOption = {
   firstName: string;
   lastName: string;
   email: string;
+  /** Same id the Stream client uses for this user in this workspace. */
+  streamUserId: string;
 };
