@@ -3828,6 +3828,32 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@chatscope/chat-ui-kit-react@npm:^2.1.1":
+  version: 2.1.1
+  resolution: "@chatscope/chat-ui-kit-react@npm:2.1.1"
+  dependencies:
+    "@chatscope/chat-ui-kit-styles": "npm:^1.2.0"
+    "@fortawesome/fontawesome-free": "npm:^6.5.2"
+    "@fortawesome/fontawesome-svg-core": "npm:^6.5.2"
+    "@fortawesome/free-solid-svg-icons": "npm:^6.5.2"
+    "@fortawesome/react-fontawesome": "npm:^0.2.2"
+    classnames: "npm:^2.2.6"
+    prop-types: "npm:^15.7.2"
+  peerDependencies:
+    prop-types: ^15.7.2
+    react: ^16.12.0 || ^17.0.0 || ^18.2.0 || ^19.0.0
+    react-dom: ^16.12.0 || ^17.0.0 || ^18.2.0 || ^19.0.0
+  checksum: 10c0/1f22a7e9f88af058a09c8bd7113d4283faa45a12eb47aee1998ab3666a163df4049c4f6bbbae3600f39138dbbe44fe7b0baad661b9c2d3020ba4ca55109b08bc
+  languageName: node
+  linkType: hard
+
+"@chatscope/chat-ui-kit-styles@npm:^1.2.0, @chatscope/chat-ui-kit-styles@npm:^1.4.0":
+  version: 1.4.0
+  resolution: "@chatscope/chat-ui-kit-styles@npm:1.4.0"
+  checksum: 10c0/86d06dfad67118661e89076b5ba26ea82cf5b070fc2b77927be0d809359dc06565db87bebfc2cd898bd08e623c2d1534c2f1326c0beb0e690dab19eb34a4e990
+  languageName: node
+  linkType: hard
+
 "@chromatic-com/storybook@npm:^4.1.3":
   version: 4.1.3
   resolution: "@chromatic-com/storybook@npm:4.1.3"
@@ -6796,6 +6822,50 @@ __metadata:
   dependencies:
     tslib: "npm:2"
   checksum: 10c0/90238e633426ff7237ab2bbe017be044fb2fb185a8d59a0652096ddab9cb1ddf64106d58fafd711ea19c4d3455bd966516ab93574ac3b169d9af2325875fae59
+  languageName: node
+  linkType: hard
+
+"@fortawesome/fontawesome-common-types@npm:6.7.2":
+  version: 6.7.2
+  resolution: "@fortawesome/fontawesome-common-types@npm:6.7.2"
+  checksum: 10c0/0785df560542d9c08a0ba07bb7a39902274a3cd65c018672eb2520a99efccce18bdb7f7f4b1c6089763bc5627bf0f0837c3af963a8427eaeb535bd57c820a723
+  languageName: node
+  linkType: hard
+
+"@fortawesome/fontawesome-free@npm:^6.5.2":
+  version: 6.7.2
+  resolution: "@fortawesome/fontawesome-free@npm:6.7.2"
+  checksum: 10c0/e27fb8b846f0bcf40c904acc210829a640329fc7b7ec4e42a7c43cb53739ed6052d78df90810f555a5c80bc608fee5a5174db3fa6da617f582d6210009a19278
+  languageName: node
+  linkType: hard
+
+"@fortawesome/fontawesome-svg-core@npm:^6.5.2":
+  version: 6.7.2
+  resolution: "@fortawesome/fontawesome-svg-core@npm:6.7.2"
+  dependencies:
+    "@fortawesome/fontawesome-common-types": "npm:6.7.2"
+  checksum: 10c0/9e4e2992b341d2d11cd6ab8cf001e2cb9be4266ce200b307d15c0618e7d2cf11c1c4c67a1f95f3cc70feed2380fa66672132c32078674d5f9cb2cb0b7703f3ac
+  languageName: node
+  linkType: hard
+
+"@fortawesome/free-solid-svg-icons@npm:^6.5.2":
+  version: 6.7.2
+  resolution: "@fortawesome/free-solid-svg-icons@npm:6.7.2"
+  dependencies:
+    "@fortawesome/fontawesome-common-types": "npm:6.7.2"
+  checksum: 10c0/e900f3bb7b7d821421f11439ff78cd2b3c98ca31e848e1afebf7caa578d29a31fb6cf8ef283d4df342de777126a71fcbb154dd395b9d9ab6914a40a86df81413
+  languageName: node
+  linkType: hard
+
+"@fortawesome/react-fontawesome@npm:^0.2.2":
+  version: 0.2.6
+  resolution: "@fortawesome/react-fontawesome@npm:0.2.6"
+  dependencies:
+    prop-types: "npm:^15.8.1"
+  peerDependencies:
+    "@fortawesome/fontawesome-svg-core": ~1 || ~6 || ~7
+    react: ^16.3 || ^17.0.0 || ^18.0.0 || ^19.0.0
+  checksum: 10c0/d4b733ad211a6cf4354564124fd1119890d5497762d6eff39e4716e6ded709a3b8ec6064cc6ab423e12f0307ad159130e3341e5e46132ad1124a16b416b4a6c7
   languageName: node
   linkType: hard
 
@@ -32918,7 +32988,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"classnames@npm:^2.3.0, classnames@npm:^2.5.1":
+"classnames@npm:^2.2.6, classnames@npm:^2.3.0, classnames@npm:^2.5.1":
   version: 2.5.1
   resolution: "classnames@npm:2.5.1"
   checksum: 10c0/afff4f77e62cea2d79c39962980bf316bacb0d7c49e13a21adaadb9221e1c6b9d3cdb829d8bb1b23c406f4e740507f37e1dcf506f7e3b7113d17c5bab787aa69
@@ -60415,6 +60485,8 @@ __metadata:
     "@blocknote/xl-docx-exporter": "npm:^0.47.1"
     "@blocknote/xl-pdf-exporter": "npm:^0.47.1"
     "@calcom/embed-react": "npm:^1.5.3"
+    "@chatscope/chat-ui-kit-react": "npm:^2.1.1"
+    "@chatscope/chat-ui-kit-styles": "npm:^1.4.0"
     "@clerk/clerk-react": "npm:^5.61.3"
     "@cyntler/react-doc-viewer": "npm:^1.17.0"
     "@dagrejs/dagre": "npm:^1.1.8"

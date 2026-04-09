@@ -1,58 +1,61 @@
-.konnecct-stream-layout .str-chat {
-  flex: 1 1 auto;
-}
-
-.konnecct-stream-layout .str-chat-channel {
-  display: flex;
-  flex: 1 1 auto;
-}
-
-.konnecct-stream-layout .str-chat__container {
-  display: flex;
-  flex: 1 1 auto;
-  gap: 0;
+.cs-main-container,
+.cs-chat-container,
+.cs-sidebar {
   height: 100%;
 }
 
-.konnecct-stream-layout .str-chat__list {
+.cs-main-container {
+  background: #14161a;
+}
+
+.cs-sidebar {
+  background: #171a20;
+  border-right: 1px solid #2a2f39;
+}
+
+.cs-conversation-list {
   background: transparent;
 }
 
-.konnecct-stream-layout .str-chat__main-panel {
-  background: rgba(255, 255, 255, 0.01);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  min-width: 0 !important;
-  width: 100%;
+.cs-conversation {
+  background: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-.konnecct-stream-layout .str-chat__channel-list {
-  border-right: none;
-  width: 100%;
+.cs-conversation:hover {
+  background: rgba(255, 255, 255, 0.04);
 }
 
-.konnecct-stream-layout .str-chat__channel-list-messenger {
-  height: 100%;
-  width: 100%;
+.cs-conversation--active {
+  background: rgba(37, 99, 235, 0.18) !important;
 }
 
-.konnecct-stream-layout .str-chat__channel-list-messenger-react__main {
+.cs-conversation__name,
+.cs-message__content-wrapper {
+  color: #e5e7eb;
+}
+
+.cs-conversation__info {
+  color: #94a3b8;
+}
+
+.cs-chat-container {
+  background: #111318;
+}
+
+.cs-message-list {
   background: transparent;
 }
 
-.konnecct-stream-layout .str-chat__channel-header {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+.cs-message-input {
+  background: #0f1115;
+  border-top: 1px solid #2a2f39;
 }
 
-.konnecct-stream-layout .str-chat__message-input {
-  background: transparent;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+.cs-message-input__content-editor-wrapper {
+  background: #151923;
 }
 
-.konnecct-stream-layout .str-chat__virtual-list,
-.konnecct-stream-layout .str-chat__thread {
-  height: 100%;
+.cs-message__content {
+  border-radius: 12px;
 }
