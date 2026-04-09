@@ -1,0 +1,13 @@
+.konnecct-cometchat-thread {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.str-chat,
+.str-chat-channel,
+.str-chat__container,
+.str-chat-channel-list {
+  height: 100%;
+}

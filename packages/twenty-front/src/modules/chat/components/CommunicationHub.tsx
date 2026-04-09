@@ -1,365 +1,320 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAtomValue } from 'jotai';
-import { styled } from '@linaria/react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useAuth as useClerkAuth } from '@clerk/clerk-react';
+import {
+  CallControls,
+  SpeakerLayout,
+  StreamCall,
+  StreamVideo,
+  StreamVideoClient,
+  type Call,
+} from '@stream-io/video-react-sdk';
+import {
+  Channel,
+  ChannelHeader,
+  ChannelList,
+  Chat,
+  MessageInput,
+  MessageList,
+  Thread,
+  Window,
+} from 'stream-chat-react';
+import {
+  StreamChat,
+  type Channel as StreamChannel,
+  type DefaultGenerics,
+} from 'stream-chat';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
+import { styled } from '@linaria/react';
 
 import { tokenPairState } from '@/auth/states/tokenPairState';
-import { ChatInfoPanel } from '@/chat/components/ChatInfoPanel';
-import { ChatRail } from '@/chat/components/ChatRail';
-import { ChatWorkspaceSidebar } from '@/chat/components/ChatWorkspaceSidebar';
-import { ConversationView } from '@/chat/components/ConversationView';
-import { useAgoraChat } from '@/chat/hooks/useAgoraChat';
-import { useChatResponsiveLayout } from '@/chat/hooks/useChatResponsiveLayout';
-import { useChatWorkspaceLayout } from '@/chat/hooks/useChatWorkspaceLayout';
-import { useChatWorkspaceMembers } from '@/chat/hooks/useChatWorkspaceMembers';
 import {
-  agoraConnectionStateAtom,
-  agoraConnectionErrorAtom,
-  type ChatConversation,
-} from '@/chat/states/agoraSessionState';
+  REACT_APP_STREAM_API_KEY,
+} from '~/config';
+
+import '@stream-io/video-react-sdk/dist/css/styles.css';
+import 'stream-chat-react/dist/css/v2/index.css';
+import './CommunicationHub.css';
+
+type HubStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 const StyledShell = styled.div`
-  display: flex;
-  flex-direction: row;
-  flex: 1 1 auto;
-  height: 100%;
-  overflow: hidden;
   background: ${themeCssVariables.background.primary};
-`;
-
-const StyledListColumn = styled.div<{ $grow: boolean }>`
   display: flex;
-  flex-direction: column;
-  flex: ${({ $grow }) => ($grow ? '1 1 auto' : '0 0 auto')};
-  min-width: 0;
-  max-width: ${({ $grow }) => ($grow ? 'none' : '308px')};
-  height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
 `;
 
-const StyledThreadColumn = styled.div`
+const StyledSidebar = styled.div`
+  border-right: 1px solid ${themeCssVariables.border.color.medium};
+  display: flex;
+  min-width: 320px;
+  width: 360px;
+`;
+
+const StyledThread = styled.div`
+  display: flex;
   flex: 1 1 auto;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
 `;
 
-const StyledNoSelection = styled.div`
-  flex: 1 1 auto;
-  display: flex;
+const StyledCenterState = styled.div`
   align-items: center;
-  justify-content: center;
-  color: ${themeCssVariables.font.color.tertiary};
-  font-size: ${themeCssVariables.font.size.md};
-  font-family: ${themeCssVariables.font.family};
-`;
-
-const StyledLoadingState = styled.div`
-  flex: 1 1 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 12px;
   color: ${themeCssVariables.font.color.secondary};
+  display: flex;
+  flex: 1 1 auto;
   font-family: ${themeCssVariables.font.family};
-  font-size: ${themeCssVariables.font.size.sm};
+  font-size: ${themeCssVariables.font.size.md};
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
 `;
 
-const StyledErrorState = styled(StyledLoadingState)`
+const StyledError = styled(StyledCenterState)`
   color: ${themeCssVariables.color.red5};
 `;
 
-const StyledInfoBackdrop = styled.div`
-  position: fixed;
-  inset: 0;
-  z-index: 10050;
-  background: rgba(15, 23, 42, 0.42);
+const StyledTopActions = styled.div`
+  align-items: center;
+  border-bottom: 1px solid ${themeCssVariables.border.color.medium};
   display: flex;
+  gap: 8px;
   justify-content: flex-end;
-  align-items: stretch;
+  padding: 10px 12px;
 `;
 
-const StyledInfoSheet = styled.div`
-  max-width: 360px;
-  width: 100%;
-  height: 100%;
-  box-shadow: ${themeCssVariables.boxShadow.strong};
+const StyledActionButton = styled.button`
+  background: ${themeCssVariables.color.blue5};
+  border: none;
+  border-radius: 6px;
+  color: ${themeCssVariables.font.color.inverted};
+  cursor: pointer;
+  font-family: ${themeCssVariables.font.family};
+  font-size: ${themeCssVariables.font.size.sm};
+  padding: 6px 10px;
 `;
 
-const StyledErrorDetail = styled.span`
-  font-size: 12px;
+const StyledCallWrapper = styled.div`
+  border-top: 1px solid ${themeCssVariables.border.color.medium};
+  height: 340px;
 `;
 
 export const CommunicationHub = () => {
-  const { channelId, dmThreadId } = useParams<{
-    channelId?: string;
-    dmThreadId?: string;
-  }>();
-  const navigate = useNavigate();
-  const connectionState = useAtomValue(agoraConnectionStateAtom);
-  const connectionError = useAtomValue(agoraConnectionErrorAtom);
   const tokenPair = useAtomValue(tokenPairState.atom);
-  const authToken = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
+  const crmToken = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
+  const { getToken: getClerkToken, orgId: clerkOrgId, userId: clerkUserId } =
+    useClerkAuth();
 
-  const { isMobile, isNarrowDesktop } = useChatResponsiveLayout();
-  const [infoOpen, setInfoOpen] = useState(true);
-  const [openDmSignal, setOpenDmSignal] = useState(0);
+  const [status, setStatus] = useState<HubStatus>('idle');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [streamClient, setStreamClient] = useState<StreamChat>();
+  const [streamVideoClient, setStreamVideoClient] = useState<StreamVideoClient>();
+  const [activeChannel, setActiveChannel] = useState<
+    StreamChannel<DefaultGenerics> | undefined
+  >();
+  const [activeCall, setActiveCall] = useState<Call | undefined>();
+  const [isCallPanelOpen, setIsCallPanelOpen] = useState(false);
 
-  const { layout, isLoading, error: layoutError, reload } =
-    useChatWorkspaceLayout();
-  const { members } = useChatWorkspaceMembers(authToken);
-  const {
-    connectToAgora,
-    disconnectFromAgora,
-    sendMessage,
-    sendAttachment,
-    syncConversationHistory,
-    client,
-  } = useAgoraChat();
-
-  useEffect(() => {
-    connectToAgora();
-    return () => disconnectFromAgora();
-  }, [connectToAgora, disconnectFromAgora]);
+  const fallbackUid = useMemo(
+    () => clerkUserId ?? 'stream-uid-1',
+    [clerkUserId],
+  );
 
   useEffect(() => {
-    if (isMobile || isNarrowDesktop) {
-      setInfoOpen(false);
-    } else {
-      setInfoOpen(true);
-    }
-  }, [isMobile, isNarrowDesktop]);
+    let mounted = true;
 
-  const selectedChannel = useMemo(() => {
-    if (!channelId || !layout) {
-      return null;
-    }
-
-    for (const category of layout.categories) {
-      const found = category.channels.find((c) => c.id === channelId);
-      if (found) {
-        return found;
-      }
-    }
-
-    return null;
-  }, [channelId, layout]);
-
-  const selectedDm = useMemo(() => {
-    if (!dmThreadId || !layout) {
-      return null;
-    }
-
-    return layout.directThreads.find((t) => t.id === dmThreadId) ?? null;
-  }, [dmThreadId, layout]);
-
-  const selectedConversation: ChatConversation | null = useMemo(() => {
-    if (selectedChannel) {
-      if (!selectedChannel.agoraGroupId) {
-        return null;
+    const init = async () => {
+      if (
+        !REACT_APP_STREAM_API_KEY
+      ) {
+        setStatus('error');
+        setErrorMessage(
+          'Stream is not configured. Missing REACT_APP_STREAM_API_KEY.',
+        );
+        return;
       }
 
-      return {
-        id: selectedChannel.agoraGroupId,
-        type: 'groupChat',
-        name: selectedChannel.name,
-        unreadCount: 0,
-        crmChannelId: selectedChannel.id,
-      };
-    }
+      setStatus('loading');
 
-    if (selectedDm) {
-      const agoraTarget =
-        selectedDm.agoraGroupId ?? selectedDm.peerAgoraUserId;
+      try {
+        const bearer = crmToken ?? (await getClerkToken());
 
-      if (!agoraTarget) {
-        return null;
+        if (!bearer) {
+          throw new Error('Missing auth token for Stream session bootstrap.');
+        }
+
+        const response = await fetch('/stream/token', {
+          headers: {
+            Authorization: `Bearer ${bearer}`,
+            ...(clerkOrgId ? { 'X-Clerk-Org-Id': clerkOrgId } : {}),
+            'X-Konnecct-Uid-Fallback': fallbackUid,
+          },
+        });
+
+        if (!response.ok) {
+          const raw = await response.text();
+          throw new Error(raw || `Token endpoint failed with ${response.status}`);
+        }
+
+        const { token, userId } = (await response.json()) as {
+          token: string;
+          userId: string;
+        };
+
+        const user = {
+          id: userId,
+          name: userId,
+        };
+
+        const chatClient = StreamChat.getInstance(REACT_APP_STREAM_API_KEY);
+
+        await chatClient.connectUser(user, token);
+
+        const generalChannel = chatClient.channel(
+          'messaging',
+          'konnecct-general',
+          {
+            members: [user.id],
+            name: 'General',
+          },
+        );
+
+        await generalChannel.watch();
+
+        const videoClient = StreamVideoClient.getOrCreateInstance({
+          apiKey: REACT_APP_STREAM_API_KEY,
+          token,
+          user,
+        });
+
+        if (!mounted) {
+          await chatClient.disconnectUser();
+          videoClient.disconnectUser();
+          return;
+        }
+
+        setActiveChannel(generalChannel);
+        setStreamClient(chatClient);
+        setStreamVideoClient(videoClient);
+        setStatus('ready');
+      } catch (error) {
+        if (!mounted) {
+          return;
+        }
+
+        setStatus('error');
+        setErrorMessage(error instanceof Error ? error.message : String(error));
       }
+    };
 
-      return {
-        id: agoraTarget,
-        type: selectedDm.agoraGroupId ? 'groupChat' : 'singleChat',
-        name: selectedDm.title ?? 'Direct',
-        unreadCount: 0,
-        crmDmThreadId: selectedDm.id,
-      };
-    }
+    void init();
 
-    return null;
-  }, [selectedChannel, selectedDm]);
+    return () => {
+      mounted = false;
+      setIsCallPanelOpen(false);
+      setActiveCall(undefined);
+      streamVideoClient?.disconnectUser();
+      void streamClient?.disconnectUser();
+    };
+  }, [
+    clerkOrgId,
+    crmToken,
+    fallbackUid,
+    getClerkToken,
+    streamClient,
+    streamVideoClient,
+  ]);
 
-  useEffect(() => {
-    if (connectionState !== 'connected' || !client) {
+  const handleStartCall = async () => {
+    if (!streamVideoClient) {
       return;
     }
 
-    const groupId =
-      selectedChannel?.agoraGroupId ?? selectedDm?.agoraGroupId ?? null;
+    const call = streamVideoClient.call('default', 'konnecct-main-room');
 
-    if (!groupId) {
-      return;
-    }
-
-    client.joinGroup({ groupId }).catch((err: unknown) => {
-      console.warn('[KONNECCT-AGORA] joinGroup failed', err);
+    await call.join({
+      create: true,
     });
-  }, [
-    client,
-    connectionState,
-    selectedChannel?.agoraGroupId,
-    selectedDm?.agoraGroupId,
-  ]);
 
-  useEffect(() => {
-    if (connectionState !== 'connected' || !client || !selectedConversation) {
-      return;
+    setActiveCall(call);
+    setIsCallPanelOpen(true);
+  };
+
+  const handleEndCall = async () => {
+    if (activeCall) {
+      await activeCall.leave();
     }
 
-    const chatType =
-      selectedConversation.type === 'groupChat' ? 'groupChat' : 'singleChat';
+    setActiveCall(undefined);
+    setIsCallPanelOpen(false);
+  };
 
-    void syncConversationHistory(selectedConversation.id, chatType);
-  }, [
-    client,
-    connectionState,
-    selectedConversation?.id,
-    selectedConversation?.type,
-    syncConversationHistory,
-  ]);
-
-  const chatType = selectedConversation?.type ?? 'singleChat';
-
-  const memberCountPreview = members.length + 1;
-  const metaLine =
-    selectedConversation?.type === 'groupChat'
-      ? `${memberCountPreview} members · preview`
-      : `Direct · live delivery`;
-
-  const showInfoOverlay =
-    !!selectedConversation && infoOpen && (isNarrowDesktop || isMobile);
-
-  const showInfoDocked =
-    !!selectedConversation &&
-    infoOpen &&
-    !isNarrowDesktop &&
-    !isMobile;
-
-  const showListColumn = !isMobile || !selectedConversation;
-
-  const mainPane =
-    layoutError && !layout ? (
-      <StyledErrorState>
-        <span>Could not load chat layout</span>
-        <StyledErrorDetail>{layoutError}</StyledErrorDetail>
-      </StyledErrorState>
-    ) : isLoading && !layout ? (
-      <StyledLoadingState>
-        <span>Loading workspace chat…</span>
-      </StyledLoadingState>
-    ) : selectedConversation ? (
-      <ConversationView
-        conversation={selectedConversation}
-        metaLine={metaLine}
-        onBack={
-          isMobile ? () => navigate('/chat') : undefined
-        }
-        onOpenDetails={() => setInfoOpen(true)}
-        onSendMessage={(text) =>
-          sendMessage(selectedConversation.id, text, chatType)
-        }
-        onSendAttachment={(file, type) =>
-          sendAttachment(
-            selectedConversation.id,
-            file,
-            type,
-            chatType,
-          )
-        }
-      />
-    ) : (
-      <StyledNoSelection>
-        {channelId || dmThreadId
-          ? 'This conversation is not available or chat is still provisioning.'
-          : 'Select a channel or direct message to start chatting'}
-      </StyledNoSelection>
-    );
-
-  if (connectionState === 'error') {
+  if (status === 'error') {
     return (
-      <StyledErrorState>
-        <span>Error connecting to Agora SDK</span>
-        <StyledErrorDetail>{connectionError}</StyledErrorDetail>
-      </StyledErrorState>
+      <StyledError>
+        {errorMessage ?? 'Failed to initialize Stream.'}
+      </StyledError>
     );
   }
 
-  if (connectionState !== 'connected') {
-    return (
-      <StyledLoadingState>
-        <span>Connecting to chat…</span>
-      </StyledLoadingState>
-    );
+  if (status !== 'ready') {
+    return <StyledCenterState>Connecting to Stream…</StyledCenterState>;
+  }
+
+  if (!streamClient) {
+    return <StyledCenterState>Preparing chat client…</StyledCenterState>;
   }
 
   return (
-    <>
-      <StyledShell>
-        {!isMobile && (
-          <ChatRail
-            viewerLabel="Me"
-            onCompose={() => setOpenDmSignal((n) => n + 1)}
+    <StyledShell>
+      <Chat client={streamClient} theme="str-chat__theme-dark">
+        <StyledSidebar>
+          <ChannelList
+            filters={{
+              members: { $in: [streamClient.userID ?? fallbackUid] },
+              type: 'messaging',
+            }}
+            onSelect={(channel) => setActiveChannel(channel)}
+            sort={{ last_message_at: -1 }}
           />
-        )}
-        {showListColumn ? (
-          <StyledListColumn $grow={isMobile && !selectedConversation}>
-            <ChatWorkspaceSidebar
-              layout={layout}
-              selectedChannelId={channelId ?? null}
-              selectedDmThreadId={dmThreadId ?? null}
-              authToken={authToken}
-              onLayoutRefresh={() => void reload()}
-              members={members}
-              viewerUserWorkspaceId={layout?.viewer.userWorkspaceId ?? null}
-              fullWidth={isMobile && !selectedConversation}
-              openDmSignal={openDmSignal}
-            />
-          </StyledListColumn>
-        ) : null}
-        {(!isMobile || !!selectedConversation) && (
-          <StyledThreadColumn>{mainPane}</StyledThreadColumn>
-        )}
-        {showInfoDocked && selectedConversation && (
-          <ChatInfoPanel
-            title={selectedConversation.name}
-            isGroup={selectedConversation.type === 'groupChat'}
-            memberCount={memberCountPreview}
-            members={members}
-            onClose={() => setInfoOpen(false)}
-          />
-        )}
-      </StyledShell>
-      {showInfoOverlay && selectedConversation && (
-        <StyledInfoBackdrop
-          role="presentation"
-          onClick={() => setInfoOpen(false)}
-        >
-          <StyledInfoSheet
-            role="dialog"
-            aria-label="Conversation details"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <ChatInfoPanel
-              title={selectedConversation.name}
-              isGroup={selectedConversation.type === 'groupChat'}
-              memberCount={memberCountPreview}
-              members={members}
-              onClose={() => setInfoOpen(false)}
-            />
-          </StyledInfoSheet>
-        </StyledInfoBackdrop>
-      )}
-    </>
+        </StyledSidebar>
+        <StyledThread>
+          {activeChannel ? (
+            <Channel channel={activeChannel}>
+              <Window>
+                <StyledTopActions>
+                  <StyledActionButton type="button" onClick={handleStartCall}>
+                    Start call
+                  </StyledActionButton>
+                  {isCallPanelOpen && (
+                    <StyledActionButton type="button" onClick={handleEndCall}>
+                      End call
+                    </StyledActionButton>
+                  )}
+                </StyledTopActions>
+                <ChannelHeader />
+                <MessageList />
+                <MessageInput />
+              </Window>
+              <Thread />
+              {isCallPanelOpen && activeCall && streamVideoClient ? (
+                <StyledCallWrapper>
+                  <StreamVideo client={streamVideoClient}>
+                    <StreamCall call={activeCall}>
+                      <SpeakerLayout />
+                      <CallControls />
+                    </StreamCall>
+                  </StreamVideo>
+                </StyledCallWrapper>
+              ) : null}
+            </Channel>
+          ) : (
+            <StyledCenterState>
+              Select a conversation to start messaging or calling.
+            </StyledCenterState>
+          )}
+        </StyledThread>
+      </Chat>
+    </StyledShell>
   );
 };
