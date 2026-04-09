@@ -55,5 +55,7 @@ export const REACT_APP_PLANE_WORKSPACE_SLUG =
 
 export const REACT_APP_STREAM_API_KEY =
   window._env_?.REACT_APP_STREAM_API_KEY ||
+  window._env_?.STREAM_API_KEY ||
   process.env.REACT_APP_STREAM_API_KEY ||
+  process.env.STREAM_API_KEY ||
   '';
