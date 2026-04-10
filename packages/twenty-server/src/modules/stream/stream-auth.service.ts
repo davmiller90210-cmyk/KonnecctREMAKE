@@ -1,12 +1,26 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { StreamChat } from 'stream-chat';
+
+import { UserEntity } from 'src/engine/core-modules/user/user.entity';
+import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user-workspace.entity';
+
+import { AgoraAuthService } from 'src/modules/agora/agora-auth.service';
+
+const MAX_ENSURE_USERS_PER_REQUEST = 64;
 
 @Injectable()
 export class StreamAuthService {
   private readonly logger = new Logger(StreamAuthService.name);
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly agoraAuthService: AgoraAuthService,
+    @InjectRepository(UserWorkspaceEntity)
+    private readonly userWorkspaceRepository: Repository<UserWorkspaceEntity>,
+  ) {}
 
   private get apiKey() {
     return this.configService.get<string>('STREAM_API_KEY') ?? '';
@@ -30,12 +44,99 @@ export class StreamAuthService {
     return StreamChat.getInstance(this.apiKey, this.apiSecret);
   }
 
-  async createUserToken(userId: string) {
+  displayNameFromUser(user: UserEntity | null | undefined): string {
+    if (!user) {
+      return '';
+    }
+
+    const parts = [user.firstName, user.lastName]
+      .map((s) => (s ?? '').trim())
+      .filter((s) => s.length > 0);
+
+    if (parts.length > 0) {
+      return parts.join(' ');
+    }
+
+    return user.email?.trim() || user.id;
+  }
+
+  /**
+   * Upserts Stream users for the given workspace-scoped ids using Twenty profile data.
+   * Only ids that belong to the workspace are processed (others are ignored).
+   */
+  async ensureScopedUsersForWorkspace(
+    workspaceId: string,
+    scopedUserIds: string[],
+  ): Promise<void> {
+    if (!this.isConfigured || scopedUserIds.length === 0) {
+      return;
+    }
+
+    const requested = [...new Set(scopedUserIds)].slice(
+      0,
+      MAX_ENSURE_USERS_PER_REQUEST,
+    );
+
+    if (requested.length === 0) {
+      return;
+    }
+
+    const want = new Set(requested);
+
+    try {
+      const client = this.serverClient;
+      const members = await this.userWorkspaceRepository.find({
+        where: { workspaceId },
+        relations: ['user'],
+      });
+
+      for (const uw of members) {
+        if (!uw.user) {
+          continue;
+        }
+
+        const scoped = this.agoraAuthService.scopedUserIdFor(
+          uw.userId,
+          workspaceId,
+        );
+
+        if (!want.has(scoped)) {
+          continue;
+        }
+
+        const name = this.displayNameFromUser(uw.user);
+        const payload: { id: string; name: string; image?: string } = {
+          id: scoped,
+          name: name || scoped,
+        };
+
+        if (uw.user.defaultAvatarUrl) {
+          payload.image = uw.user.defaultAvatarUrl;
+        }
+
+        await client.upsertUser(payload);
+      }
+    } catch (error) {
+      this.logger.warn(
+        `ensureScopedUsersForWorkspace failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      throw error;
+    }
+  }
+
+  async createUserToken(
+    userId: string,
+    profile?: { name?: string; image?: string },
+  ) {
     const client = this.serverClient;
 
+    const name = profile?.name?.trim() || userId;
     await client.upsertUser({
       id: userId,
-      name: userId,
+      name,
+      ...(profile?.image ? { image: profile.image } : {}),
     });
 
     const token = client.createToken(userId);
@@ -52,6 +153,7 @@ export class StreamAuthService {
    * and ensures all scoped workspace members are channel members.
    */
   async provisionMessagingChannel(params: {
+    workspaceId: string;
     channelId: string;
     name: string;
     creatorScopedUserId: string;
@@ -68,11 +170,12 @@ export class StreamAuthService {
     }
 
     try {
-      const client = this.serverClient;
+      await this.ensureScopedUsersForWorkspace(
+        params.workspaceId,
+        uniqueMembers,
+      );
 
-      for (const id of uniqueMembers) {
-        await client.upsertUser({ id, name: id });
-      }
+      const client = this.serverClient;
 
       const channel = client.channel('messaging', params.channelId, {
         name: params.name,

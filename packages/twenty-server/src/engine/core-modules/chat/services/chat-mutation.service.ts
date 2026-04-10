@@ -193,6 +193,7 @@ export class ChatMutationService {
     );
 
     await this.streamAuthService.provisionMessagingChannel({
+      workspaceId: input.workspaceId,
       channelId: channel.id,
       name: channel.name,
       creatorScopedUserId: creatorScoped,

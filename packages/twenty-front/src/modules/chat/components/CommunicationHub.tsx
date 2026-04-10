@@ -52,12 +52,36 @@ import { REACT_APP_STREAM_API_KEY } from '~/config';
 import {
   HUB_QUICK_REACTION_TYPES,
 } from '@/chat/constants/communicationHub.constants';
+import { type ChatWorkspaceMemberOption } from '@/chat/types/chat-workspace-layout.type';
+import { ensureStreamWorkspaceUsers } from '@/chat/utils/ensureStreamWorkspaceUsers';
 
 import '@stream-io/video-react-sdk/dist/css/styles.css';
 
 const QUICK_REACTION_SET = new Set<string>(
   HUB_QUICK_REACTION_TYPES as readonly string[],
 );
+
+function looksLikeScopedStreamId(id: string | undefined): boolean {
+  return typeof id === 'string' && /^k[a-f0-9]{31}$/.test(id);
+}
+
+function labelForStreamUser(
+  map: Map<string, string>,
+  userId: string | undefined,
+  streamName: string | undefined,
+): string {
+  if (userId && map.has(userId)) {
+    return map.get(userId) as string;
+  }
+  const raw = streamName?.trim();
+  if (raw && !looksLikeScopedStreamId(raw)) {
+    return raw;
+  }
+  if (userId && looksLikeScopedStreamId(userId)) {
+    return 'Member';
+  }
+  return raw || userId || 'Member';
+}
 
 type HubStatus = 'idle' | 'loading' | 'ready' | 'error';
 type RailSection = 'channels' | 'dms';
@@ -1150,6 +1174,9 @@ export const CommunicationHub = () => {
   const globalSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  const [workspaceChatMembers, setWorkspaceChatMembers] = useState<
+    ChatWorkspaceMemberOption[]
+  >([]);
 
   const fallbackUid = useMemo(
     () => clerkUserId ?? 'stream-uid-1',
@@ -1202,6 +1229,41 @@ export const CommunicationHub = () => {
       pendingMentionUserIdsRef.current.clear();
     }
   }, [activeChannel?.cid]);
+
+  useEffect(() => {
+    if (!crmToken) {
+      setWorkspaceChatMembers([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const response = await fetch('/chat/workspace-members', {
+          headers: { Authorization: `Bearer ${crmToken}` },
+        });
+
+        if (!response.ok) {
+          throw new Error(await response.text());
+        }
+
+        const data = (await response.json()) as ChatWorkspaceMemberOption[];
+
+        if (!cancelled) {
+          setWorkspaceChatMembers(Array.isArray(data) ? data : []);
+        }
+      } catch {
+        if (!cancelled) {
+          setWorkspaceChatMembers([]);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [crmToken]);
 
   useEffect(() => {
     if (!activeChannel || !threadRoot?.id) {
@@ -1717,6 +1779,43 @@ export const CommunicationHub = () => {
     return map;
   }, [conversationSummaries]);
 
+  const workspaceLabelByStreamId = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const row of workspaceChatMembers) {
+      const label =
+        [row.firstName, row.lastName].filter(Boolean).join(' ').trim() ||
+        row.email ||
+        row.streamUserId;
+      map.set(row.streamUserId, label);
+    }
+    return map;
+  }, [workspaceChatMembers]);
+
+  const resolveAuthorName = useCallback(
+    (userId: string | undefined, streamName: string | undefined) =>
+      labelForStreamUser(workspaceLabelByStreamId, userId, streamName),
+    [workspaceLabelByStreamId],
+  );
+
+  const conversationTitle = useCallback(
+    (row: ConversationSummary) => {
+      if (!streamClient?.userID || !isLikelyDm(row.channel)) {
+        return row.title;
+      }
+      const self = streamClient.userID;
+      const members = Object.values(
+        row.channel.state.members ?? {},
+      ) as ChannelMemberResponse[];
+      const peer = members.find((m) => m.user?.id && m.user.id !== self);
+      const pid = peer?.user?.id;
+      if (pid && workspaceLabelByStreamId.has(pid)) {
+        return workspaceLabelByStreamId.get(pid) as string;
+      }
+      return row.title;
+    },
+    [streamClient?.userID, workspaceLabelByStreamId],
+  );
+
   const rootMessages = useMemo(
     () => channelMessages.filter((m) => !m.parent_id),
     [channelMessages],
@@ -1794,7 +1893,7 @@ export const CommunicationHub = () => {
       if (!uid) {
         return;
       }
-      const rawName = member.user?.name ?? uid;
+      const rawName = resolveAuthorName(member.user?.id, member.user?.name);
       const label = rawName.trim() !== '' ? rawName : uid;
       const insertion = `@${label} `;
       const caret = composerMention.replaceFrom + insertion.length;
@@ -1813,7 +1912,7 @@ export const CommunicationHub = () => {
         }
       });
     },
-    [composerMention],
+    [composerMention, resolveAuthorName],
   );
 
   const handleThreadComposerInput = (
@@ -1847,7 +1946,7 @@ export const CommunicationHub = () => {
       if (!uid) {
         return;
       }
-      const rawName = member.user?.name ?? uid;
+      const rawName = resolveAuthorName(member.user?.id, member.user?.name);
       const label = rawName.trim() !== '' ? rawName : uid;
       const insertion = `@${label} `;
       const caret = threadComposerMention.replaceFrom + insertion.length;
@@ -1866,7 +1965,7 @@ export const CommunicationHub = () => {
         }
       });
     },
-    [threadComposerMention],
+    [resolveAuthorName, threadComposerMention],
   );
 
   const handleSend = async () => {
@@ -1988,6 +2087,19 @@ export const CommunicationHub = () => {
         throw new Error('Cannot message yourself');
       }
 
+      const bearer = crmToken ?? (await getClerkToken());
+
+      if (!bearer) {
+        throw new Error('Missing auth token');
+      }
+
+      await ensureStreamWorkspaceUsers({
+        bearerToken: bearer,
+        clerkOrgId: clerkOrgId ?? undefined,
+        fallbackUid,
+        scopedUserIds: [streamClient.userID, peerStreamUserId],
+      });
+
       const dmChannel = streamClient.channel('messaging', {
         members: [streamClient.userID, peerStreamUserId],
         konnecctKind: 'dm',
@@ -1998,7 +2110,14 @@ export const CommunicationHub = () => {
       setActiveChannel(dmChannel);
       setActiveSection('dms');
     },
-    [refreshConversations, streamClient],
+    [
+      clerkOrgId,
+      crmToken,
+      fallbackUid,
+      getClerkToken,
+      refreshConversations,
+      streamClient,
+    ],
   );
 
   const handleStartCall = async () => {
@@ -2304,10 +2423,12 @@ export const CommunicationHub = () => {
                   type="button"
                   onClick={() => setActiveChannel(row.channel)}
                 >
-                  <StyledAvatar>{initialsFromName(row.avatarName)}</StyledAvatar>
+                  <StyledAvatar>
+                    {initialsFromName(conversationTitle(row))}
+                  </StyledAvatar>
                   <StyledRowBody>
                     <StyledRowTop>
-                      <StyledRowName>{row.title}</StyledRowName>
+                      <StyledRowName>{conversationTitle(row)}</StyledRowName>
                       {t ? (
                         <StyledRowTime>
                           {formatDistanceToNow(t, { addSuffix: false })}
@@ -2348,7 +2469,9 @@ export const CommunicationHub = () => {
                   <StyledHeaderLeft>
                     <IconNotes size={themeCssVariables.icon.size.md} />
                     <StyledHeaderTitles>
-                      <StyledHeaderName>{activeSummary.title}</StyledHeaderName>
+                      <StyledHeaderName>
+                        {conversationTitle(activeSummary)}
+                      </StyledHeaderName>
                       <StyledHeaderMeta>
                         {memberCount(activeChannel)} members ·{' '}
                         {channelMessages.length} messages
@@ -2442,8 +2565,10 @@ export const CommunicationHub = () => {
                 >
                   {rootMessages.map((message) => {
                     const own = message.user?.id === selfId;
-                    const author =
-                      message.user?.name ?? message.user?.id ?? 'Member';
+                    const author = resolveAuthorName(
+                      message.user?.id,
+                      message.user?.name,
+                    );
                     const body =
                       typeof message.text === 'string' &&
                       message.text.trim() !== ''
@@ -2596,8 +2721,10 @@ export const CommunicationHub = () => {
                       </StyledThreadHeader>
                       <StyledThreadScroll>
                         {threadReplies.map((tm) => {
-                          const ta =
-                            tm.user?.name ?? tm.user?.id ?? 'Member';
+                          const ta = resolveAuthorName(
+                            tm.user?.id,
+                            tm.user?.name,
+                          );
                           const tb =
                             typeof tm.text === 'string' ? tm.text : '';
                           const tmOwn = tm.user?.id === selfId;
@@ -2625,8 +2752,10 @@ export const CommunicationHub = () => {
                           threadMentionCandidates.length > 0 ? (
                             <StyledMentionPopover role="listbox">
                               {threadMentionCandidates.map((mem, idx) => {
-                                const mname =
-                                  mem.user?.name ?? mem.user?.id ?? 'Member';
+                                const mname = resolveAuthorName(
+                                  mem.user?.id,
+                                  mem.user?.name,
+                                );
                                 return (
                                   <StyledMentionItem
                                     key={mem.user?.id ?? String(idx)}
@@ -2733,8 +2862,10 @@ export const CommunicationHub = () => {
                       {composerMention && mentionCandidates.length > 0 ? (
                         <StyledMentionPopover role="listbox">
                           {mentionCandidates.map((mem, idx) => {
-                            const mname =
-                              mem.user?.name ?? mem.user?.id ?? 'Member';
+                            const mname = resolveAuthorName(
+                              mem.user?.id,
+                              mem.user?.name,
+                            );
                             return (
                               <StyledMentionItem
                                 key={mem.user?.id ?? String(idx)}
@@ -2753,7 +2884,7 @@ export const CommunicationHub = () => {
                       ) : null}
                       <StyledComposerInput
                         ref={composerTextareaRef}
-                        placeholder={`Message ${activeSummary.title}`}
+                        placeholder={`Message ${conversationTitle(activeSummary)}`}
                         rows={1}
                         value={draft}
                         onChange={handleComposerInput}
@@ -2933,8 +3064,7 @@ export const CommunicationHub = () => {
                       ) : (
                         channelMembers.map((m) => {
                           const u = m.user;
-                          const label =
-                            u?.name ?? u?.id ?? 'Member';
+                          const label = resolveAuthorName(u?.id, u?.name);
 
                           return (
                             <StyledMemberRow
@@ -2969,8 +3099,10 @@ export const CommunicationHub = () => {
                         ) : (
                           searchRemoteHits.map((hit) => {
                             const m = hit.message;
-                            const author =
-                              m.user?.name ?? m.user?.id ?? 'Member';
+                            const author = resolveAuthorName(
+                              m.user?.id,
+                              m.user?.name,
+                            );
                             const preview =
                               typeof m.text === 'string' ? m.text : '';
 
@@ -3081,8 +3213,10 @@ export const CommunicationHub = () => {
               ) : (
                 globalHits.map((hit) => {
                   const m = hit.message;
-                  const author =
-                    m.user?.name ?? m.user?.id ?? 'Member';
+                  const author = resolveAuthorName(
+                    m.user?.id,
+                    m.user?.name,
+                  );
                   const preview =
                     typeof m.text === 'string' ? m.text : '';
                   const cid = m.cid ?? m.channel?.cid ?? '';
