@@ -2,57 +2,28 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { styled } from '@linaria/react';
 import { t } from '@lingui/core/macro';
 import { Button } from 'twenty-ui/input';
-import { IconSearch } from 'twenty-ui/display';
+import { Avatar, IconSearch } from 'twenty-ui/display';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 
+import { ChatModalShell } from '@/chat/components/ChatModalShell';
 import { type ChatWorkspaceMemberOption } from '@/chat/types/chat-workspace-layout.type';
-
-const StyledBackdrop = styled.div`
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.45);
-  padding: ${themeCssVariables.spacing[4]};
-`;
-
-const StyledPanel = styled.div`
-  width: 100%;
-  max-width: 440px;
-  border-radius: ${themeCssVariables.border.radius.md};
-  background: ${themeCssVariables.background.primary};
-  border: 1px solid ${themeCssVariables.border.color.medium};
-  padding: ${themeCssVariables.spacing[5]};
-  display: flex;
-  flex-direction: column;
-  gap: ${themeCssVariables.spacing[3]};
-  font-family: ${themeCssVariables.font.family};
-`;
-
-const StyledTitle = styled.div`
-  font-size: ${themeCssVariables.font.size.md};
-  font-weight: ${themeCssVariables.font.weight.semiBold};
-  color: ${themeCssVariables.font.color.primary};
-`;
 
 const StyledSearchWrap = styled.div`
   position: relative;
 `;
 
 const StyledSearchInput = styled.input`
-  width: 100%;
-  box-sizing: border-box;
-  padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[2]}
-    ${themeCssVariables.spacing[2]} 36px;
-  border-radius: ${themeCssVariables.border.radius.sm};
-  border: 1px solid ${themeCssVariables.border.color.medium};
   background: ${themeCssVariables.background.secondary};
+  border: 1px solid ${themeCssVariables.border.color.medium};
+  border-radius: ${themeCssVariables.border.radius.sm};
+  box-sizing: border-box;
   color: ${themeCssVariables.font.color.primary};
   font-family: ${themeCssVariables.font.family};
   font-size: ${themeCssVariables.font.size.sm};
   outline: none;
+  padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[2]}
+    ${themeCssVariables.spacing[2]} 36px;
+  width: 100%;
 
   &:focus {
     border-color: ${themeCssVariables.border.color.strong};
@@ -60,36 +31,38 @@ const StyledSearchInput = styled.input`
 `;
 
 const StyledSearchIcon = styled.div`
-  position: absolute;
+  color: ${themeCssVariables.font.color.tertiary};
   left: 10px;
+  pointer-events: none;
+  position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  color: ${themeCssVariables.font.color.tertiary};
-  pointer-events: none;
 `;
 
 const StyledMemberList = styled.div`
-  max-height: 260px;
-  overflow-y: auto;
   border: 1px solid ${themeCssVariables.border.color.medium};
   border-radius: ${themeCssVariables.border.radius.sm};
+  max-height: 280px;
+  overflow-y: auto;
 `;
 
 const StyledMemberButton = styled.button<{ $selected: boolean }>`
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: ${themeCssVariables.spacing[3]};
-  border: none;
-  border-bottom: 1px solid ${themeCssVariables.border.color.medium};
+  align-items: center;
   background: ${({ $selected }) =>
     $selected
       ? themeCssVariables.background.transparent.medium
       : 'transparent'};
+  border: none;
+  border-bottom: 1px solid ${themeCssVariables.border.color.light};
+  color: ${themeCssVariables.font.color.primary};
   cursor: pointer;
+  display: flex;
   font-family: ${themeCssVariables.font.family};
   font-size: ${themeCssVariables.font.size.sm};
-  color: ${themeCssVariables.font.color.primary};
+  gap: ${themeCssVariables.spacing[3]};
+  padding: ${themeCssVariables.spacing[3]};
+  text-align: left;
+  width: 100%;
 
   &:last-child {
     border-bottom: none;
@@ -100,21 +73,44 @@ const StyledMemberButton = styled.button<{ $selected: boolean }>`
   }
 `;
 
-const StyledMuted = styled.div`
-  padding: ${themeCssVariables.spacing[3]};
-  font-size: ${themeCssVariables.font.size.sm};
+const StyledMemberTextCol = styled.div`
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+`;
+
+const StyledMemberPrimary = styled.span`
+  font-weight: ${themeCssVariables.font.weight.medium};
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+const StyledMemberSecondary = styled.span`
   color: ${themeCssVariables.font.color.tertiary};
+  font-size: ${themeCssVariables.font.size.xs};
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+const StyledMuted = styled.div`
+  color: ${themeCssVariables.font.color.tertiary};
+  font-size: ${themeCssVariables.font.size.sm};
+  padding: ${themeCssVariables.spacing[4]};
 `;
 
 const StyledError = styled.div`
   color: ${themeCssVariables.color.red5};
-  font-size: 12px;
+  font-size: ${themeCssVariables.font.size.xs};
 `;
 
 const StyledActions = styled.div`
   display: flex;
   gap: ${themeCssVariables.spacing[2]};
   justify-content: flex-end;
+  margin-top: ${themeCssVariables.spacing[1]};
 `;
 
 type StreamDmModalProps = {
@@ -220,85 +216,73 @@ export const StreamDmModal = ({
     }
   }, [currentStreamUserId, onClose, onStartDm, selectedStreamId]);
 
-  if (!isOpen) {
-    return null;
-  }
-
   return (
-    <StyledBackdrop
-      role="dialog"
-      aria-modal="true"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
+    <ChatModalShell
+      isOpen={isOpen}
+      maxWidth={480}
+      title={t`New direct message`}
+      onClose={onClose}
     >
-      <StyledPanel onClick={(e) => e.stopPropagation()}>
-        <StyledTitle>{t`New direct message`}</StyledTitle>
-        <StyledSearchWrap>
-          <StyledSearchIcon>
-            <IconSearch size={themeCssVariables.icon.size.sm} />
-          </StyledSearchIcon>
-          <StyledSearchInput
-            placeholder={t`Search by name or email…`}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            autoFocus
-          />
-        </StyledSearchWrap>
-        <StyledMemberList>
-          {filtered.length === 0 ? (
-            <StyledMuted>
-              {members.length === 0
-                ? t`No other members in this workspace`
-                : t`No matches`}
-            </StyledMuted>
-          ) : (
-            filtered.map((m) => {
-              const label =
-                [m.firstName, m.lastName].filter(Boolean).join(' ') || m.email;
-              const sid = m.streamUserId;
+      <StyledSearchWrap>
+        <StyledSearchIcon>
+          <IconSearch size={themeCssVariables.icon.size.sm} />
+        </StyledSearchIcon>
+        <StyledSearchInput
+          autoFocus
+          placeholder={t`Search by name or email…`}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </StyledSearchWrap>
+      <StyledMemberList>
+        {filtered.length === 0 ? (
+          <StyledMuted>
+            {members.length === 0
+              ? t`No other members in this workspace`
+              : t`No matches`}
+          </StyledMuted>
+        ) : (
+          filtered.map((m) => {
+            const label =
+              [m.firstName, m.lastName].filter(Boolean).join(' ') || m.email;
+            const sid = m.streamUserId;
 
-              return (
-                <StyledMemberButton
-                  key={m.userWorkspaceId}
-                  type="button"
-                  $selected={selectedStreamId === sid}
-                  onClick={() => setSelectedStreamId(sid)}
-                >
-                  {label}
+            return (
+              <StyledMemberButton
+                key={m.userWorkspaceId}
+                type="button"
+                $selected={selectedStreamId === sid}
+                onClick={() => setSelectedStreamId(sid)}
+              >
+                <Avatar
+                  placeholder={label}
+                  placeholderColorSeed={sid}
+                  size="sm"
+                />
+                <StyledMemberTextCol>
+                  <StyledMemberPrimary>{label}</StyledMemberPrimary>
                   {m.email ? (
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 11,
-                        color: themeCssVariables.font.color.tertiary,
-                        marginTop: 2,
-                      }}
-                    >
-                      {m.email}
-                    </span>
+                    <StyledMemberSecondary>{m.email}</StyledMemberSecondary>
                   ) : null}
-                </StyledMemberButton>
-              );
-            })
-          )}
-        </StyledMemberList>
+                </StyledMemberTextCol>
+              </StyledMemberButton>
+            );
+          })
+        )}
+      </StyledMemberList>
 
-        {error ? <StyledError>{error}</StyledError> : null}
+      {error ? <StyledError>{error}</StyledError> : null}
 
-        <StyledActions>
-          <Button title={t`Cancel`} variant="secondary" onClick={onClose} />
-          <Button
-            title={submitting ? t`Opening…` : t`Open chat`}
-            variant="primary"
-            accent="blue"
-            disabled={submitting || !selectedStreamId}
-            onClick={() => void handleSubmit()}
-          />
-        </StyledActions>
-      </StyledPanel>
-    </StyledBackdrop>
+      <StyledActions>
+        <Button title={t`Cancel`} variant="secondary" onClick={onClose} />
+        <Button
+          accent="blue"
+          disabled={submitting || !selectedStreamId}
+          title={submitting ? t`Opening…` : t`Open chat`}
+          variant="primary"
+          onClick={() => void handleSubmit()}
+        />
+      </StyledActions>
+    </ChatModalShell>
   );
 };

@@ -7,6 +7,7 @@ import {
   type ChangeEvent,
   type KeyboardEvent,
 } from 'react';
+import { ChatModalShell } from '@/chat/components/ChatModalShell';
 import { CreateChannelModal } from '@/chat/components/CreateChannelModal';
 import { StreamDmModal } from '@/chat/components/StreamDmModal';
 import { useChatWorkspaceLayout } from '@/chat/hooks/useChatWorkspaceLayout';
@@ -31,6 +32,7 @@ import {
 } from 'stream-chat';
 import { Button, LightIconButton } from 'twenty-ui/input';
 import {
+  Avatar,
   IconFileText,
   IconMessage,
   IconNotes,
@@ -94,17 +96,6 @@ type ConversationSummary = {
   title: string;
   unreadCount: number;
 };
-
-function initialsFromName(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) {
-    return '?';
-  }
-  if (parts.length === 1) {
-    return parts[0].slice(0, 2).toUpperCase();
-  }
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
 
 function memberCount(channel: StreamChannel<DefaultGenerics>): number {
   return Object.keys(channel.state.members ?? {}).length;
@@ -306,20 +297,6 @@ const StyledListRow = styled.button<{ $active?: boolean }>`
   }
 `;
 
-const StyledAvatar = styled.div`
-  align-items: center;
-  background: ${themeCssVariables.background.transparent.blue};
-  border-radius: 50%;
-  color: ${themeCssVariables.color.blue};
-  display: flex;
-  flex-shrink: 0;
-  font-size: ${themeCssVariables.font.size.sm};
-  font-weight: ${themeCssVariables.font.weight.semiBold};
-  height: 40px;
-  justify-content: center;
-  width: 40px;
-`;
-
 const StyledRowBody = styled.div`
   flex: 1 1 auto;
   min-width: 0;
@@ -446,20 +423,6 @@ const StyledMessageRow = styled.div<{ $own?: boolean }>`
   gap: 10px;
 `;
 
-const StyledMsgAvatar = styled.div`
-  align-items: center;
-  background: ${themeCssVariables.background.secondary};
-  border-radius: 50%;
-  color: ${themeCssVariables.font.color.secondary};
-  display: flex;
-  flex-shrink: 0;
-  font-size: 11px;
-  font-weight: 600;
-  height: 32px;
-  justify-content: center;
-  width: 32px;
-`;
-
 const StyledMsgCol = styled.div<{ $own?: boolean }>`
   align-items: ${({ $own }) => ($own ? 'flex-end' : 'flex-start')};
   display: flex;
@@ -540,28 +503,58 @@ const StyledThreadHint = styled.button`
 `;
 
 const StyledThreadDrawer = styled.div`
-  border-top: 1px solid ${themeCssVariables.border.color.medium};
+  background: ${themeCssVariables.background.secondary};
+  border: 1px solid ${themeCssVariables.border.color.medium};
+  border-bottom: none;
+  border-radius: ${themeCssVariables.border.radius.md}
+    ${themeCssVariables.border.radius.md} 0 0;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  max-height: 42vh;
-  min-height: 120px;
+  margin: 0 ${themeCssVariables.spacing[3]};
+  max-height: 44vh;
+  min-height: 140px;
+  overflow: hidden;
 `;
 
-const StyledThreadHeader = styled.div`
-  align-items: center;
+const StyledThreadHeaderTop = styled.div`
+  align-items: flex-start;
+  background: ${themeCssVariables.background.primary};
   border-bottom: 1px solid ${themeCssVariables.border.color.light};
   display: flex;
   flex-shrink: 0;
+  gap: ${themeCssVariables.spacing[2]};
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: ${themeCssVariables.spacing[3]} ${themeCssVariables.spacing[4]};
+`;
+
+const StyledThreadTitleBlock = styled.div`
+  min-width: 0;
+`;
+
+const StyledThreadKicker = styled.div`
+  color: ${themeCssVariables.font.color.tertiary};
+  font-size: ${themeCssVariables.font.size.xs};
+  font-weight: ${themeCssVariables.font.weight.semiBold};
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+`;
+
+const StyledThreadParentSnippet = styled.div`
+  color: ${themeCssVariables.font.color.secondary};
+  font-size: ${themeCssVariables.font.size.sm};
+  line-height: 1.45;
+  margin-top: ${themeCssVariables.spacing[2]};
+  max-height: 2.9em;
+  overflow: hidden;
 `;
 
 const StyledThreadScroll = styled.div`
+  background: ${themeCssVariables.background.primary};
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: 8px 12px;
+  padding: ${themeCssVariables.spacing[3]} ${themeCssVariables.spacing[4]};
 `;
 
 const StyledThreadComposerBar = styled.div`
@@ -570,8 +563,8 @@ const StyledThreadComposerBar = styled.div`
   border-top: 1px solid ${themeCssVariables.border.color.medium};
   display: flex;
   flex-shrink: 0;
-  gap: 6px;
-  padding: 8px 12px;
+  gap: ${themeCssVariables.spacing[2]};
+  padding: ${themeCssVariables.spacing[3]} ${themeCssVariables.spacing[4]};
 `;
 
 const StyledResizeHandle = styled.div`
@@ -678,29 +671,6 @@ const StyledMentionItem = styled.li<{ $active?: boolean }>`
   &:hover {
     background: ${themeCssVariables.background.transparent.blue};
   }
-`;
-
-const StyledGlobalSearchBackdrop = styled.div`
-  align-items: center;
-  background: rgba(0, 0, 0, 0.35);
-  display: flex;
-  inset: 0;
-  justify-content: center;
-  padding: 24px;
-  position: fixed;
-  z-index: 1000;
-`;
-
-const StyledGlobalSearchModal = styled.div`
-  background: ${themeCssVariables.background.primary};
-  border: 1px solid ${themeCssVariables.border.color.medium};
-  border-radius: 12px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
-  display: flex;
-  flex-direction: column;
-  max-height: min(480px, 80vh);
-  max-width: 520px;
-  width: 100%;
 `;
 
 const StyledGlobalSearchHeader = styled.div`
@@ -975,20 +945,6 @@ const StyledMemberRow = styled.div`
   display: flex;
   gap: 10px;
   padding: 10px 0;
-`;
-
-const StyledMemberAvatar = styled.div`
-  align-items: center;
-  background: ${themeCssVariables.background.transparent.blue};
-  border-radius: 50%;
-  color: ${themeCssVariables.color.blue};
-  display: flex;
-  flex-shrink: 0;
-  font-size: 11px;
-  font-weight: 600;
-  height: 32px;
-  justify-content: center;
-  width: 32px;
 `;
 
 const StyledMemberName = styled.span`
@@ -2423,9 +2379,11 @@ export const CommunicationHub = () => {
                   type="button"
                   onClick={() => setActiveChannel(row.channel)}
                 >
-                  <StyledAvatar>
-                    {initialsFromName(conversationTitle(row))}
-                  </StyledAvatar>
+                  <Avatar
+                    placeholder={conversationTitle(row)}
+                    placeholderColorSeed={row.id}
+                    size="md"
+                  />
                   <StyledRowBody>
                     <StyledRowTop>
                       <StyledRowName>{conversationTitle(row)}</StyledRowName>
@@ -2590,9 +2548,16 @@ export const CommunicationHub = () => {
                           id={`hub-msg-${message.id}`}
                           $own={own}
                         >
-                          <StyledMsgAvatar>
-                            {initialsFromName(author)}
-                          </StyledMsgAvatar>
+                          <Avatar
+                            avatarUrl={
+                              typeof message.user?.image === 'string'
+                                ? message.user.image
+                                : undefined
+                            }
+                            placeholder={author}
+                            placeholderColorSeed={message.user?.id}
+                            size="sm"
+                          />
                           <StyledMsgCol $own={own}>
                             <StyledMsgMeta $own={own}>
                               <StyledMsgAuthor>
@@ -2710,15 +2675,36 @@ export const CommunicationHub = () => {
                     transition={{ duration: 0.2 }}
                   >
                     <StyledThreadDrawer>
-                      <StyledThreadHeader>
-                        <StyledMutedHelp>Thread</StyledMutedHelp>
+                      <StyledThreadHeaderTop>
+                        <StyledThreadTitleBlock>
+                          <StyledThreadKicker>Thread</StyledThreadKicker>
+                          <StyledThreadParentSnippet>
+                            <strong>
+                              {resolveAuthorName(
+                                threadRoot.user?.id,
+                                threadRoot.user?.name,
+                              )}
+                            </strong>
+                            {': '}
+                            {typeof threadRoot.text === 'string' &&
+                            threadRoot.text.trim() !== ''
+                              ? threadRoot.text.slice(0, 180)
+                              : threadRoot.attachments?.length
+                                ? '[Attachment]'
+                                : '…'}
+                            {typeof threadRoot.text === 'string' &&
+                            threadRoot.text.length > 180
+                              ? '…'
+                              : ''}
+                          </StyledThreadParentSnippet>
+                        </StyledThreadTitleBlock>
                         <LightIconButton
                           Icon={IconX}
                           accent="tertiary"
                           aria-label="Close thread"
                           onClick={() => setThreadRoot(null)}
                         />
-                      </StyledThreadHeader>
+                      </StyledThreadHeaderTop>
                       <StyledThreadScroll>
                         {threadReplies.map((tm) => {
                           const ta = resolveAuthorName(
@@ -2731,9 +2717,16 @@ export const CommunicationHub = () => {
 
                           return (
                             <StyledMessageRow key={tm.id} $own={tmOwn}>
-                              <StyledMsgAvatar>
-                                {initialsFromName(ta)}
-                              </StyledMsgAvatar>
+                                                           <Avatar
+                                avatarUrl={
+                                  typeof tm.user?.image === 'string'
+                                    ? tm.user.image
+                                    : undefined
+                                }
+                                placeholder={ta}
+                                placeholderColorSeed={tm.user?.id}
+                                size="sm"
+                              />
                               <StyledMsgCol $own={tmOwn}>
                                 <StyledMsgMeta $own={tmOwn}>
                                   <StyledMsgAuthor>
@@ -3070,9 +3063,11 @@ export const CommunicationHub = () => {
                             <StyledMemberRow
                               key={u?.id ?? `member-${label}`}
                             >
-                              <StyledMemberAvatar>
-                                {initialsFromName(label)}
-                              </StyledMemberAvatar>
+                              <Avatar
+                                placeholder={label}
+                                placeholderColorSeed={u?.id}
+                                size="sm"
+                              />
                               <StyledMemberName>{label}</StyledMemberName>
                             </StyledMemberRow>
                           );
@@ -3171,88 +3166,75 @@ export const CommunicationHub = () => {
         onClose={() => setDmModalOpen(false)}
         onStartDm={(id) => handleStartDmFromPicker(id)}
       />
-      {globalSearchOpen ? (
-        <StyledGlobalSearchBackdrop
-          aria-hidden={false}
-          role="presentation"
-          onClick={() => setGlobalSearchOpen(false)}
-        >
-          <StyledGlobalSearchModal
-            aria-label="Search all messages"
-            aria-modal="true"
-            role="dialog"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <StyledGlobalSearchHeader>
-              <StyledGlobalSearchInput
-                ref={globalSearchInputRef}
-                placeholder="Search across all conversations…"
-                type="search"
-                value={globalQuery}
-                onChange={(e) => setGlobalQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') {
-                    setGlobalSearchOpen(false);
-                  }
-                }}
-              />
-              <StyledMutedHelp>
-                Ctrl+Shift+K · min. 2 characters
-              </StyledMutedHelp>
-            </StyledGlobalSearchHeader>
-            <StyledGlobalSearchScroll>
-              {globalSearchLoading ? (
-                <StyledMutedHelp>Searching…</StyledMutedHelp>
-              ) : globalQuery.trim().length < 2 ? (
-                <StyledMutedHelp>
-                  Type at least 2 characters to search all your channels and
-                  DMs.
-                </StyledMutedHelp>
-              ) : globalHits.length === 0 ? (
-                <StyledMutedHelp>No results.</StyledMutedHelp>
-              ) : (
-                globalHits.map((hit) => {
-                  const m = hit.message;
-                  const author = resolveAuthorName(
-                    m.user?.id,
-                    m.user?.name,
-                  );
-                  const preview =
-                    typeof m.text === 'string' ? m.text : '';
-                  const cid = m.cid ?? m.channel?.cid ?? '';
-                  const channelFromSearch = m.channel as
-                    | { name?: string }
-                    | undefined;
-                  const channelName =
-                    (typeof cid === 'string' && cid.length > 0
-                      ? channelTitleByCid.get(cid)
-                      : undefined) ??
-                    (typeof channelFromSearch?.name === 'string'
-                      ? channelFromSearch.name
-                      : undefined) ??
-                    (typeof cid === 'string' ? cid : 'Conversation');
+      <ChatModalShell
+        ariaLabel="Search all messages"
+        isOpen={globalSearchOpen}
+        maxWidth={520}
+        onClose={() => setGlobalSearchOpen(false)}
+      >
+        <StyledGlobalSearchHeader>
+          <StyledGlobalSearchInput
+            ref={globalSearchInputRef}
+            placeholder="Search across all conversations…"
+            type="search"
+            value={globalQuery}
+            onChange={(e) => setGlobalQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setGlobalSearchOpen(false);
+              }
+            }}
+          />
+          <StyledMutedHelp>
+            Ctrl+Shift+K · min. 2 characters
+          </StyledMutedHelp>
+        </StyledGlobalSearchHeader>
+        <StyledGlobalSearchScroll>
+          {globalSearchLoading ? (
+            <StyledMutedHelp>Searching…</StyledMutedHelp>
+          ) : globalQuery.trim().length < 2 ? (
+            <StyledMutedHelp>
+              Type at least 2 characters to search all your channels and DMs.
+            </StyledMutedHelp>
+          ) : globalHits.length === 0 ? (
+            <StyledMutedHelp>No results.</StyledMutedHelp>
+          ) : (
+            globalHits.map((hit) => {
+              const m = hit.message;
+              const author = resolveAuthorName(m.user?.id, m.user?.name);
+              const preview = typeof m.text === 'string' ? m.text : '';
+              const cid = m.cid ?? m.channel?.cid ?? '';
+              const channelFromSearch = m.channel as
+                | { name?: string }
+                | undefined;
+              const channelName =
+                (typeof cid === 'string' && cid.length > 0
+                  ? channelTitleByCid.get(cid)
+                  : undefined) ??
+                (typeof channelFromSearch?.name === 'string'
+                  ? channelFromSearch.name
+                  : undefined) ??
+                (typeof cid === 'string' ? cid : 'Conversation');
 
-                  return (
-                    <StyledGlobalSearchHit
-                      key={`${cid}-${m.id}`}
-                      type="button"
-                      onClick={() => void handlePickGlobalSearchHit(m)}
-                    >
-                      <div>
-                        {preview.slice(0, 200)}
-                        {preview.length > 200 ? '…' : ''}
-                      </div>
-                      <StyledGlobalSearchHitMeta>
-                        {channelName} · {author}
-                      </StyledGlobalSearchHitMeta>
-                    </StyledGlobalSearchHit>
-                  );
-                })
-              )}
-            </StyledGlobalSearchScroll>
-          </StyledGlobalSearchModal>
-        </StyledGlobalSearchBackdrop>
-      ) : null}
+              return (
+                <StyledGlobalSearchHit
+                  key={`${cid}-${m.id}`}
+                  type="button"
+                  onClick={() => void handlePickGlobalSearchHit(m)}
+                >
+                  <div>
+                    {preview.slice(0, 200)}
+                    {preview.length > 200 ? '…' : ''}
+                  </div>
+                  <StyledGlobalSearchHitMeta>
+                    {channelName} · {author}
+                  </StyledGlobalSearchHitMeta>
+                </StyledGlobalSearchHit>
+              );
+            })
+          )}
+        </StyledGlobalSearchScroll>
+      </ChatModalShell>
     </StyledShell>
   );
 };
