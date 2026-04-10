@@ -1717,6 +1717,11 @@ export const CommunicationHub = () => {
     return map;
   }, [conversationSummaries]);
 
+  const rootMessages = useMemo(
+    () => channelMessages.filter((m) => !m.parent_id),
+    [channelMessages],
+  );
+
   useEffect(() => {
     if (!composerMention || mentionCandidates.length === 0) {
       return;
@@ -2175,11 +2180,6 @@ export const CommunicationHub = () => {
   );
 
   const selfId = streamClient.userID;
-
-  const rootMessages = useMemo(
-    () => channelMessages.filter((m) => !m.parent_id),
-    [channelMessages],
-  );
 
   const attachmentVisual = (
     message: MessageResponse,
