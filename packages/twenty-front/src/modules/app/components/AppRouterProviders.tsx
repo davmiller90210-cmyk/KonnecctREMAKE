@@ -34,6 +34,7 @@ import { PageTitle } from '@/ui/utilities/page-title/components/PageTitle';
 import { WorkspaceProviderEffect } from '@/workspace/components/WorkspaceProviderEffect';
 import { StrictMode } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
+import { CLERK_PUBLISHABLE_KEY } from '~/config';
 import { getPageTitleFromPath } from '~/utils/title-utils';
 
 export const AppRouterProviders = () => {
@@ -80,7 +81,9 @@ export const AppRouterProviders = () => {
                       <MainContextStoreProvider />
                       <SupportChatEffect />
                       <PageChangeEffect />
-                      <ClerkSessionExchangeEffect />
+                      {CLERK_PUBLISHABLE_KEY ? (
+                        <ClerkSessionExchangeEffect />
+                      ) : null}
                       <SignOutOnOtherTabSignOutEffect />
                     </PreComputedChipGeneratorsProvider>
                   </SSEProvider>
