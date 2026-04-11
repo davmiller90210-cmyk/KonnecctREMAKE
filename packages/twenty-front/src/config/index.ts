@@ -29,30 +29,6 @@ export const CLERK_PUBLISHABLE_KEY =
   process.env.REACT_APP_CLERK_PUBLISHABLE_KEY ||
   '';
 
-/** Plane web origin/path (optional). Empty = same host /_konnecct/plane (production). */
-export const REACT_APP_PLANE_WEB_URL =
-  window._env_?.REACT_APP_PLANE_WEB_URL ||
-  process.env.REACT_APP_PLANE_WEB_URL ||
-  '';
-
-/** `auto` | `federation` | `iframe` — see KonnecctProjectsEmbed. */
-export const REACT_APP_PLANE_EMBED =
-  window._env_?.REACT_APP_PLANE_EMBED ||
-  process.env.REACT_APP_PLANE_EMBED ||
-  'auto';
-
-/** Module Federation id, e.g. konnecct_plane/./KonnecctShell */
-export const REACT_APP_PLANE_MF_MODULE =
-  window._env_?.REACT_APP_PLANE_MF_MODULE ||
-  process.env.REACT_APP_PLANE_MF_MODULE ||
-  '';
-
-/** Optional explicit Plane workspace slug override. */
-export const REACT_APP_PLANE_WORKSPACE_SLUG =
-  window._env_?.REACT_APP_PLANE_WORKSPACE_SLUG ||
-  process.env.REACT_APP_PLANE_WORKSPACE_SLUG ||
-  '';
-
 export const REACT_APP_STREAM_API_KEY =
   window._env_?.REACT_APP_STREAM_API_KEY ||
   window._env_?.STREAM_API_KEY ||

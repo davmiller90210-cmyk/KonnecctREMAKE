@@ -33,12 +33,6 @@ export function generateFrontConfig(): void {
           process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '',
         REACT_APP_CLERK_PUBLISHABLE_KEY:
           process.env.REACT_APP_CLERK_PUBLISHABLE_KEY ?? '',
-        REACT_APP_PLANE_WEB_URL:
-          process.env.REACT_APP_PLANE_WEB_URL ?? 'https://projects.konnecct.com',
-        REACT_APP_PLANE_EMBED: process.env.REACT_APP_PLANE_EMBED ?? 'auto',
-        REACT_APP_PLANE_MF_MODULE: process.env.REACT_APP_PLANE_MF_MODULE ?? '',
-        REACT_APP_PLANE_WORKSPACE_SLUG:
-          process.env.REACT_APP_PLANE_WORKSPACE_SLUG ?? '',
         REACT_APP_STREAM_API_KEY:
           process.env.REACT_APP_STREAM_API_KEY ??
           process.env.STREAM_API_KEY ??

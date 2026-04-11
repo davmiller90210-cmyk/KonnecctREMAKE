@@ -9,7 +9,6 @@ import { IconMessage, IconSparkles } from 'twenty-ui/display';
 
 import { NavigationDrawerOpenedSection } from '@/navigation-menu-item/display/sections/components/NavigationDrawerOpenedSection';
 import { NavigationDrawerWorkspaceSectionSkeletonLoader } from '@/object-metadata/components/NavigationDrawerWorkspaceSectionSkeletonLoader';
-import { KonnecctProjectsNavigationSection } from '@/navigation/components/KonnecctProjectsNavigationSection';
 import { NavigationDrawerOtherSection } from '@/navigation/components/NavigationDrawerOtherSection';
 import { NavigationDrawerItem } from '@/ui/navigation/navigation-drawer/components/NavigationDrawerItem';
 
@@ -59,7 +58,6 @@ export const MainNavigationDrawerScrollableItems = () => {
         Icon={IconSparkles}
         active={location.pathname.startsWith('/superagents')}
       />
-      <KonnecctProjectsNavigationSection />
 
       <NavigationDrawerOtherSection />
     </StyledScrollableItemsContainer>

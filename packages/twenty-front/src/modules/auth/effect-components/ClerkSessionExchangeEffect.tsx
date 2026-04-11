@@ -85,53 +85,6 @@ export const ClerkSessionExchangeEffect = () => {
         setTokenPair(tokens);
         await loadCurrentUser();
 
-        void (async () => {
-          try {
-            const bridgeRes = await fetch('/integrations/plane/bridge-token', {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${clerkToken}`,
-                ...(orgId ? { 'X-Clerk-Org-Id': orgId } : {}),
-              },
-            });
-
-            if (!bridgeRes.ok) {
-              return;
-            }
-
-            const data = (await bridgeRes.json()) as {
-              bridgeToken?: string;
-              workspaceSlug?: string;
-            };
-
-            if (!data.bridgeToken) {
-              return;
-            }
-
-            if (data.workspaceSlug) {
-              try {
-                localStorage.setItem(
-                  'konnecct.plane.workspaceSlug',
-                  data.workspaceSlug,
-                );
-              } catch {
-                /* storage unavailable */
-              }
-            }
-
-            await fetch('/auth/konnecct-bridge/', {
-              method: 'POST',
-              credentials: 'include',
-              headers: {
-                Authorization: `Bearer ${data.bridgeToken}`,
-                'Content-Type': 'application/json',
-              },
-            });
-          } catch {
-            /* Plane bridge optional until KONNECCT_BRIDGE_SECRET and workspace slug are set */
-          }
-        })();
-
         setExchangeError(null);
       } catch (error) {
         // oxlint-disable-next-line no-console
