@@ -6,7 +6,7 @@ import { objectEventFixtures, workspaceEventFixtures } from './fixtures';
 
 config({
   path: process.env.NODE_ENV === 'test' ? '.env.test' : '.env',
-  override: true,
+  override: false,
 });
 
 const client = createClient({

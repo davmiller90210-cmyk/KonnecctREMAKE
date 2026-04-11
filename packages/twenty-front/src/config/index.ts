@@ -27,6 +27,8 @@ export const CLERK_PUBLISHABLE_KEY =
   process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
   window._env_?.REACT_APP_CLERK_PUBLISHABLE_KEY ||
   process.env.REACT_APP_CLERK_PUBLISHABLE_KEY ||
+  window._env_?.CLERK_PUBLISHABLE_KEY ||
+  process.env.CLERK_PUBLISHABLE_KEY ||
   '';
 
 export const REACT_APP_STREAM_API_KEY =

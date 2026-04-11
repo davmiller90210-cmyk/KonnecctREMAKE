@@ -2,10 +2,28 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { config } from 'dotenv';
+// Do not override existing process.env (Docker/Kubernetes wins over .env file).
+// override:true previously wiped NEXT_PUBLIC_CLERK_* when .env contained empty placeholders.
 config({
   path: process.env.NODE_ENV === 'test' ? '.env.test' : '.env',
-  override: true,
+  override: false,
 });
+
+/** Single resolved publishable key for the SPA (aliases + Docker-friendly names). */
+function resolveClerkPublishableKey(): string {
+  const candidates = [
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+    process.env.REACT_APP_CLERK_PUBLISHABLE_KEY,
+    process.env.CLERK_PUBLISHABLE_KEY,
+  ];
+  for (const value of candidates) {
+    const trimmed = value?.trim();
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+  return '';
+}
 
 /** Must match nginx Mattermost subpath + MM_SERVICESETTINGS_SITEURL (same host as CRM). */
 function resolveMattermostWebappUrl(): string {
@@ -21,14 +39,14 @@ function resolveMattermostWebappUrl(): string {
 }
 
 export function generateFrontConfig(): void {
+  const clerkPublishableKey = resolveClerkPublishableKey();
   const configObject = {
     window: {
       _env_: {
         REACT_APP_SERVER_BASE_URL: process.env.SERVER_URL,
-        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
-          process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '',
-        REACT_APP_CLERK_PUBLISHABLE_KEY:
-          process.env.REACT_APP_CLERK_PUBLISHABLE_KEY ?? '',
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: clerkPublishableKey,
+        REACT_APP_CLERK_PUBLISHABLE_KEY: clerkPublishableKey,
+        CLERK_PUBLISHABLE_KEY: clerkPublishableKey,
         REACT_APP_STREAM_API_KEY:
           process.env.REACT_APP_STREAM_API_KEY ??
           process.env.STREAM_API_KEY ??

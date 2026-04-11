@@ -4,7 +4,8 @@ import { config } from 'dotenv';
 import { DataSource, type DataSourceOptions, type LogLevel } from 'typeorm';
 config({
   path: process.env.NODE_ENV === 'test' ? '.env.test' : '.env',
-  override: true,
+  // Preserve env injected by Docker / orchestrator; do not let .env blank out keys.
+  override: false,
 });
 
 const isRunningCommand = (): boolean => {
