@@ -48,6 +48,8 @@ services:
       REACT_APP_STREAM_API_KEY: ${REACT_APP_STREAM_API_KEY:-${STREAM_API_KEY:-}}
       REACT_APP_CHAT_PROVIDER: ${REACT_APP_CHAT_PROVIDER:-stream}
       REACT_APP_MATTERMOST_WEBAPP_URL: ${REACT_APP_MATTERMOST_WEBAPP_URL:-}
+      # Same as Mattermost MM_SERVICESETTINGS_SITEURL (iframe target, usually https://chat.konnecct.com)
+      MATTERMOST_SITE_URL: ${MATTERMOST_SITE_URL:-https://chat.konnecct.com}
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}
       REACT_APP_CLERK_PUBLISHABLE_KEY: ${REACT_APP_CLERK_PUBLISHABLE_KEY:-}
       CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-}
@@ -114,10 +116,10 @@ services:
     environment:
       MM_SQLSETTINGS_DRIVERNAME: postgres
       MM_SQLSETTINGS_DATASOURCE: postgres://mmuser:${MATTERMOST_DB_PASSWORD:-mattermost-db-change-me}@mattermost-db:5432/mattermost?sslmode=disable&connect_timeout=10
-      MM_SERVICESETTINGS_SITEURL: ${MATTERMOST_SITE_URL:-https://app.konnecct.com/_konnecct/mattermost}
+      MM_SERVICESETTINGS_SITEURL: ${MATTERMOST_SITE_URL:-https://chat.konnecct.com}
       MM_SERVICESETTINGS_LISTENADDRESS: ":8065"
       MM_SERVICESETTINGS_TLSSTRICT: "false"
-      # Embed in CRM iframe (same host); explicit allow for Mattermost 10.7+ CSP.
+      # CRM at app.* embeds chat.* in an iframe (Mattermost 10.7+).
       MM_SERVICESETTINGS_FRAMEANCESTORS: ${MATTERMOST_FRAME_ANCESTORS:-https://app.konnecct.com}
       MM_SERVICESETTINGS_ALLOWCORSFROM: ${MATTERMOST_ALLOW_CORS_FROM:-https://app.konnecct.com}
       MM_FILESETTINGS_DRIVERNAME: local

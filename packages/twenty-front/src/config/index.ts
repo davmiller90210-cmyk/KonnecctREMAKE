@@ -36,9 +36,6 @@ export const REACT_APP_STREAM_API_KEY =
   process.env.STREAM_API_KEY ||
   '';
 
-/** Same-origin Mattermost path as production nginx (keep in sync with server `generate-front-config`). */
-export const KONNECCT_MATTERMOST_PUBLIC_PATH = '/_konnecct/mattermost';
-
 /** `stream` (default) | `mattermost` */
 export const REACT_APP_CHAT_PROVIDER = (
   window._env_?.REACT_APP_CHAT_PROVIDER ||
@@ -49,19 +46,12 @@ export const REACT_APP_CHAT_PROVIDER = (
   .toLowerCase();
 
 /**
- * Public Mattermost webapp URL — no trailing slash (must match MM Site URL + nginx).
+ * Mattermost web URL (no trailing slash). Usually `https://chat.<your-domain>` — injected at runtime by the API.
  */
 export const REACT_APP_MATTERMOST_WEBAPP_URL = (() => {
   const fromEnv =
     window._env_?.REACT_APP_MATTERMOST_WEBAPP_URL ||
     process.env.REACT_APP_MATTERMOST_WEBAPP_URL ||
     '';
-  const trimmed = fromEnv.trim().replace(/\/$/, '');
-  if (trimmed) {
-    return trimmed;
-  }
-  if (typeof window !== 'undefined' && window.location?.origin) {
-    return `${window.location.origin}${KONNECCT_MATTERMOST_PUBLIC_PATH}`;
-  }
-  return '';
+  return fromEnv.trim().replace(/\/$/, '');
 })();

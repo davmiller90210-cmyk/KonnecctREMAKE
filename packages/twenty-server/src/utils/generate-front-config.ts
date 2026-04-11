@@ -7,21 +7,17 @@ config({
   override: true,
 });
 
-/** Same-origin Mattermost path as nginx `location /_konnecct/mattermost/`. */
-const KONNECCT_MATTERMOST_PUBLIC_PATH = '/_konnecct/mattermost';
-
+/** Must match nginx `server_name` for Mattermost (dedicated host, not a subpath on the CRM). */
 function resolveMattermostWebappUrl(): string {
   const explicit = process.env.REACT_APP_MATTERMOST_WEBAPP_URL?.trim();
   if (explicit) {
     return explicit.replace(/\/$/, '');
   }
-  const base = (process.env.FRONT_URL ?? process.env.SERVER_URL ?? '')
-    .trim()
-    .replace(/\/$/, '');
-  if (!base) {
-    return '';
+  const siteUrl = process.env.MATTERMOST_SITE_URL?.trim();
+  if (siteUrl) {
+    return siteUrl.replace(/\/$/, '');
   }
-  return `${base}${KONNECCT_MATTERMOST_PUBLIC_PATH}`;
+  return 'https://chat.konnecct.com';
 }
 
 export function generateFrontConfig(): void {
