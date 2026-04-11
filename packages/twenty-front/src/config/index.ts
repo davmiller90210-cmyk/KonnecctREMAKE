@@ -46,7 +46,7 @@ export const REACT_APP_CHAT_PROVIDER = (
   .toLowerCase();
 
 /**
- * Mattermost web URL (no trailing slash). Usually `https://chat.<your-domain>` — injected at runtime by the API.
+ * Mattermost web URL (no trailing slash). Usually `https://projects.<your-domain>` — injected at runtime by the API.
  */
 export const REACT_APP_MATTERMOST_WEBAPP_URL = (() => {
   const fromEnv =

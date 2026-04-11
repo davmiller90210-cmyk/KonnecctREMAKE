@@ -7,7 +7,7 @@ config({
   override: true,
 });
 
-/** Must match nginx `server_name` for Mattermost (dedicated host, not a subpath on the CRM). */
+/** Must match nginx `server_name` + MM_SERVICESETTINGS_SITEURL (e.g. https://projects.konnecct.com). */
 function resolveMattermostWebappUrl(): string {
   const explicit = process.env.REACT_APP_MATTERMOST_WEBAPP_URL?.trim();
   if (explicit) {
@@ -17,7 +17,7 @@ function resolveMattermostWebappUrl(): string {
   if (siteUrl) {
     return siteUrl.replace(/\/$/, '');
   }
-  return 'https://chat.konnecct.com';
+  return 'https://projects.konnecct.com';
 }
 
 export function generateFrontConfig(): void {
