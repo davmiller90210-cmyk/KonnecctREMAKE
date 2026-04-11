@@ -137,6 +137,8 @@ services:
       mattermost-db:
         condition: service_healthy
 
+  # Do not depends_on crm-server/mattermost: if either fails, nginx must still bind :80/:443
+  # or the whole site shows ERR_CONNECTION_REFUSED. Unready upstreams return 502 until healthy.
   nginx:
     image: nginx:1.25-alpine
     ports:
@@ -147,11 +149,6 @@ services:
       - ./nginx/mattermost-upstream-common.conf:/etc/nginx/mattermost-upstream-common.conf:ro
       - ./nginx/certbot-etc:/etc/letsencrypt:ro
       - ./nginx/certbot-www:/var/www/certbot:ro
-    depends_on:
-      crm-server:
-        condition: service_started
-      mattermost:
-        condition: service_started
     restart: always
 
   certbot:
