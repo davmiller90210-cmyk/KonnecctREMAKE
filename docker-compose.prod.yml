@@ -117,6 +117,9 @@ services:
       MM_SERVICESETTINGS_SITEURL: ${MATTERMOST_SITE_URL:-https://app.konnecct.com/_konnecct/mattermost}
       MM_SERVICESETTINGS_LISTENADDRESS: ":8065"
       MM_SERVICESETTINGS_TLSSTRICT: "false"
+      # Embed in CRM iframe (same host); explicit allow for Mattermost 10.7+ CSP.
+      MM_SERVICESETTINGS_FRAMEANCESTORS: ${MATTERMOST_FRAME_ANCESTORS:-https://app.konnecct.com}
+      MM_SERVICESETTINGS_ALLOWCORSFROM: ${MATTERMOST_ALLOW_CORS_FROM:-https://app.konnecct.com}
       MM_FILESETTINGS_DRIVERNAME: local
       MM_LOGSETTINGS_CONSOLELEVEL: INFO
       MM_CLUSTERSETTINGS_ENABLE: "false"
