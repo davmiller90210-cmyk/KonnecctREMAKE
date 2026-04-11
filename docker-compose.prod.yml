@@ -28,8 +28,8 @@ services:
       args:
         REACT_APP_STREAM_API_KEY: ${REACT_APP_STREAM_API_KEY:-${STREAM_API_KEY:-}}
         STREAM_API_KEY: ${STREAM_API_KEY:-}
-        REACT_APP_CHAT_PROVIDER: ${REACT_APP_CHAT_PROVIDER:-stream}
-        REACT_APP_MATTERMOST_WEBAPP_URL: ${REACT_APP_MATTERMOST_WEBAPP_URL:-}
+        REACT_APP_CHAT_PROVIDER: ${REACT_APP_CHAT_PROVIDER:-mattermost}
+        REACT_APP_MATTERMOST_WEBAPP_URL: ${REACT_APP_MATTERMOST_WEBAPP_URL:-https://app.konnecct.com/_konnecct/mattermost}
     depends_on:
       crm-db:
         condition: service_healthy
@@ -48,8 +48,8 @@ services:
       STREAM_API_KEY: ${STREAM_API_KEY:-}
       STREAM_API_SECRET: ${STREAM_API_SECRET:-}
       REACT_APP_STREAM_API_KEY: ${REACT_APP_STREAM_API_KEY:-${STREAM_API_KEY:-}}
-      REACT_APP_CHAT_PROVIDER: ${REACT_APP_CHAT_PROVIDER:-stream}
-      REACT_APP_MATTERMOST_WEBAPP_URL: ${REACT_APP_MATTERMOST_WEBAPP_URL:-}
+      REACT_APP_CHAT_PROVIDER: ${REACT_APP_CHAT_PROVIDER:-mattermost}
+      REACT_APP_MATTERMOST_WEBAPP_URL: ${REACT_APP_MATTERMOST_WEBAPP_URL:-https://app.konnecct.com/_konnecct/mattermost}
       # Must match nginx subpath + Mattermost Site URL (single-origin chat on app.*)
       MATTERMOST_SITE_URL: ${MATTERMOST_SITE_URL:-https://app.konnecct.com/_konnecct/mattermost}
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}
@@ -110,10 +110,11 @@ services:
       timeout: 5s
       retries: 10
 
-  # Site URL is https://app.konnecct.com/_konnecct/mattermost (see nginx). If assets break after
-  # changing URL, set Site URL in System Console and/or use mmctl per Mattermost subpath docs
-  # (mmctl config subpath --assets-dir <client dir> --path /_konnecct/mattermost). Env can be
-  # ignored if mattermost-config volume already stores a different SiteURL in config.json.
+  # Production alignment: System Console → Environment → Site URL must be exactly:
+  #   https://app.konnecct.com/_konnecct/mattermost
+  # If assets break after changing URL, use mmctl per Mattermost subpath docs
+  # (mmctl config subpath --assets-dir <client dir> --path /_konnecct/mattermost).
+  # mattermost-config volume can override MM_SERVICESETTINGS_SITEURL — update Site URL in console or edit config.
   mattermost:
     image: mattermost/mattermost-team-edition:${MATTERMOST_IMAGE_TAG:-release-10}
     restart: always
