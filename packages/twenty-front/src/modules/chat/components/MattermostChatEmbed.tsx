@@ -73,7 +73,7 @@ export const MattermostChatEmbed = () => {
       <StyledIframe
         allow="clipboard-read; clipboard-write; fullscreen"
         referrerPolicy="strict-origin-when-cross-origin"
-        src={`${src}/`}
+        src={src}
         title="Team chat"
       />
       <StyledToolbar>
@@ -81,7 +81,7 @@ export const MattermostChatEmbed = () => {
           title="Open team chat in a new tab"
           variant="secondary"
           size="small"
-          onClick={() => window.open(`${src}/`, '_blank', 'noopener,noreferrer')}
+          onClick={() => window.open(src, '_blank', 'noopener,noreferrer')}
         />
       </StyledToolbar>
     </StyledShell>

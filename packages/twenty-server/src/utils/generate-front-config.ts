@@ -13,7 +13,7 @@ const KONNECCT_MATTERMOST_PUBLIC_PATH = '/_konnecct/mattermost';
 function resolveMattermostWebappUrl(): string {
   const explicit = process.env.REACT_APP_MATTERMOST_WEBAPP_URL?.trim();
   if (explicit) {
-    return explicit;
+    return explicit.replace(/\/$/, '');
   }
   const base = (process.env.FRONT_URL ?? process.env.SERVER_URL ?? '')
     .trim()

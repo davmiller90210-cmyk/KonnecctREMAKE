@@ -49,16 +49,14 @@ export const REACT_APP_CHAT_PROVIDER = (
   .toLowerCase();
 
 /**
- * Public Mattermost webapp URL (no trailing slash). When unset, defaults to
- * same host + `KONNECCT_MATTERMOST_PUBLIC_PATH` (e.g. https://app.example.com/_konnecct/mattermost).
- * Used when REACT_APP_CHAT_PROVIDER is `mattermost`.
+ * Public Mattermost webapp URL — no trailing slash (must match MM Site URL + nginx).
  */
 export const REACT_APP_MATTERMOST_WEBAPP_URL = (() => {
   const fromEnv =
     window._env_?.REACT_APP_MATTERMOST_WEBAPP_URL ||
     process.env.REACT_APP_MATTERMOST_WEBAPP_URL ||
     '';
-  const trimmed = fromEnv.trim();
+  const trimmed = fromEnv.trim().replace(/\/$/, '');
   if (trimmed) {
     return trimmed;
   }
