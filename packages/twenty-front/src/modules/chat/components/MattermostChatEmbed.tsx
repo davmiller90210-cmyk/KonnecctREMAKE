@@ -61,7 +61,7 @@ export const MattermostChatEmbed = () => {
           <Callout
             variant="warning"
             title="Mattermost URL not configured"
-            description="Set MATTERMOST_SITE_URL or REACT_APP_MATTERMOST_WEBAPP_URL on the API (e.g. https://projects.konnecct.com) and rebuild crm-server."
+            description="Set MATTERMOST_SITE_URL or REACT_APP_MATTERMOST_WEBAPP_URL on the API (must match nginx, e.g. https://app.konnecct.com/_konnecct/mattermost) and rebuild crm-server."
           />
         </StyledFallback>
       </StyledShell>

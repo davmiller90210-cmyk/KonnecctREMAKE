@@ -10,7 +10,14 @@ setup_and_migrate_db() {
     echo "Running database setup and migrations..."
 
     # Run setup and migration scripts
+    set +e
     has_schema=$(psql -tAc "SELECT EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'core')" ${PG_DATABASE_URL})
+    psql_exit=$?
+    set -e
+    if [ "$psql_exit" -ne 0 ]; then
+        echo "FATAL: psql could not reach PostgreSQL (exit ${psql_exit}). Check PG_DATABASE_URL, POSTGRES_PASSWORD, and that crm-db is healthy."
+        exit 1
+    fi
     if [ "$has_schema" = "f" ]; then
         echo "Database appears to be empty, running migrations."
         yarn database:init:prod
