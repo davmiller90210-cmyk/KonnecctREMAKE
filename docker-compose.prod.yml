@@ -19,6 +19,8 @@ services:
     restart: always
 
   crm-server:
+    # Same name as crm-worker `image:` so one build tags what the worker runs (no manual docker tag).
+    image: konnecctremake-crm-server
     build:
       context: .
       target: twenty
