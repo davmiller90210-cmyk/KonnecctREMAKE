@@ -370,6 +370,8 @@ services:
       MM_SQLSETTINGS_DATASOURCE: postgres://mmuser:${MATTERMOST_DB_PASSWORD:-mattermost-db-change-me}@mattermost-db:5432/mattermost?sslmode=disable&connect_timeout=10
       MM_SERVICESETTINGS_SITEURL: ${MATTERMOST_SITE_URL:-https://app.konnecct.com/_konnecct/mattermost}
       MM_SERVICESETTINGS_LISTENADDRESS: ":8065"
+      # TLS terminates at nginx; avoid Mattermost issuing http↔https redirect loops.
+      MM_SERVICESETTINGS_TLSSTRICT: "false"
       MM_FILESETTINGS_DRIVERNAME: local
       MM_LOGSETTINGS_CONSOLELEVEL: INFO
       MM_CLUSTERSETTINGS_ENABLE: "false"
