@@ -43,9 +43,9 @@ const Authorize = lazy(() =>
   })),
 );
 
-const CommunicationHub = lazy(() =>
-  import('@/chat/components/CommunicationHub').then((module) => ({
-    default: module.CommunicationHub,
+const KonnecctChatPage = lazy(() =>
+  import('@/chat/components/KonnecctChatPage').then((module) => ({
+    default: module.KonnecctChatPage,
   })),
 );
 
@@ -132,7 +132,7 @@ export const useCreateAppRouter = (
             path="/chat"
             element={
               <LazyRoute>
-                <CommunicationHub />
+                <KonnecctChatPage />
               </LazyRoute>
             }
           />
@@ -140,7 +140,7 @@ export const useCreateAppRouter = (
             path="/chat/c/:channelId"
             element={
               <LazyRoute>
-                <CommunicationHub />
+                <KonnecctChatPage />
               </LazyRoute>
             }
           />
@@ -148,7 +148,7 @@ export const useCreateAppRouter = (
             path="/chat/dm/:dmThreadId"
             element={
               <LazyRoute>
-                <CommunicationHub />
+                <KonnecctChatPage />
               </LazyRoute>
             }
           />

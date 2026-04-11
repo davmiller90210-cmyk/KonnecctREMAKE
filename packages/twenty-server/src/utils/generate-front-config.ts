@@ -7,6 +7,23 @@ config({
   override: true,
 });
 
+/** Same-origin Mattermost path as nginx `location /_konnecct/mattermost/`. */
+const KONNECCT_MATTERMOST_PUBLIC_PATH = '/_konnecct/mattermost';
+
+function resolveMattermostWebappUrl(): string {
+  const explicit = process.env.REACT_APP_MATTERMOST_WEBAPP_URL?.trim();
+  if (explicit) {
+    return explicit;
+  }
+  const base = (process.env.FRONT_URL ?? process.env.SERVER_URL ?? '')
+    .trim()
+    .replace(/\/$/, '');
+  if (!base) {
+    return '';
+  }
+  return `${base}${KONNECCT_MATTERMOST_PUBLIC_PATH}`;
+}
+
 export function generateFrontConfig(): void {
   const configObject = {
     window: {
@@ -22,6 +39,13 @@ export function generateFrontConfig(): void {
         REACT_APP_PLANE_MF_MODULE: process.env.REACT_APP_PLANE_MF_MODULE ?? '',
         REACT_APP_PLANE_WORKSPACE_SLUG:
           process.env.REACT_APP_PLANE_WORKSPACE_SLUG ?? '',
+        REACT_APP_STREAM_API_KEY:
+          process.env.REACT_APP_STREAM_API_KEY ??
+          process.env.STREAM_API_KEY ??
+          '',
+        STREAM_API_KEY: process.env.STREAM_API_KEY ?? '',
+        REACT_APP_CHAT_PROVIDER: process.env.REACT_APP_CHAT_PROVIDER ?? 'stream',
+        REACT_APP_MATTERMOST_WEBAPP_URL: resolveMattermostWebappUrl(),
       },
     },
   };

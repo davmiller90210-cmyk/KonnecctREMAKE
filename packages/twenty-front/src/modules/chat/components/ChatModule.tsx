@@ -1,5 +1,5 @@
-import { CommunicationHub } from '@/chat/components/CommunicationHub';
+import { KonnecctChatPage } from '@/chat/components/KonnecctChatPage';
 
 export const ChatModule = () => {
-  return <CommunicationHub />;
+  return <KonnecctChatPage />;
 };

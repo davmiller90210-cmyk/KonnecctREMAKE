@@ -92,6 +92,8 @@ services:
       args:
         REACT_APP_STREAM_API_KEY: ${REACT_APP_STREAM_API_KEY:-${STREAM_API_KEY:-}}
         STREAM_API_KEY: ${STREAM_API_KEY:-}
+        REACT_APP_CHAT_PROVIDER: ${REACT_APP_CHAT_PROVIDER:-stream}
+        REACT_APP_MATTERMOST_WEBAPP_URL: ${REACT_APP_MATTERMOST_WEBAPP_URL:-}
     depends_on:
       crm-db:
         condition: service_healthy
@@ -111,6 +113,8 @@ services:
       STREAM_API_KEY: ${STREAM_API_KEY:-}
       STREAM_API_SECRET: ${STREAM_API_SECRET:-}
       REACT_APP_STREAM_API_KEY: ${REACT_APP_STREAM_API_KEY:-${STREAM_API_KEY:-}}
+      REACT_APP_CHAT_PROVIDER: ${REACT_APP_CHAT_PROVIDER:-stream}
+      REACT_APP_MATTERMOST_WEBAPP_URL: ${REACT_APP_MATTERMOST_WEBAPP_URL:-}
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}
       REACT_APP_CLERK_PUBLISHABLE_KEY: ${REACT_APP_CLERK_PUBLISHABLE_KEY:-}
       CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-}
@@ -340,6 +344,45 @@ services:
       live:
         condition: service_started
 
+  # Mattermost (team chat) — same host as CRM at /_konnecct/mattermost/
+  mattermost-db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: mmuser
+      POSTGRES_PASSWORD: ${MATTERMOST_DB_PASSWORD:-mattermost-db-change-me}
+      POSTGRES_DB: mattermost
+    volumes:
+      - mattermost-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mmuser -d mattermost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mattermost:
+    image: mattermost/mattermost-team-edition:${MATTERMOST_IMAGE_TAG:-release-10}
+    restart: always
+    expose:
+      - "8065"
+    environment:
+      MM_SQLSETTINGS_DRIVERNAME: postgres
+      MM_SQLSETTINGS_DATASOURCE: postgres://mmuser:${MATTERMOST_DB_PASSWORD:-mattermost-db-change-me}@mattermost-db:5432/mattermost?sslmode=disable&connect_timeout=10
+      MM_SERVICESETTINGS_SITEURL: ${MATTERMOST_SITE_URL:-https://app.konnecct.com/_konnecct/mattermost}
+      MM_SERVICESETTINGS_LISTENADDRESS: ":8065"
+      MM_FILESETTINGS_DRIVERNAME: local
+      MM_LOGSETTINGS_CONSOLELEVEL: INFO
+      MM_CLUSTERSETTINGS_ENABLE: "false"
+    volumes:
+      - mattermost-config:/mattermost/config
+      - mattermost-data:/mattermost/data
+      - mattermost-logs:/mattermost/logs
+      - mattermost-plugins:/mattermost/plugins
+      - mattermost-client-plugins:/mattermost/client/plugins
+    depends_on:
+      mattermost-db:
+        condition: service_healthy
+
   # Nginx Reverse Proxy
   nginx:
     image: nginx:1.25-alpine
@@ -349,12 +392,15 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/plane-upstream-common.conf:/etc/nginx/plane-upstream-common.conf:ro
+      - ./nginx/mattermost-upstream-common.conf:/etc/nginx/mattermost-upstream-common.conf:ro
       - ./nginx/certbot-etc:/etc/letsencrypt:ro
       - ./nginx/certbot-www:/var/www/certbot:ro
     depends_on:
       crm-server:
         condition: service_started
       proxy:
+        condition: service_started
+      mattermost:
         condition: service_started
     restart: always
 
@@ -370,6 +416,12 @@ services:
 volumes:
   crm-postgres-data:
   crm-redis-data:
+  mattermost-pgdata:
+  mattermost-config:
+  mattermost-data:
+  mattermost-logs:
+  mattermost-plugins:
+  mattermost-client-plugins:
   plane-pgdata:
   plane-redisdata:
   plane-uploads:
