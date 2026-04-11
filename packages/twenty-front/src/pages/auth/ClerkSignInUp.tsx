@@ -17,7 +17,25 @@ import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomState
 import { useSetAtomState } from '@/ui/utilities/state/jotai/hooks/useSetAtomState';
 import { CLERK_PUBLISHABLE_KEY } from '~/config';
 
+/**
+ * Must not call Clerk hooks unless ClerkProvider is mounted (publishable key set in App).
+ * Guard runs before any useClerk/useAuth.
+ */
 export const ClerkSignInUp = () => {
+  if (!CLERK_PUBLISHABLE_KEY?.trim()) {
+    return (
+      <div style={{ padding: 24 }}>
+        Clerk is not configured. Set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY (or
+        REACT_APP_CLERK_PUBLISHABLE_KEY) in the API environment, rebuild
+        crm-server, and ensure generateFrontConfig injects them into index.html.
+      </div>
+    );
+  }
+
+  return <ClerkSignInUpInner />;
+};
+
+const ClerkSignInUpInner = () => {
   const location = useLocation();
   const tokenPair = useAtomStateValue(tokenPairState);
   const exchangeError = useAtomStateValue(clerkExchangeErrorState);
@@ -38,15 +56,6 @@ export const ClerkSignInUp = () => {
 
     return location.pathname.includes('invite') || mode === 'sign-up';
   }, [location.pathname, location.search]);
-
-  if (!CLERK_PUBLISHABLE_KEY) {
-    return (
-      <div style={{ padding: 24 }}>
-        Clerk is not configured. Set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY (or
-        REACT_APP_CLERK_PUBLISHABLE_KEY) and restart the server.
-      </div>
-    );
-  }
 
   return (
     <>
