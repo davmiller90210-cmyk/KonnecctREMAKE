@@ -17,7 +17,7 @@ const SignInBackgroundMockPage = lazy(() =>
 );
 import { useShowAuthModal } from '@/ui/layout/hooks/useShowAuthModal';
 import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useIsMobile } from '@/ui/utilities/responsive/hooks/useIsMobile';
 import { styled } from '@linaria/react';
 import { ThemeContext, themeCssVariables } from 'twenty-ui/theme-constants';
@@ -62,7 +62,12 @@ const StyledMainContainer = styled.div`
 export const ChatEmbedLayout = () => {
   const isMobile = useIsMobile();
   const showAuthModal = useShowAuthModal();
+  const { pathname } = useLocation();
   const { theme } = useContext(ThemeContext);
+  const isNativeChatRoute =
+    pathname === '/chat' ||
+    pathname.startsWith('/chat/c/') ||
+    pathname.startsWith('/chat/dm/');
 
   return (
     <>
@@ -73,11 +78,17 @@ export const ChatEmbedLayout = () => {
             <StyledPageContainer
               animate={{ marginLeft: 0 }}
               transition={{
-                duration: theme.animation.duration.normal,
+                duration:
+                  typeof theme.animation.duration.normal === 'number' &&
+                  !Number.isNaN(theme.animation.duration.normal)
+                    ? theme.animation.duration.normal
+                    : 0.2,
               }}
             >
               <PageDragDropProvider>
-                {!showAuthModal && <KeyboardShortcutMenu />}
+                {!showAuthModal && !isNativeChatRoute ? (
+                  <KeyboardShortcutMenu />
+                ) : null}
                 {showAuthModal ? (
                   <>
                     <StyledNavigationDrawerWrapper>

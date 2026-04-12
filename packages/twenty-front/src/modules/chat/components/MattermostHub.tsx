@@ -42,6 +42,7 @@ import { useMattermostWebSocket } from '@/chat/mattermost-client/useMattermostWe
 import { useMattermostWorkspace } from '@/chat/mattermost-client/useMattermostWorkspace';
 import { useMentionSearch } from '@/mention/hooks/useMentionSearch';
 import { useAtomValue } from 'jotai';
+import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 
 const StyledRoot = styled.div`
   background: ${themeCssVariables.background.noisy};
@@ -366,7 +367,27 @@ type MentionPick =
       username: string;
     };
 
-export const MattermostHub = () => {
+const MattermostHubErrorFallback = ({
+  error,
+  resetErrorBoundary,
+}: FallbackProps) => (
+  <StyledRoot>
+    <Callout
+      variant="warning"
+      title="Chat failed to load"
+      description={error instanceof Error ? error.message : String(error)}
+    />
+    <StyledRetryWrap>
+      <Button
+        title="Retry"
+        variant="secondary"
+        onClick={resetErrorBoundary}
+      />
+    </StyledRetryWrap>
+  </StyledRoot>
+);
+
+const MattermostHubImpl = () => {
   const tokenPair = useAtomValue(tokenPairState);
   const crmToken = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
   const navigate = useNavigate();
@@ -1300,3 +1321,9 @@ export const MattermostHub = () => {
     </StyledRoot>
   );
 };
+
+export const MattermostHub = () => (
+  <ErrorBoundary FallbackComponent={MattermostHubErrorFallback}>
+    <MattermostHubImpl />
+  </ErrorBoundary>
+);
