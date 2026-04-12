@@ -48,7 +48,7 @@ export const REACT_APP_CHAT_PROVIDER = (
   .toLowerCase();
 
 /**
- * Mattermost web URL (no trailing slash). Same host as CRM subpath, e.g. `https://app.<domain>/_konnecct/mattermost` — injected at runtime by the API.
+ * Mattermost web URL (no trailing slash). Prefer dedicated host, e.g. `https://chat.<domain>` — injected at runtime by the API.
  */
 export const REACT_APP_MATTERMOST_WEBAPP_URL = (() => {
   const fromEnv =

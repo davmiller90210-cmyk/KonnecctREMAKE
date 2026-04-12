@@ -25,7 +25,7 @@ function resolveClerkPublishableKey(): string {
   return '';
 }
 
-/** Must match nginx Mattermost subpath + MM_SERVICESETTINGS_SITEURL (same host as CRM). */
+/** Must match nginx + MM_SERVICESETTINGS_SITEURL (dedicated chat host avoids MM subpath redirect loops). */
 function resolveMattermostWebappUrl(): string {
   const explicit = process.env.REACT_APP_MATTERMOST_WEBAPP_URL?.trim();
   if (explicit) {
@@ -35,7 +35,7 @@ function resolveMattermostWebappUrl(): string {
   if (siteUrl) {
     return siteUrl.replace(/\/$/, '');
   }
-  return 'https://app.konnecct.com/_konnecct/mattermost';
+  return 'https://chat.konnecct.com';
 }
 
 export function generateFrontConfig(): void {
