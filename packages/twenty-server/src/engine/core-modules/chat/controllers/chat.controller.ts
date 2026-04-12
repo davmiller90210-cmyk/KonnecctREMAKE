@@ -8,17 +8,22 @@ import {
   Logger,
   Post,
   Req,
+  Res,
   ServiceUnavailableException,
   UnauthorizedException,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { type Request } from 'express';
+import { type Request, type Response } from 'express';
 import { createHash } from 'crypto';
 import { QueryFailedError } from 'typeorm';
 
 import { ChatLayoutService } from 'src/engine/core-modules/chat/services/chat-layout.service';
 import { ChatMutationService } from 'src/engine/core-modules/chat/services/chat-mutation.service';
+import { MattermostBridgeService } from 'src/engine/core-modules/mattermost/mattermost-bridge.service';
 
 type VerifiedAccessPayload = {
   sub?: string;
@@ -34,6 +39,7 @@ export class ChatController {
   constructor(
     private readonly chatLayoutService: ChatLayoutService,
     private readonly chatMutationService: ChatMutationService,
+    private readonly mattermostBridgeService: MattermostBridgeService,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
   ) {}
@@ -70,6 +76,83 @@ export class ChatController {
     } catch (error) {
       this.rethrowIfMissingChatSchema(error, 'GET /chat/layout');
     }
+  }
+
+  @Get('mattermost/session')
+  @HttpCode(HttpStatus.OK)
+  async getMattermostSession(@Req() req: Request) {
+    const context = await this.resolveVerifiedAccessContext(req);
+
+    if (!this.mattermostBridgeService.isConfigured()) {
+      throw new ServiceUnavailableException(
+        'Mattermost bridge is not configured (MATTERMOST_SITE_URL, MATTERMOST_ADMIN_TOKEN).',
+      );
+    }
+
+    return this.mattermostBridgeService.getSessionForTwentyUser(context.userId);
+  }
+
+  @Post('mattermost/files')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(
+    FileInterceptor('files', { limits: { fileSize: 52 * 1024 * 1024 } }),
+  )
+  async uploadMattermostFile(
+    @Req() req: Request,
+    @UploadedFile()
+    file:
+      | { buffer: Buffer; originalname: string; mimetype?: string }
+      | undefined,
+  ) {
+    const context = await this.resolveVerifiedAccessContext(req);
+    const channelId = (req.body as { channel_id?: string }).channel_id;
+
+    if (!channelId || typeof channelId !== 'string') {
+      throw new HttpException('channel_id is required', HttpStatus.BAD_REQUEST);
+    }
+
+    if (!file) {
+      throw new HttpException(
+        'Multipart field "files" is required',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return this.mattermostBridgeService.uploadFile(
+      context.userId,
+      channelId,
+      file,
+    );
+  }
+
+  @Post('mattermost/forward')
+  async forwardMattermostV4(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Body()
+    body: {
+      method?: string;
+      path?: string;
+      body?: unknown;
+    },
+  ) {
+    const context = await this.resolveVerifiedAccessContext(req);
+
+    if (!body?.path || typeof body.path !== 'string') {
+      throw new HttpException('path is required', HttpStatus.BAD_REQUEST);
+    }
+
+    const result = await this.mattermostBridgeService.forwardV4(context.userId, {
+      method: typeof body.method === 'string' ? body.method : 'GET',
+      path: body.path,
+      body: body.body,
+    });
+
+    if (result.kind === 'json') {
+      return res.status(result.status).json(result.data);
+    }
+
+    return res.status(result.status).type('text/plain').send(result.text);
   }
 
   @Get('workspace-members')

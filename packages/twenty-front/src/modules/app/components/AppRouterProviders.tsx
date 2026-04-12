@@ -9,6 +9,8 @@ import { PageChangeEffect } from '@/app/effect-components/PageChangeEffect';
 import { ClerkSessionExchangeEffect } from '@/auth/effect-components/ClerkSessionExchangeEffect';
 import { SignOutOnOtherTabSignOutEffect } from '@/auth/effect-components/SignOutOnOtherTabSignOutEffect';
 import { AuthProvider } from '@/auth/components/AuthProvider';
+import { GlobalMattermostCallShell } from '@/chat/components/GlobalMattermostCallShell';
+import { MattermostCallShellProvider } from '@/chat/contexts/MattermostCallShellContext';
 import { CaptchaProvider } from '@/captcha/components/CaptchaProvider';
 import { ClientConfigProvider } from '@/client-config/components/ClientConfigProvider';
 import { ClientConfigProviderEffect } from '@/client-config/components/ClientConfigProviderEffect';
@@ -53,41 +55,44 @@ export const AppRouterProviders = () => {
           <CaptchaProvider>
             <MinimalMetadataGater>
               <AuthProvider>
-                <ApolloCoreProvider>
-                  <SSEProvider>
-                    <PreComputedChipGeneratorsProvider>
-                      <UserThemeProviderEffect />
-                      <SnackBarProvider>
-                        <ErrorMessageEffect />
-                        <AgentChatProvider>
-                          <DialogComponentInstanceContext.Provider
-                            value={{ instanceId: 'dialog-manager' }}
-                          >
-                            <DialogManager>
-                              <StrictMode>
-                                <PromiseRejectionEffect />
-                                <GotoHotkeysEffectsProvider />
-                                <PageTitle title={pageTitle} />
-                                <PageFavicon />
-                                <Outlet />
-                                <GlobalFilePreviewModal />
-                                <CommandMenuConfirmationModalManager />
-                                <CommandRunner />
-                              </StrictMode>
-                            </DialogManager>
-                          </DialogComponentInstanceContext.Provider>
-                        </AgentChatProvider>
-                      </SnackBarProvider>
-                      <MainContextStoreProvider />
-                      <SupportChatEffect />
-                      <PageChangeEffect />
-                      {CLERK_PUBLISHABLE_KEY ? (
-                        <ClerkSessionExchangeEffect />
-                      ) : null}
-                      <SignOutOnOtherTabSignOutEffect />
-                    </PreComputedChipGeneratorsProvider>
-                  </SSEProvider>
-                </ApolloCoreProvider>
+                <MattermostCallShellProvider>
+                  <ApolloCoreProvider>
+                    <SSEProvider>
+                      <PreComputedChipGeneratorsProvider>
+                        <UserThemeProviderEffect />
+                        <SnackBarProvider>
+                          <ErrorMessageEffect />
+                          <AgentChatProvider>
+                            <DialogComponentInstanceContext.Provider
+                              value={{ instanceId: 'dialog-manager' }}
+                            >
+                              <DialogManager>
+                                <StrictMode>
+                                  <PromiseRejectionEffect />
+                                  <GotoHotkeysEffectsProvider />
+                                  <PageTitle title={pageTitle} />
+                                  <PageFavicon />
+                                  <Outlet />
+                                  <GlobalFilePreviewModal />
+                                  <GlobalMattermostCallShell />
+                                  <CommandMenuConfirmationModalManager />
+                                  <CommandRunner />
+                                </StrictMode>
+                              </DialogManager>
+                            </DialogComponentInstanceContext.Provider>
+                          </AgentChatProvider>
+                        </SnackBarProvider>
+                        <MainContextStoreProvider />
+                        <SupportChatEffect />
+                        <PageChangeEffect />
+                        {CLERK_PUBLISHABLE_KEY ? (
+                          <ClerkSessionExchangeEffect />
+                        ) : null}
+                        <SignOutOnOtherTabSignOutEffect />
+                      </PreComputedChipGeneratorsProvider>
+                    </SSEProvider>
+                  </ApolloCoreProvider>
+                </MattermostCallShellProvider>
               </AuthProvider>
             </MinimalMetadataGater>
           </CaptchaProvider>

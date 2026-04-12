@@ -1,5 +1,5 @@
 import { CommunicationHub } from '@/chat/components/CommunicationHub';
-import { MattermostChatEmbed } from '@/chat/components/MattermostChatEmbed';
+import { MattermostHub } from '@/chat/components/MattermostHub';
 import { styled } from '@linaria/react';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 
@@ -21,7 +21,7 @@ export const KonnecctChatPage = () => {
   return (
     <StyledChatPageRoot>
       {REACT_APP_CHAT_PROVIDER === 'mattermost' ? (
-        <MattermostChatEmbed />
+        <MattermostHub />
       ) : (
         <CommunicationHub />
       )}

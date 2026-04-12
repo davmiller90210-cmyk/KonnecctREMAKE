@@ -119,3 +119,29 @@ Regression check after upgrade: login, channels, threads, calls plugin, mobile w
 | **Paid Mattermost tier** | Supported branding | Cost |
 
 **Legal:** Mattermost’s trademarks and edition labels have usage rules; consult Mattermost’s trademark policy before hiding required notices. Prefer supported branding features or a paid tier when compliance matters.
+
+## 7. Native Konnecct chat (Twenty UI + BFF)
+
+When `REACT_APP_CHAT_PROVIDER=mattermost`, the CRM uses **MattermostHub** (Twenty UI) instead of embedding the full Mattermost webapp. Traffic flow:
+
+1. Browser keeps the normal **workspace CRM JWT** and calls **`GET /chat/mattermost/session`** and **`POST /chat/mattermost/forward`** on the **app** host (proxied to `crm-server`).
+2. **crm-server** validates the JWT, loads or creates an **encrypted Mattermost PAT** per CRM user (`core.mattermostUserCredential`), and proxies allowed **`/api/v4/*`** requests to `MATTERMOST_SITE_URL` with that PAT.
+3. The browser may open a **WebSocket** to **`wss://<chat-host>/api/v4/websocket`** using the PAT from the session endpoint (same host as Mattermost).
+4. **CRM @mentions** are stored in post text as markdown links, e.g. `[@Acme](/object/company/…)` or full `https://app…/object/…` URLs, and rendered as in-app links in the hub.
+
+### 7.1 Requirements
+
+| Item | Notes |
+|------|--------|
+| **API** | `MATTERMOST_SITE_URL`, `MATTERMOST_ADMIN_TOKEN` on **crm-server** (same as provisioning). Run **core DB migrations** so `mattermostUserCredential` exists. |
+| **CORS** | If the browser talks to **chat.*** directly (WebSocket/session token), set **`MM_SERVICESETTINGS_ALLOWCORSFROM`** to your CRM origin (e.g. `https://app.konnecct.com`). Compose defaults this in `docker-compose.prod.yml`. |
+| **Calls iframe** | MVP **GlobalMattermostCallShell** iframes the channel URL on **chat.***. Set **`MM_SERVICESETTINGS_FRAMEANCESTORS`** so **app.*** may frame **chat.*** (compose default: `https://app.konnecct.com`). If the iframe stays blank, check Mattermost **Content Security Policy** / **X-Frame-Options** in System Console and align with your public URLs. |
+| **REST via BFF only** | `POST /chat/mattermost/forward` is restricted by an **allow-list** in `MattermostBridgeService` (specific `GET` paths, `POST /api/v4/posts`, `POST /api/v4/reactions`, `DELETE …/reactions/{emoji}`). **`POST /chat/mattermost/files`** uploads one multipart file to `POST /api/v4/files?channel_id=…` with the user’s PAT. Extend the allow-list when adding features. WebSocket still hits **chat.*** unless you add a server-side relay. |
+
+### 7.2 SSO note
+
+OIDC into Mattermost (sections 1–3) remains how users avoid a second password. The PAT is created server-side after the CRM user exists; users should complete **at least one** Mattermost login via SSO if your server requires it before API tokens work as expected.
+
+### 7.3 Iframe embed (legacy)
+
+`MattermostChatEmbed` remains in the repo for troubleshooting or rollback; **KonnecctChatPage** uses **MattermostHub** when the chat provider is `mattermost`.

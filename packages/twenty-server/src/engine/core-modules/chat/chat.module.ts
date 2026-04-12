@@ -15,6 +15,7 @@ import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user
 import { UserEntity } from 'src/engine/core-modules/user/user.entity';
 import { RoleEntity } from 'src/engine/metadata-modules/role/role.entity';
 import { UserRoleModule } from 'src/engine/metadata-modules/user-role/user-role.module';
+import { MattermostModule } from 'src/engine/core-modules/mattermost/mattermost.module';
 import { AgoraModule } from 'src/modules/agora/agora.module';
 import { StreamModule } from 'src/modules/stream/stream.module';
 
@@ -32,6 +33,7 @@ import { StreamModule } from 'src/modules/stream/stream.module';
     ]),
     JwtModule.register({}),
     UserRoleModule,
+    MattermostModule,
     AgoraModule,
     StreamModule,
   ],
