@@ -1,9 +1,9 @@
 import { SEARCH_QUERY } from '@/command-menu/graphql/queries/search';
-import { useApolloCoreClient } from '@/object-metadata/hooks/useApolloCoreClient';
+import { ApolloCoreClientContext } from '@/object-metadata/contexts/ApolloCoreClientContext';
 import { useFilteredObjectMetadataItems } from '@/object-metadata/hooks/useFilteredObjectMetadataItems';
 import { filterReadableActiveObjectMetadataItems } from '@/object-metadata/utils/filterReadableActiveObjectMetadataItems';
 import { useObjectPermissions } from '@/object-record/hooks/useObjectPermissions';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useContext, useMemo } from 'react';
 import {
   type SearchQuery,
   type SearchQueryVariables,
@@ -16,7 +16,7 @@ const MENTION_SEARCH_LIMIT = 50;
 
 export const useMentionSearch = () => {
   const { activeObjectMetadataItems } = useFilteredObjectMetadataItems();
-  const apolloCoreClient = useApolloCoreClient();
+  const apolloCoreClient = useContext(ApolloCoreClientContext);
   const { objectPermissionsByObjectMetadataId } = useObjectPermissions();
 
   const searchableObjectMetadataItems = useMemo(
@@ -35,6 +35,10 @@ export const useMentionSearch = () => {
 
   const searchMentionRecords = useCallback(
     async (query: string): Promise<MentionSearchResult[]> => {
+      if (!apolloCoreClient) {
+        return [];
+      }
+
       const { data } = await apolloCoreClient.query<
         SearchQuery,
         SearchQueryVariables

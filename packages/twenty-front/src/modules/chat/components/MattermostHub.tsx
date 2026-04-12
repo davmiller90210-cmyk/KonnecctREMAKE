@@ -31,6 +31,10 @@ import {
 } from '@/chat/mattermost-client/mattermost-api.types';
 import { MATTERMOST_QUICK_REACTIONS } from '@/chat/constants/mattermost.constants';
 import {
+  compareMattermostChannels,
+  formatMattermostRelativeTime,
+} from '@/chat/mattermost-client/mattermost-format.utils';
+import {
   getMattermostReactions,
   userHasMattermostReaction,
 } from '@/chat/mattermost-client/mattermost-post.utils';
@@ -38,7 +42,6 @@ import { useMattermostWebSocket } from '@/chat/mattermost-client/useMattermostWe
 import { useMattermostWorkspace } from '@/chat/mattermost-client/useMattermostWorkspace';
 import { useMentionSearch } from '@/mention/hooks/useMentionSearch';
 import { useAtomValue } from 'jotai';
-import { formatDistanceToNow } from 'date-fns';
 
 const StyledRoot = styled.div`
   background: ${themeCssVariables.background.noisy};
@@ -419,11 +422,7 @@ export const MattermostHub = () => {
   const sortedChannels = useMemo(() => {
     const list = [...channels];
 
-    return list.sort((a, b) =>
-      a.display_name.localeCompare(b.display_name, undefined, {
-        sensitivity: 'base',
-      }),
-    );
+    return list.sort(compareMattermostChannels);
   }, [channels]);
 
   const publicChannels = useMemo(
@@ -582,16 +581,18 @@ export const MattermostHub = () => {
   });
 
   const labelForUser = useCallback(
-    (userId: string) => {
-      const u = userMap[userId];
+    (userId: string | undefined) => {
+      const id = userId ?? '';
+
+      const u = id ? userMap[id] : undefined;
 
       if (!u) {
-        return userId.slice(0, 8);
+        return id ? id.slice(0, 8) : '—';
       }
 
       const name = [u.first_name, u.last_name].filter(Boolean).join(' ').trim();
 
-      return name || u.username || userId.slice(0, 8);
+      return name || u.username || id.slice(0, 8);
     },
     [userMap],
   );
@@ -1068,7 +1069,7 @@ export const MattermostHub = () => {
               >
                 <StyledMeta>
                   {labelForUser(p.user_id)} ·{' '}
-                  {formatDistanceToNow(p.create_at, { addSuffix: true })}
+                  {formatMattermostRelativeTime(p.create_at)}
                 </StyledMeta>
                 <div>
                   <MattermostPostMessageBody message={p.message} />
@@ -1200,7 +1201,7 @@ export const MattermostHub = () => {
                 <StyledThreadPostBlock key={p.id}>
                   <StyledMeta>
                     {labelForUser(p.user_id)} ·{' '}
-                    {formatDistanceToNow(p.create_at, { addSuffix: true })}
+                    {formatMattermostRelativeTime(p.create_at)}
                   </StyledMeta>
                   <div>
                     <MattermostPostMessageBody message={p.message} />

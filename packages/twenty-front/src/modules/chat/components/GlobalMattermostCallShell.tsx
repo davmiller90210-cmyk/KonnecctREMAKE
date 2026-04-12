@@ -1,4 +1,4 @@
-import { useMattermostCallShell } from '@/chat/contexts/MattermostCallShellContext';
+import { useMattermostCallShellOptional } from '@/chat/contexts/MattermostCallShellContext';
 import { styled } from '@linaria/react';
 import { IconExternalLink, IconX } from 'twenty-ui/display';
 import { IconButton } from 'twenty-ui/input';
@@ -56,7 +56,13 @@ const StyledIframe = styled.iframe`
  * without this iframe is a follow-up (Mattermost Calls plugin APIs).
  */
 export const GlobalMattermostCallShell = () => {
-  const { callShell, closeCallShell } = useMattermostCallShell();
+  const ctx = useMattermostCallShellOptional();
+
+  if (!ctx) {
+    return null;
+  }
+
+  const { callShell, closeCallShell } = ctx;
 
   if (!callShell?.open) {
     return null;

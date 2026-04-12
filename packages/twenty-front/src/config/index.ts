@@ -38,11 +38,11 @@ export const REACT_APP_STREAM_API_KEY =
   process.env.STREAM_API_KEY ||
   '';
 
-/** `stream` (default) | `mattermost` */
+/** `mattermost` (Konnecct default) | `stream` */
 export const REACT_APP_CHAT_PROVIDER = (
   window._env_?.REACT_APP_CHAT_PROVIDER ||
   process.env.REACT_APP_CHAT_PROVIDER ||
-  'stream'
+  'mattermost'
 )
   .trim()
   .toLowerCase();

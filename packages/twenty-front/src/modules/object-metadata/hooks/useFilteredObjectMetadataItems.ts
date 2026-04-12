@@ -6,7 +6,7 @@ export const useFilteredObjectMetadataItems = () => {
   const objectMetadataItemsWithFields = useAtomStateValue(
     objectMetadataItemsWithFieldsSelector,
   );
-  const objectMetadataItems = objectMetadataItemsWithFields;
+  const objectMetadataItems = objectMetadataItemsWithFields ?? [];
 
   const activeNonSystemObjectMetadataItems = useMemo(
     () =>
@@ -20,7 +20,11 @@ export const useFilteredObjectMetadataItems = () => {
     () =>
       objectMetadataItems
         .filter(({ isActive }) => isActive)
-        .sort((a, b) => a.labelSingular.localeCompare(b.labelSingular)),
+        .sort((a, b) =>
+          (a.labelSingular ?? '').localeCompare(b.labelSingular ?? '', undefined, {
+            sensitivity: 'base',
+          }),
+        ),
     [objectMetadataItems],
   );
 

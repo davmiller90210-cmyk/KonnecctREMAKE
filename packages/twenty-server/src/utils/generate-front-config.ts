@@ -52,7 +52,8 @@ export function generateFrontConfig(): void {
           process.env.STREAM_API_KEY ??
           '',
         STREAM_API_KEY: process.env.STREAM_API_KEY ?? '',
-        REACT_APP_CHAT_PROVIDER: process.env.REACT_APP_CHAT_PROVIDER ?? 'stream',
+        // Align with docker-compose.prod.yml default (mattermost); explicit env overrides.
+        REACT_APP_CHAT_PROVIDER: process.env.REACT_APP_CHAT_PROVIDER ?? 'mattermost',
         REACT_APP_MATTERMOST_WEBAPP_URL: resolveMattermostWebappUrl(),
         REACT_APP_MATTERMOST_SSO_ENTRY_PATH:
           process.env.REACT_APP_MATTERMOST_SSO_ENTRY_PATH?.trim() || '/login',

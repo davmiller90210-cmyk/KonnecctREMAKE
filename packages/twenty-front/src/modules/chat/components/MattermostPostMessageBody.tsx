@@ -44,18 +44,19 @@ function toInAppRecordPath(href: string): string | null {
 export const MattermostPostMessageBody = ({
   message,
 }: {
-  message: string;
+  message: string | undefined;
 }) => {
+  const text = message ?? '';
   const nodes: ReactNode[] = [];
   let last = 0;
   let match: RegExpExecArray | null;
   const re = new RegExp(MD_LINK.source, MD_LINK.flags);
   let key = 0;
 
-  while ((match = re.exec(message)) !== null) {
+  while ((match = re.exec(text)) !== null) {
     if (match.index > last) {
       nodes.push(
-        <span key={`t-${key++}`}>{message.slice(last, match.index)}</span>,
+        <span key={`t-${key++}`}>{text.slice(last, match.index)}</span>,
       );
     }
 
@@ -85,8 +86,8 @@ export const MattermostPostMessageBody = ({
     last = match.index + match[0].length;
   }
 
-  if (last < message.length) {
-    nodes.push(<span key={`t-${key++}`}>{message.slice(last)}</span>);
+  if (last < text.length) {
+    nodes.push(<span key={`t-${key++}`}>{text.slice(last)}</span>);
   }
 
   return <span>{nodes}</span>;
