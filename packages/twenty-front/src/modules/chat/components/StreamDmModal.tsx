@@ -1,43 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { styled } from '@linaria/react';
 import { t } from '@lingui/core/macro';
-import { Button } from 'twenty-ui/input';
-import { Avatar, IconSearch } from 'twenty-ui/display';
+import { Button, SearchInput } from 'twenty-ui/input';
+import { Avatar } from 'twenty-ui/display';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 import { ChatModalShell } from '@/chat/components/ChatModalShell';
 import { type ChatWorkspaceMemberOption } from '@/chat/types/chat-workspace-layout.type';
-
-const StyledSearchWrap = styled.div`
-  position: relative;
-`;
-
-const StyledSearchInput = styled.input`
-  background: ${themeCssVariables.background.secondary};
-  border: 1px solid ${themeCssVariables.border.color.medium};
-  border-radius: ${themeCssVariables.border.radius.sm};
-  box-sizing: border-box;
-  color: ${themeCssVariables.font.color.primary};
-  font-family: ${themeCssVariables.font.family};
-  font-size: ${themeCssVariables.font.size.sm};
-  outline: none;
-  padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[2]}
-    ${themeCssVariables.spacing[2]} 36px;
-  width: 100%;
-
-  &:focus {
-    border-color: ${themeCssVariables.border.color.strong};
-  }
-`;
-
-const StyledSearchIcon = styled.div`
-  color: ${themeCssVariables.font.color.tertiary};
-  left: 10px;
-  pointer-events: none;
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-`;
 
 const StyledMemberList = styled.div`
   border: 1px solid ${themeCssVariables.border.color.medium};
@@ -182,15 +151,18 @@ export const StreamDmModal = ({
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
+    const base = currentStreamUserId
+      ? members.filter((m) => m.streamUserId !== currentStreamUserId)
+      : members;
     if (!q) {
-      return members;
+      return base;
     }
-    return members.filter((m) => {
+    return base.filter((m) => {
       const label = [m.firstName, m.lastName].filter(Boolean).join(' ');
       const hay = `${label} ${m.email}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [members, query]);
+  }, [currentStreamUserId, members, query]);
 
   const handleSubmit = useCallback(async () => {
     if (!selectedStreamId) {
@@ -223,17 +195,12 @@ export const StreamDmModal = ({
       title={t`New direct message`}
       onClose={onClose}
     >
-      <StyledSearchWrap>
-        <StyledSearchIcon>
-          <IconSearch size={themeCssVariables.icon.size.sm} />
-        </StyledSearchIcon>
-        <StyledSearchInput
-          autoFocus
-          placeholder={t`Search by name or email…`}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-      </StyledSearchWrap>
+      <SearchInput
+        autoFocus
+        placeholder={t`Search by name or email…`}
+        value={query}
+        onChange={setQuery}
+      />
       <StyledMemberList>
         {filtered.length === 0 ? (
           <StyledMuted>

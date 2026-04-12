@@ -157,6 +157,14 @@ export const CreateChannelModal = ({
     };
   }, [isOpen, token]);
 
+  const inviteableMembers = useMemo(
+    () =>
+      members.filter(
+        (m) => m.userWorkspaceId !== layout?.viewer.userWorkspaceId,
+      ),
+    [members, layout?.viewer.userWorkspaceId],
+  );
+
   const toggleInvite = useCallback((id: string) => {
     setInviteIds((prev) => ({ ...prev, [id]: !prev[id] }));
   }, []);
@@ -304,12 +312,12 @@ export const CreateChannelModal = ({
         <div>
           <StyledLabel>{t`Invite members`}</StyledLabel>
           <StyledMemberList>
-            {members.length === 0 ? (
+            {inviteableMembers.length === 0 ? (
               <StyledInviteEmpty>
                 {t`No other members in this workspace`}
               </StyledInviteEmpty>
             ) : (
-              members.map((m) => {
+              inviteableMembers.map((m) => {
                 const label =
                   [m.firstName, m.lastName].filter(Boolean).join(' ') ||
                   m.email;

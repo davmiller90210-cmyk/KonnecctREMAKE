@@ -54,6 +54,8 @@ export function generateFrontConfig(): void {
         STREAM_API_KEY: process.env.STREAM_API_KEY ?? '',
         REACT_APP_CHAT_PROVIDER: process.env.REACT_APP_CHAT_PROVIDER ?? 'stream',
         REACT_APP_MATTERMOST_WEBAPP_URL: resolveMattermostWebappUrl(),
+        REACT_APP_MATTERMOST_SSO_ENTRY_PATH:
+          process.env.REACT_APP_MATTERMOST_SSO_ENTRY_PATH?.trim() || '/login',
       },
     },
   };

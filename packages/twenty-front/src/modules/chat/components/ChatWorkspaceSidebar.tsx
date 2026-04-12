@@ -431,11 +431,11 @@ export const ChatWorkspaceSidebar = ({
       return [];
     }
 
-    return layout.directThreads.map((t) => ({
+    return layout.directThreads.map((dmThread) => ({
       kind: 'dm' as const,
-      id: t.id,
-      title: t.title ?? t`Direct`,
-      agoraTarget: t.agoraGroupId ?? t.peerAgoraUserId,
+      id: dmThread.id,
+      title: dmThread.title ?? t`Direct`,
+      agoraTarget: dmThread.agoraGroupId ?? dmThread.peerAgoraUserId,
     }));
   }, [layout]);
 
@@ -508,6 +508,7 @@ export const ChatWorkspaceSidebar = ({
         isOpen={newDmOpen}
         onClose={() => setNewDmOpen(false)}
         token={authToken}
+        viewerUserWorkspaceId={layout.viewer.userWorkspaceId}
         onCreated={handleDmCreated}
         onLayoutRefresh={onLayoutRefresh}
       />

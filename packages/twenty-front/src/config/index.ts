@@ -57,3 +57,13 @@ export const REACT_APP_MATTERMOST_WEBAPP_URL = (() => {
     '';
   return fromEnv.trim().replace(/\/$/, '');
 })();
+
+/** Mattermost login path opened in a popup for SSO handoff (first-party cookies on chat host). */
+export const REACT_APP_MATTERMOST_SSO_ENTRY_PATH = (() => {
+  const fromEnv =
+    window._env_?.REACT_APP_MATTERMOST_SSO_ENTRY_PATH ||
+    process.env.REACT_APP_MATTERMOST_SSO_ENTRY_PATH ||
+    '/login';
+  const trimmed = fromEnv.trim();
+  return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+})();

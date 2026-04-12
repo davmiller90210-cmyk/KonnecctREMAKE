@@ -1,0 +1,114 @@
+import { AuthModal } from '@/auth/components/AuthModal';
+import { AppErrorBoundary } from '@/error-handler/components/AppErrorBoundary';
+import { AppFullScreenErrorFallback } from '@/error-handler/components/AppFullScreenErrorFallback';
+import { AppPageErrorFallback } from '@/error-handler/components/AppPageErrorFallback';
+import { FileUploadProvider } from '@/file-upload/components/FileUploadProvider';
+import { KeyboardShortcutMenu } from '@/keyboard-shortcut-menu/components/KeyboardShortcutMenu';
+import { LayoutCustomizationBar } from '@/layout-customization/components/LayoutCustomizationBar';
+import { MobileNavigationBar } from '@/navigation/components/MobileNavigationBar';
+import { PageDragDropProvider } from '@/navigation-menu-item/display/dnd/providers/PageDragDropProvider';
+import { SignInAppNavigationDrawerMock } from '@/sign-in-background-mock/components/SignInAppNavigationDrawerMock';
+import { Suspense, lazy, useContext } from 'react';
+
+const SignInBackgroundMockPage = lazy(() =>
+  import('@/sign-in-background-mock/components/SignInBackgroundMockPage').then(
+    (module) => ({ default: module.SignInBackgroundMockPage }),
+  ),
+);
+import { useShowAuthModal } from '@/ui/layout/hooks/useShowAuthModal';
+import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
+import { Outlet } from 'react-router-dom';
+import { useIsMobile } from '@/ui/utilities/responsive/hooks/useIsMobile';
+import { styled } from '@linaria/react';
+import { ThemeContext, themeCssVariables } from 'twenty-ui/theme-constants';
+
+const StyledLayout = styled.div`
+  background: ${themeCssVariables.background.noisy};
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  position: relative;
+  scrollbar-color: ${themeCssVariables.border.color.medium} transparent;
+  scrollbar-width: 4px;
+  width: 100%;
+
+  *::-webkit-scrollbar-thumb {
+    border-radius: ${themeCssVariables.border.radius.sm};
+  }
+`;
+
+const StyledPageContainerBase = styled.div`
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: row;
+  min-height: 0;
+`;
+const StyledPageContainer = motion.create(StyledPageContainerBase);
+
+const StyledNavigationDrawerWrapper = styled.div`
+  flex-shrink: 0;
+`;
+
+const StyledMainContainer = styled.div`
+  display: flex;
+  flex: 1 1 100%;
+  min-width: 0;
+  overflow: hidden;
+`;
+
+/**
+ * Full-width main column for embedded Mattermost chat: no CRM navigation drawer.
+ */
+export const ChatEmbedLayout = () => {
+  const isMobile = useIsMobile();
+  const showAuthModal = useShowAuthModal();
+  const { theme } = useContext(ThemeContext);
+
+  return (
+    <>
+      <FileUploadProvider>
+        <StyledLayout>
+          <AppErrorBoundary FallbackComponent={AppFullScreenErrorFallback}>
+            <LayoutCustomizationBar />
+            <StyledPageContainer
+              animate={{ marginLeft: 0 }}
+              transition={{
+                duration: theme.animation.duration.normal,
+              }}
+            >
+              <PageDragDropProvider>
+                {!showAuthModal && <KeyboardShortcutMenu />}
+                {showAuthModal ? (
+                  <>
+                    <StyledNavigationDrawerWrapper>
+                      <SignInAppNavigationDrawerMock />
+                    </StyledNavigationDrawerWrapper>
+                    <StyledMainContainer>
+                      <Suspense fallback={null}>
+                        <SignInBackgroundMockPage />
+                      </Suspense>
+                    </StyledMainContainer>
+                    <AnimatePresence mode="wait">
+                      <LayoutGroup>
+                        <AuthModal>
+                          <Outlet />
+                        </AuthModal>
+                      </LayoutGroup>
+                    </AnimatePresence>
+                  </>
+                ) : (
+                  <StyledMainContainer>
+                    <AppErrorBoundary FallbackComponent={AppPageErrorFallback}>
+                      <Outlet />
+                    </AppErrorBoundary>
+                  </StyledMainContainer>
+                )}
+              </PageDragDropProvider>
+            </StyledPageContainer>
+            {isMobile && !showAuthModal && <MobileNavigationBar />}
+          </AppErrorBoundary>
+        </StyledLayout>
+      </FileUploadProvider>
+    </>
+  );
+};

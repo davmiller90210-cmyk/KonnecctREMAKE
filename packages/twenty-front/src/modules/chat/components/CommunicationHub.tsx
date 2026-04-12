@@ -30,7 +30,7 @@ import {
   type DefaultGenerics,
   type MessageResponse,
 } from 'stream-chat';
-import { Button, LightIconButton } from 'twenty-ui/input';
+import { Button, LightIconButton, SearchInput } from 'twenty-ui/input';
 import {
   Avatar,
   IconFileText,
@@ -67,6 +67,20 @@ function looksLikeScopedStreamId(id: string | undefined): boolean {
   return typeof id === 'string' && /^k[a-f0-9]{31}$/.test(id);
 }
 
+function workspaceMembersToLabelMap(
+  rows: ChatWorkspaceMemberOption[],
+): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const row of rows) {
+    const label =
+      [row.firstName, row.lastName].filter(Boolean).join(' ').trim() ||
+      row.email ||
+      row.streamUserId;
+    map.set(row.streamUserId, label);
+  }
+  return map;
+}
+
 function labelForStreamUser(
   map: Map<string, string>,
   userId: string | undefined,
@@ -80,9 +94,9 @@ function labelForStreamUser(
     return raw;
   }
   if (userId && looksLikeScopedStreamId(userId)) {
-    return 'Member';
+    return 'Teammate';
   }
-  return raw || userId || 'Member';
+  return raw || userId || 'Teammate';
 }
 
 type HubStatus = 'idle' | 'loading' | 'ready' | 'error';
@@ -235,41 +249,6 @@ const StyledListTitle = styled.span`
   color: ${themeCssVariables.font.color.primary};
   font-size: ${themeCssVariables.font.size.md};
   font-weight: ${themeCssVariables.font.weight.semiBold};
-`;
-
-const StyledSearchWrap = styled.div`
-  position: relative;
-`;
-
-const StyledSearchIcon = styled.div`
-  color: ${themeCssVariables.font.color.tertiary};
-  left: 10px;
-  pointer-events: none;
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-`;
-
-const StyledSearchInput = styled.input`
-  background: ${themeCssVariables.background.secondary};
-  border: 1px solid transparent;
-  border-radius: 8px;
-  box-sizing: border-box;
-  color: ${themeCssVariables.font.color.primary};
-  font-family: ${themeCssVariables.font.family};
-  font-size: ${themeCssVariables.font.size.sm};
-  height: 36px;
-  outline: none;
-  padding: 0 12px 0 36px;
-  width: 100%;
-
-  &::placeholder {
-    color: ${themeCssVariables.font.color.tertiary};
-  }
-
-  &:focus {
-    border-color: ${themeCssVariables.border.color.strong};
-  }
 `;
 
 const StyledListScroll = styled.div`
@@ -677,24 +656,11 @@ const StyledGlobalSearchHeader = styled.div`
   border-bottom: 1px solid ${themeCssVariables.border.color.light};
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px 14px;
-`;
-
-const StyledGlobalSearchInput = styled.input`
-  background: ${themeCssVariables.background.secondary};
-  border: 1px solid ${themeCssVariables.border.color.medium};
-  border-radius: 8px;
-  color: ${themeCssVariables.font.color.primary};
-  font-family: ${themeCssVariables.font.family};
-  font-size: ${themeCssVariables.font.size.sm};
-  outline: none;
-  padding: 8px 10px;
-  width: 100%;
-
-  &::placeholder {
-    color: ${themeCssVariables.font.color.tertiary};
-  }
+  gap: ${themeCssVariables.spacing[2]};
+  margin: calc(-1 * ${themeCssVariables.spacing[5]})
+    calc(-1 * ${themeCssVariables.spacing[5]})
+    0;
+  padding: 0 ${themeCssVariables.spacing[5]} ${themeCssVariables.spacing[3]};
 `;
 
 const StyledGlobalSearchScroll = styled.div`
@@ -955,22 +921,8 @@ const StyledMemberName = styled.span`
   white-space: nowrap;
 `;
 
-const StyledSearchInChatInput = styled.input`
-  background: ${themeCssVariables.background.primary};
-  border: 1px solid ${themeCssVariables.border.color.medium};
-  border-radius: 8px;
-  box-sizing: border-box;
-  color: ${themeCssVariables.font.color.primary};
-  font-family: ${themeCssVariables.font.family};
-  font-size: ${themeCssVariables.font.size.sm};
-  margin: 0 12px 8px;
-  outline: none;
-  padding: 8px 10px;
-  width: calc(100% - 24px);
-
-  &:focus {
-    border-color: ${themeCssVariables.border.color.strong};
-  }
+const StyledPanelSearchField = styled.div`
+  margin: 0 ${themeCssVariables.spacing[3]} ${themeCssVariables.spacing[2]};
 `;
 
 const StyledSearchHit = styled.button`
@@ -1094,7 +1046,7 @@ export const CommunicationHub = () => {
     startX: number;
     startWidth: number;
   } | null>(null);
-  const listSearchInputRef = useRef<HTMLInputElement>(null);
+  const mergedDisplayNameMapRef = useRef(new Map<string, string>());
   const [callMinimized, setCallMinimized] = useState(false);
   const [joiningCall, setJoiningCall] = useState(false);
   const [composerMention, setComposerMention] = useState<
@@ -1126,7 +1078,6 @@ export const CommunicationHub = () => {
     useState(0);
   const pendingThreadMentionUserIdsRef = useRef<Set<string>>(new Set());
   const threadTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const globalSearchInputRef = useRef<HTMLInputElement>(null);
   const globalSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -1168,8 +1119,11 @@ export const CommunicationHub = () => {
   useEffect(() => {
     if (globalSearchOpen) {
       requestAnimationFrame(() => {
-        globalSearchInputRef.current?.focus();
-        globalSearchInputRef.current?.select();
+        const el = document.querySelector<HTMLInputElement>(
+          '#hub-global-search-wrap input',
+        );
+        el?.focus();
+        el?.select();
       });
     }
   }, [globalSearchOpen]);
@@ -1261,7 +1215,9 @@ export const CommunicationHub = () => {
 
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        listSearchInputRef.current?.focus();
+        document
+          .querySelector<HTMLInputElement>('#hub-channel-search-wrap input')
+          ?.focus();
         return;
       }
 
@@ -1492,11 +1448,14 @@ export const CommunicationHub = () => {
           throw new Error(raw || `Token endpoint failed with ${response.status}`);
         }
 
-        const { apiKey, token, userId } = (await response.json()) as {
-          apiKey?: string;
-          token: string;
-          userId: string;
-        };
+        const { apiKey, token, userId, userName, userImage } =
+          (await response.json()) as {
+            apiKey?: string;
+            token: string;
+            userId: string;
+            userName?: string;
+            userImage?: string;
+          };
         const resolvedApiKey = REACT_APP_STREAM_API_KEY || apiKey;
 
         if (!resolvedApiKey) {
@@ -1507,7 +1466,8 @@ export const CommunicationHub = () => {
 
         const user = {
           id: userId,
-          name: userId,
+          name: userName?.trim() || userId,
+          ...(userImage ? { image: userImage } : {}),
         };
 
         const chatClient = StreamChat.getInstance(resolvedApiKey);
@@ -1633,7 +1593,13 @@ export const CommunicationHub = () => {
       if (event.type === 'typing.start' || event.type === 'typing.stop') {
         const typers = Object.values(current.state.typing ?? {})
           .filter((typing) => typing.user?.id !== streamClient.userID)
-          .map((typing) => typing.user?.name ?? typing.user?.id ?? 'Someone');
+          .map((typing) =>
+            labelForStreamUser(
+              mergedDisplayNameMapRef.current,
+              typing.user?.id,
+              typing.user?.name,
+            ),
+          );
 
         setTypingText(typers.length > 0 ? `${typers[0]} is typing…` : null);
       }
@@ -1685,6 +1651,7 @@ export const CommunicationHub = () => {
     }
     const self = streamClient.userID;
     const q = composerMention.query.trim().toLowerCase();
+    const wsMap = workspaceMembersToLabelMap(workspaceChatMembers);
     const members = Object.values(
       activeChannel.state.members ?? {},
     ) as ChannelMemberResponse[];
@@ -1694,14 +1661,18 @@ export const CommunicationHub = () => {
         if (!uid || uid === self) {
           return false;
         }
-        const name = (m.user?.name ?? uid).toLowerCase();
+        const name = labelForStreamUser(
+          wsMap,
+          uid,
+          m.user?.name,
+        ).toLowerCase();
         if (!q) {
           return true;
         }
         return name.includes(q) || uid.toLowerCase().includes(q);
       })
       .slice(0, 10);
-  }, [streamClient, activeChannel, composerMention]);
+  }, [streamClient, activeChannel, composerMention, workspaceChatMembers]);
 
   const threadMentionCandidates = useMemo((): ChannelMemberResponse[] => {
     if (!streamClient?.userID || !activeChannel || !threadComposerMention) {
@@ -1709,6 +1680,7 @@ export const CommunicationHub = () => {
     }
     const self = streamClient.userID;
     const q = threadComposerMention.query.trim().toLowerCase();
+    const wsMap = workspaceMembersToLabelMap(workspaceChatMembers);
     const members = Object.values(
       activeChannel.state.members ?? {},
     ) as ChannelMemberResponse[];
@@ -1718,14 +1690,18 @@ export const CommunicationHub = () => {
         if (!uid || uid === self) {
           return false;
         }
-        const name = (m.user?.name ?? uid).toLowerCase();
+        const name = labelForStreamUser(
+          wsMap,
+          uid,
+          m.user?.name,
+        ).toLowerCase();
         if (!q) {
           return true;
         }
         return name.includes(q) || uid.toLowerCase().includes(q);
       })
       .slice(0, 10);
-  }, [streamClient, activeChannel, threadComposerMention]);
+  }, [streamClient, activeChannel, threadComposerMention, workspaceChatMembers]);
 
   const channelTitleByCid = useMemo(() => {
     const map = new Map<string, string>();
@@ -1735,22 +1711,44 @@ export const CommunicationHub = () => {
     return map;
   }, [conversationSummaries]);
 
-  const workspaceLabelByStreamId = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const row of workspaceChatMembers) {
-      const label =
-        [row.firstName, row.lastName].filter(Boolean).join(' ').trim() ||
-        row.email ||
-        row.streamUserId;
-      map.set(row.streamUserId, label);
+  const workspaceLabelByStreamId = useMemo(
+    () => workspaceMembersToLabelMap(workspaceChatMembers),
+    [workspaceChatMembers],
+  );
+
+  const mergedDisplayNameByStreamId = useMemo(() => {
+    const map = new Map(workspaceLabelByStreamId);
+    if (activeChannel) {
+      for (const m of Object.values(
+        activeChannel.state.members ?? {},
+      ) as ChannelMemberResponse[]) {
+        const u = m.user;
+        const uid = u?.id;
+        const nm = u?.name?.trim();
+        if (uid && nm && !looksLikeScopedStreamId(nm)) {
+          map.set(uid, nm);
+        }
+      }
+    }
+    const selfId = streamClient?.userID;
+    const selfNm = streamClient?.user?.name?.trim();
+    if (selfId && selfNm && !looksLikeScopedStreamId(selfNm)) {
+      map.set(selfId, selfNm);
     }
     return map;
-  }, [workspaceChatMembers]);
+  }, [
+    workspaceLabelByStreamId,
+    activeChannel,
+    streamClient?.user?.name,
+    streamClient?.userID,
+  ]);
+
+  mergedDisplayNameMapRef.current = mergedDisplayNameByStreamId;
 
   const resolveAuthorName = useCallback(
     (userId: string | undefined, streamName: string | undefined) =>
-      labelForStreamUser(workspaceLabelByStreamId, userId, streamName),
-    [workspaceLabelByStreamId],
+      labelForStreamUser(mergedDisplayNameByStreamId, userId, streamName),
+    [mergedDisplayNameByStreamId],
   );
 
   const conversationTitle = useCallback(
@@ -1764,12 +1762,16 @@ export const CommunicationHub = () => {
       ) as ChannelMemberResponse[];
       const peer = members.find((m) => m.user?.id && m.user.id !== self);
       const pid = peer?.user?.id;
-      if (pid && workspaceLabelByStreamId.has(pid)) {
-        return workspaceLabelByStreamId.get(pid) as string;
+      if (pid && mergedDisplayNameByStreamId.has(pid)) {
+        return mergedDisplayNameByStreamId.get(pid) as string;
+      }
+      const peerName = peer?.user?.name?.trim();
+      if (pid && peerName && !looksLikeScopedStreamId(peerName)) {
+        return peerName;
       }
       return row.title;
     },
-    [streamClient?.userID, workspaceLabelByStreamId],
+    [mergedDisplayNameByStreamId, streamClient?.userID],
   );
 
   const rootMessages = useMemo(
@@ -2353,21 +2355,17 @@ export const CommunicationHub = () => {
             <StyledListTitle>
               {activeSection === 'channels' ? 'Channels' : 'Direct messages'}
             </StyledListTitle>
-            <StyledSearchWrap>
-              <StyledSearchIcon>
-                <IconSearch size={themeCssVariables.icon.size.sm} />
-              </StyledSearchIcon>
-              <StyledSearchInput
-                ref={listSearchInputRef}
+            <div id="hub-channel-search-wrap">
+              <SearchInput
                 placeholder={
                   activeSection === 'channels'
                     ? 'Search channels…'
                     : 'Search people…'
                 }
                 value={listSearch}
-                onChange={(e) => setListSearch(e.target.value)}
+                onChange={setListSearch}
               />
-            </StyledSearchWrap>
+            </div>
           </StyledListHeader>
           <StyledListScroll>
             {visibleRows.map((row) => {
@@ -2717,7 +2715,7 @@ export const CommunicationHub = () => {
 
                           return (
                             <StyledMessageRow key={tm.id} $own={tmOwn}>
-                                                           <Avatar
+                              <Avatar
                                 avatarUrl={
                                   typeof tm.user?.image === 'string'
                                     ? tm.user.image
@@ -3064,6 +3062,11 @@ export const CommunicationHub = () => {
                               key={u?.id ?? `member-${label}`}
                             >
                               <Avatar
+                                avatarUrl={
+                                  typeof u?.image === 'string'
+                                    ? u.image
+                                    : undefined
+                                }
                                 placeholder={label}
                                 placeholderColorSeed={u?.id}
                                 size="sm"
@@ -3076,11 +3079,13 @@ export const CommunicationHub = () => {
                     </StyledPanelScroll>
                   ) : (
                     <>
-                      <StyledSearchInChatInput
-                        placeholder="Search messages…"
-                        value={inChatSearch}
-                        onChange={(e) => setInChatSearch(e.target.value)}
-                      />
+                      <StyledPanelSearchField>
+                        <SearchInput
+                          placeholder="Search messages…"
+                          value={inChatSearch}
+                          onChange={setInChatSearch}
+                        />
+                      </StyledPanelSearchField>
                       <StyledPanelScroll>
                         {searchRemoteLoading ? (
                           <StyledMutedHelp>Searching…</StyledMutedHelp>
@@ -3173,18 +3178,20 @@ export const CommunicationHub = () => {
         onClose={() => setGlobalSearchOpen(false)}
       >
         <StyledGlobalSearchHeader>
-          <StyledGlobalSearchInput
-            ref={globalSearchInputRef}
-            placeholder="Search across all conversations…"
-            type="search"
-            value={globalQuery}
-            onChange={(e) => setGlobalQuery(e.target.value)}
+          <div
+            id="hub-global-search-wrap"
             onKeyDown={(e) => {
               if (e.key === 'Escape') {
                 setGlobalSearchOpen(false);
               }
             }}
-          />
+          >
+            <SearchInput
+              placeholder="Search across all conversations…"
+              value={globalQuery}
+              onChange={setGlobalQuery}
+            />
+          </div>
           <StyledMutedHelp>
             Ctrl+Shift+K · min. 2 characters
           </StyledMutedHelp>

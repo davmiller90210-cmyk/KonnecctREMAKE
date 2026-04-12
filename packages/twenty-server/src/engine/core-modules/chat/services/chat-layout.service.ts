@@ -82,7 +82,7 @@ export class ChatLayoutService {
 
   async getWorkspaceMembersForChat(
     workspaceId: string,
-    viewerUserWorkspaceId: string,
+    _viewerUserWorkspaceId: string,
   ): Promise<ChatWorkspaceMemberRowDTO[]> {
     const rows = await this.userWorkspaceRepository.find({
       where: { workspaceId },
@@ -90,18 +90,16 @@ export class ChatLayoutService {
       order: { createdAt: 'ASC' },
     });
 
-    return rows
-      .filter((uw) => uw.id !== viewerUserWorkspaceId)
-      .map((uw) => ({
-        userWorkspaceId: uw.id,
-        firstName: uw.user?.firstName ?? '',
-        lastName: uw.user?.lastName ?? '',
-        email: uw.user?.email ?? '',
-        streamUserId: this.agoraAuthService.scopedUserIdFor(
-          uw.userId,
-          workspaceId,
-        ),
-      }));
+    return rows.map((uw) => ({
+      userWorkspaceId: uw.id,
+      firstName: uw.user?.firstName ?? '',
+      lastName: uw.user?.lastName ?? '',
+      email: uw.user?.email ?? '',
+      streamUserId: this.agoraAuthService.scopedUserIdFor(
+        uw.userId,
+        workspaceId,
+      ),
+    }));
   }
 
   async getLayout(

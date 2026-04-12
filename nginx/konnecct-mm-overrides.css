@@ -1,0 +1,15 @@
+/**
+ * Optional Konnecct-branded tweaks for Mattermost webapp.
+ * Load from Mattermost custom branding (if available) or inject via nginx (see docs/mattermost-konnecct-runbook.md).
+ * Selectors may change between Mattermost releases — verify after upgrades.
+ */
+
+:root {
+  --konnecct-accent: #3d5afe;
+}
+
+/* Example: slightly align header button emphasis (safe no-op if selectors miss). */
+a.btn.btn-primary {
+  background-color: var(--konnecct-accent) !important;
+  border-color: var(--konnecct-accent) !important;
+}

@@ -3,7 +3,7 @@ import { LazyRoute } from '@/app/components/LazyRoute';
 import { SettingsRoutes } from '@/app/components/SettingsRoutes';
 import indexAppPath from '@/navigation/utils/indexAppPath';
 import { BlankLayout } from '@/ui/layout/page/components/BlankLayout';
-import { DefaultLayout } from '@/ui/layout/page/components/DefaultLayout';
+import { MainLayoutSwitcher } from '@/ui/layout/page/components/MainLayoutSwitcher';
 import { AppPath } from 'twenty-shared/types';
 
 import { lazy } from 'react';
@@ -127,7 +127,7 @@ export const useCreateAppRouter = (
         // to set scroll position before the page is rendered
         loader={async () => Promise.resolve(null)}
       >
-        <Route element={<DefaultLayout />}>
+        <Route element={<MainLayoutSwitcher />}>
           <Route
             path="/chat"
             element={

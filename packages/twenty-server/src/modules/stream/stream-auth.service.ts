@@ -145,6 +145,8 @@ export class StreamAuthService {
       apiKey: this.apiKey,
       token,
       userId,
+      userName: name,
+      ...(profile?.image ? { userImage: profile.image } : {}),
     };
   }
 

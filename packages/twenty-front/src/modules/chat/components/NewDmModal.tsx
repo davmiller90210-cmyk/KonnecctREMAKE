@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { styled } from '@linaria/react';
 import { t } from '@lingui/core/macro';
 import { Button } from 'twenty-ui/input';
@@ -71,6 +71,7 @@ type NewDmModalProps = {
   isOpen: boolean;
   onClose: () => void;
   token: string | undefined;
+  viewerUserWorkspaceId: string | undefined;
   onCreated: (threadId: string) => void;
   onLayoutRefresh: () => void;
 };
@@ -79,6 +80,7 @@ export const NewDmModal = ({
   isOpen,
   onClose,
   token,
+  viewerUserWorkspaceId,
   onCreated,
   onLayoutRefresh,
 }: NewDmModalProps) => {
@@ -122,6 +124,14 @@ export const NewDmModal = ({
       cancelled = true;
     };
   }, [isOpen, token]);
+
+  const selectableMembers = useMemo(
+    () =>
+      members.filter(
+        (m) => m.userWorkspaceId !== viewerUserWorkspaceId,
+      ),
+    [members, viewerUserWorkspaceId],
+  );
 
   const handleSubmit = useCallback(async () => {
     if (!token || !selectedId) {
@@ -176,7 +186,7 @@ export const NewDmModal = ({
       <StyledPanel onClick={(e) => e.stopPropagation()}>
         <StyledLabel>{t`Start a direct message with…`}</StyledLabel>
         <StyledMemberList>
-          {members.length === 0 ? (
+          {selectableMembers.length === 0 ? (
             <div
               style={{
                 padding: themeCssVariables.spacing[3],
@@ -187,7 +197,7 @@ export const NewDmModal = ({
               {t`No other members in this workspace`}
             </div>
           ) : (
-            members.map((m) => {
+            selectableMembers.map((m) => {
               const label = [m.firstName, m.lastName].filter(Boolean).join(' ') || m.email;
 
               return (
