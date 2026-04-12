@@ -54,6 +54,8 @@ import { WorkspaceDataSourceModule } from 'src/engine/workspace-datasource/works
         OnboardingModule,
         EnterpriseModule,
         FeatureFlagModule,
+        // Required here: forFeature() creates an isolated module scope; UserWorkspaceService is resolved in this context.
+        MattermostModule,
       ],
       services: [UserWorkspaceService],
     }),
