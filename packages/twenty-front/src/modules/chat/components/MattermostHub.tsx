@@ -40,7 +40,7 @@ import {
 } from '@/chat/mattermost-client/mattermost-post.utils';
 import { useMattermostWebSocket } from '@/chat/mattermost-client/useMattermostWebSocket';
 import { useMattermostWorkspace } from '@/chat/mattermost-client/useMattermostWorkspace';
-import { useMentionSearch } from '@/mention/hooks/useMentionSearch';
+import { useMattermostRecordMentionSearch } from '@/chat/hooks/useMattermostRecordMentionSearch';
 import { useAtomValue } from 'jotai';
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 
@@ -393,7 +393,7 @@ const MattermostHubImpl = () => {
   const navigate = useNavigate();
   const { channelId: routeChannelId } = useParams<{ channelId?: string }>();
   const callShell = useMattermostCallShellOptional();
-  const { searchMentionRecords } = useMentionSearch();
+  const { searchMentionRecords } = useMattermostRecordMentionSearch();
 
   const {
     session,
