@@ -2,7 +2,7 @@ import { SubTitle } from '@/auth/components/SubTitle';
 import { Title } from '@/auth/components/Title';
 import { currentWorkspaceState } from '@/auth/states/currentWorkspaceState';
 import { calendarBookingPageIdState } from '@/client-config/states/calendarBookingPageIdState';
-import { useSetNextOnboardingStatus } from '@/onboarding/hooks/useSetNextOnboardingStatus';
+import { useLoadCurrentUser } from '@/users/hooks/useLoadCurrentUser';
 import { PageFocusId } from '@/types/PageFocusId';
 import { useSnackBar } from '@/ui/feedback/snack-bar-manager/hooks/useSnackBar';
 import { TextInput } from '@/ui/input/components/TextInput';
@@ -65,7 +65,7 @@ export const InviteTeam = () => {
   const { copyToClipboard } = useCopyToClipboard();
   const { enqueueSuccessSnackBar } = useSnackBar();
   const { sendInvitation } = useCreateWorkspaceInvitation();
-  const setNextOnboardingStatus = useSetNextOnboardingStatus();
+  const { loadCurrentUser } = useLoadCurrentUser();
   const currentWorkspace = useAtomStateValue(currentWorkspaceState);
   const calendarBookingPageId = useAtomStateValue(calendarBookingPageIdState);
   const hasCalendarBooking = isDefined(calendarBookingPageId);
@@ -137,6 +137,12 @@ export const InviteTeam = () => {
         throw result.error;
       }
 
+      if (result.data?.sendInvitations.success === false) {
+        const msg =
+          result.data.sendInvitations.errors?.[0] ?? t`Could not send invitations`;
+        throw new Error(msg);
+      }
+
       if (emails.length > 0) {
         enqueueSuccessSnackBar({
           message: t`Invite link sent to email addresses`,
@@ -146,9 +152,9 @@ export const InviteTeam = () => {
         });
       }
 
-      setNextOnboardingStatus();
+      await loadCurrentUser();
     },
-    [enqueueSuccessSnackBar, sendInvitation, setNextOnboardingStatus, t],
+    [enqueueSuccessSnackBar, loadCurrentUser, sendInvitation, t],
   );
 
   const handleSkip = async () => {

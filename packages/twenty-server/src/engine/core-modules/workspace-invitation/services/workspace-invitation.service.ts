@@ -258,6 +258,25 @@ export class WorkspaceInvitationService {
     sender: WorkspaceMemberWorkspaceEntity,
     roleId?: string,
   ): Promise<SendInvitationsDTO> {
+    // "Skip" on invite step: advance onboarding without sending mail (no invite hash required).
+    if (emails.length === 0) {
+      await this.onboardingService.setOnboardingInviteTeamPending({
+        workspaceId: workspace.id,
+        value: false,
+      });
+
+      await this.onboardingService.setOnboardingBookOnboardingPending({
+        workspaceId: workspace.id,
+        value: true,
+      });
+
+      return {
+        success: true,
+        errors: [],
+        result: [],
+      };
+    }
+
     if (!workspace?.inviteHash) {
       return {
         success: false,

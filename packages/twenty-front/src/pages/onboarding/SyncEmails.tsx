@@ -7,12 +7,12 @@ import { Key } from 'ts-key-enum';
 import { SubTitle } from '@/auth/components/SubTitle';
 import { Title } from '@/auth/components/Title';
 import { OnboardingSyncEmailsSettingsCard } from '@/onboarding/components/OnboardingSyncEmailsSettingsCard';
-import { useSetNextOnboardingStatus } from '@/onboarding/hooks/useSetNextOnboardingStatus';
 
 import { isGoogleCalendarEnabledState } from '@/client-config/states/isGoogleCalendarEnabledState';
 import { isGoogleMessagingEnabledState } from '@/client-config/states/isGoogleMessagingEnabledState';
 import { isMicrosoftCalendarEnabledState } from '@/client-config/states/isMicrosoftCalendarEnabledState';
 import { isMicrosoftMessagingEnabledState } from '@/client-config/states/isMicrosoftMessagingEnabledState';
+import { useLoadCurrentUser } from '@/users/hooks/useLoadCurrentUser';
 import { useTriggerApisOAuth } from '@/settings/accounts/hooks/useTriggerApiOAuth';
 import { PageFocusId } from '@/types/PageFocusId';
 import { ModalContent } from 'twenty-ui/layout';
@@ -56,7 +56,7 @@ const StyledProviderContainer = styled.div`
 export const SyncEmails = () => {
   const { theme } = useContext(ThemeContext);
   const { triggerApisOAuth } = useTriggerApisOAuth();
-  const setNextOnboardingStatus = useSetNextOnboardingStatus();
+  const { loadCurrentUser } = useLoadCurrentUser();
   const [visibility, setVisibility] = useState<MessageChannelVisibility>(
     MessageChannelVisibility.SHARE_EVERYTHING,
   );
@@ -81,7 +81,8 @@ export const SyncEmails = () => {
 
   const continueWithoutSync = async () => {
     await skipSyncEmailOnboardingStatusMutation();
-    setNextOnboardingStatus();
+    // Refetch user so onboardingStatus matches server (avoids stale Jotai until full reload).
+    await loadCurrentUser();
   };
 
   const userAuthenticatedWithSSO =
@@ -113,7 +114,7 @@ export const SyncEmails = () => {
       await continueWithoutSync();
     },
     focusId: PageFocusId.SyncEmail,
-    dependencies: [continueWithoutSync],
+    dependencies: [continueWithoutSync, loadCurrentUser],
   });
 
   return (
