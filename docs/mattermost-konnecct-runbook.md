@@ -1,6 +1,14 @@
 # Mattermost + Konnecct — operations runbook
 
-Single sign-on, provisioning, branding, and optional UI overrides for the dedicated chat host (`https://chat.konnecct.com` in the default compose setup).
+Single sign-on, provisioning, branding, and UI overrides for the dedicated chat host (`https://chat.konnecct.com` in the default compose setup).
+
+## 0. What you can (and cannot) get with an iframe
+
+- **Embedding Mattermost’s own webapp** (`/chat` → iframe → `chat.*`) means you are still running **Mattermost’s React app**. CSS injection can **hide branding**, force a **dark palette**, and reduce banners — but it **cannot** make the product **identical** to Twenty’s components (`twenty-ui`), typography, and layouts.
+- **One sign-in for CRM + chat** requires **OIDC/SAML** (or a bridge IdP) so Mattermost never uses a **second password**. That is **server configuration**, not a front-end swap.
+- If you need **native Twenty UI only**, use **`REACT_APP_CHAT_PROVIDER=stream`** and Stream’s keys: the app uses **`CommunicationHub`** (same design system as the rest of Konnecct). That is **not** Mattermost feature parity.
+
+**This repo’s default:** nginx injects `konnecct-mm-overrides.css` into Mattermost HTML, and compose sets `MM_TEAMSETTINGS_SITENAME` and disables the email preview banner.
 
 ## 1. Unified identity (Clerk OIDC → Mattermost)
 

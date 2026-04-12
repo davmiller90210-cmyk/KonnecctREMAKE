@@ -1,15 +1,119 @@
 /**
- * Optional Konnecct-branded tweaks for Mattermost webapp.
- * Load from Mattermost custom branding (if available) or inject via nginx (see docs/mattermost-konnecct-runbook.md).
- * Selectors may change between Mattermost releases — verify after upgrades.
+ * Konnecct skin for Mattermost webapp (injected into HTML via nginx sub_filter on chat.*).
+ * Targets Mattermost ~10.x; re-verify after upgrades.
+ * This cannot replicate Twenty UI pixel-perfectly — it reskins the embedded MM client.
  */
 
+/* --- Dark palette (aligned with Twenty-style dark CRM, not identical) --- */
 :root {
-  --konnecct-accent: #3d5afe;
+  --away-indicator: #f5ab00;
+  --away-indicator-dark: #c79e3f;
+  --button-bg: #4c48ff;
+  --button-color: #ffffff;
+  --center-channel-bg: #1b1b1b;
+  --center-channel-color: #e4e4e4;
+  --dnd-indicator: #f64e4e;
+  --error-text: #fd5960;
+  --warning-text: #f5ab00;
+  --link-color: #7c9eff;
+  --mention-bg: #2a2a2a;
+  --mention-color: #b4c8ff;
+  --mention-highlight-bg: #333333;
+  --mention-highlight-link: #7c9eff;
+  --new-message-separator: #4c48ff;
+  --online-indicator: #3ddc97;
+  --sidebar-bg: #141414;
+  --sidebar-header-bg: #0f0f0f;
+  --sidebar-header-text-color: #f4f4f4;
+  --sidebar-text: #d6d6d6;
+  --sidebar-text-active-border: #4c48ff;
+  --sidebar-text-active-color: #ffffff;
+  --sidebar-text-hover-bg: #252525;
+  --sidebar-unread-text: #ffffff;
+  --sidebar-team-background: #0a0a0a;
+  --secondary-blue: #2a2a2a;
+  --denim-button-bg: #4c48ff;
+  --title-color-indigo-500: #e4e4e4;
+
+  --away-indicator-rgb: 245, 171, 0;
+  --button-bg-rgb: 76, 72, 255;
+  --button-color-rgb: 255, 255, 255;
+  --center-channel-bg-rgb: 27, 27, 27;
+  --center-channel-color-rgb: 228, 228, 228;
+  --dnd-indicator-rgb: 246, 78, 78;
+  --error-text-color-rgb: 253, 89, 96;
+  --link-color-rgb: 124, 158, 255;
+  --mention-bg-rgb: 42, 42, 42;
+  --mention-color-rgb: 180, 200, 255;
+  --mention-highlight-bg-rgb: 51, 51, 51;
+  --mention-highlight-link-rgb: 124, 158, 255;
+  --new-message-separator-rgb: 76, 72, 255;
+  --online-indicator-rgb: 61, 220, 151;
+  --sidebar-bg-rgb: 20, 20, 20;
+  --sidebar-header-bg-rgb: 15, 15, 15;
+  --sidebar-header-text-color-rgb: 244, 244, 244;
+  --sidebar-text-rgb: 214, 214, 214;
+  --sidebar-text-active-border-rgb: 76, 72, 255;
+  --sidebar-text-active-color-rgb: 255, 255, 255;
+  --sidebar-text-hover-bg-rgb: 37, 37, 37;
+  --sidebar-unread-text-rgb: 255, 255, 255;
+  --sidebar-team-background-rgb: 10, 10, 10;
+  --secondary-blue-rgb: 42, 42, 42;
+  --denim-button-bg-rgb: 76, 72, 255;
+  --title-color-indigo-500-rgb: 228, 228, 228;
 }
 
-/* Example: slightly align header button emphasis (safe no-op if selectors miss). */
-a.btn.btn-primary {
-  background-color: var(--konnecct-accent) !important;
-  border-color: var(--konnecct-accent) !important;
+html,
+body,
+#root,
+#root .app__body {
+  background-color: var(--center-channel-bg) !important;
+}
+
+/* --- Remove Mattermost product wordmark + FREE / TEAM / ENTRY badge (header) --- */
+#global-header #product_switch_menu span[tabindex='-1'] {
+  display: none !important;
+}
+
+/* --- Email preview / advisory banners (green bar) --- */
+.announcement-bar.announcement-bar-success,
+.announcement-bar.announcement-bar-advisor {
+  display: none !important;
+}
+
+body.announcement-bar--fixed {
+  --announcement-bar-count: 0 !important;
+}
+
+/* --- Global header bar: match dark shell --- */
+#global-header {
+  background: var(--sidebar-team-background) !important;
+  border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.12) !important;
+}
+
+/* --- Downplay “Start trial” / upgrade chip in product menu --- */
+#startTrial,
+.product-switcher-menu a[href*='trial'] {
+  display: none !important;
+}
+
+/* --- Channel center: dark --- */
+#app-content,
+.post-list__container,
+.post.post--thread,
+.ChannelInnerContainer,
+.RhsContainer {
+  background: var(--center-channel-bg) !important;
+}
+
+/* --- Post text --- */
+.post__body,
+.MarkdownBody {
+  color: var(--center-channel-color) !important;
+}
+
+/* --- Primary actions --- */
+.btn-primary {
+  background: var(--button-bg) !important;
+  border-color: var(--button-bg) !important;
 }

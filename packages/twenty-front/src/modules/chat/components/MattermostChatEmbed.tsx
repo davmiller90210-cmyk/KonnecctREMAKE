@@ -6,8 +6,9 @@ import {
   Callout,
   IconArrowLeft,
   IconExternalLink,
+  IconLogin2,
 } from 'twenty-ui/display';
-import { Button } from 'twenty-ui/input';
+import { IconButton } from 'twenty-ui/input';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 import {
@@ -16,7 +17,7 @@ import {
 } from '~/config';
 
 const StyledShell = styled.div`
-  background: ${themeCssVariables.background.primary};
+  background: ${themeCssVariables.background.noisy};
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
@@ -26,20 +27,28 @@ const StyledShell = styled.div`
 
 const StyledHeader = styled.div`
   align-items: center;
+  background: ${themeCssVariables.background.primary};
   border-bottom: 1px solid ${themeCssVariables.border.color.light};
   display: flex;
   flex: 0 0 auto;
-  gap: ${themeCssVariables.spacing[3]};
+  gap: ${themeCssVariables.spacing[2]};
   justify-content: space-between;
-  min-height: 40px;
+  min-height: 44px;
   padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[3]};
 `;
 
 const StyledHeaderLeft = styled.div`
   align-items: center;
   display: flex;
-  gap: ${themeCssVariables.spacing[2]};
+  gap: ${themeCssVariables.spacing[3]};
   min-width: 0;
+`;
+
+const StyledHeaderActions = styled.div`
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  gap: ${themeCssVariables.spacing[1]};
 `;
 
 const StyledTitle = styled.span`
@@ -54,17 +63,6 @@ const StyledIframe = styled.iframe`
   flex: 1 1 auto;
   min-height: 0;
   width: 100%;
-`;
-
-const StyledToolbar = styled.div`
-  align-items: center;
-  border-top: 1px solid ${themeCssVariables.border.color.light};
-  display: flex;
-  flex: 0 0 auto;
-  flex-wrap: wrap;
-  gap: ${themeCssVariables.spacing[2]};
-  justify-content: flex-end;
-  padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[3]};
 `;
 
 const StyledFallback = styled.div`
@@ -89,8 +87,8 @@ const StyledBackLink = styled(Link)`
 `;
 
 /**
- * Embeds self-hosted Mattermost on a dedicated host (e.g. https://chat.example.com).
- * The server must allow framing from the CRM origin (MM frame ancestors + nginx CSP).
+ * Embeds self-hosted Mattermost (dedicated chat host). Skinned on the server via
+ * nginx-injected CSS; cannot be true Twenty UI without replacing the MM client.
  */
 export const MattermostChatEmbed = () => {
   const src = useMemo(() => {
@@ -166,37 +164,38 @@ export const MattermostChatEmbed = () => {
     <StyledShell>
       <StyledHeader>
         <StyledHeaderLeft>
-          <StyledTitle>Team chat</StyledTitle>
           <StyledBackLink to={AppPath.Index} title="Back to workspace">
             <IconArrowLeft size={16} />
-            Back to workspace
+            Workspace
           </StyledBackLink>
+          <StyledTitle>Chat</StyledTitle>
         </StyledHeaderLeft>
+        <StyledHeaderActions>
+          <IconButton
+            Icon={IconExternalLink}
+            variant="tertiary"
+            size="small"
+            ariaLabel="Open chat in new tab"
+            title="Open in new tab"
+            onClick={() => window.open(src, '_blank', 'noopener,noreferrer')}
+          />
+          <IconButton
+            Icon={IconLogin2}
+            variant="tertiary"
+            size="small"
+            ariaLabel="Sign in to chat in a popup if the iframe session fails"
+            title="Sign-in popup"
+            onClick={openSsoHandoff}
+          />
+        </StyledHeaderActions>
       </StyledHeader>
       <StyledIframe
         key={iframeKey}
         allow="clipboard-read; clipboard-write; fullscreen"
         referrerPolicy="strict-origin-when-cross-origin"
         src={src}
-        title="Team chat"
+        title="Chat"
       />
-      <StyledToolbar>
-        <Button
-          title="Complete Mattermost sign-in in a popup (helps when SSO is blocked inside the iframe)"
-          variant="secondary"
-          size="small"
-          onClick={openSsoHandoff}
-        >
-          Sign in to chat (popup)
-        </Button>
-        <Button
-          title="Open team chat in a new tab"
-          variant="secondary"
-          size="small"
-          Icon={IconExternalLink}
-          onClick={() => window.open(src, '_blank', 'noopener,noreferrer')}
-        />
-      </StyledToolbar>
     </StyledShell>
   );
 };

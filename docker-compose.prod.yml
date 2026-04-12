@@ -130,6 +130,10 @@ services:
       # CRM at app.* embeds chat.* in an iframe (Mattermost 10.7+).
       MM_SERVICESETTINGS_FRAMEANCESTORS: ${MATTERMOST_FRAME_ANCESTORS:-https://app.konnecct.com}
       MM_SERVICESETTINGS_ALLOWCORSFROM: ${MATTERMOST_ALLOW_CORS_FROM:-https://app.konnecct.com}
+      # Site name in UI / tab (replaces default “Mattermost”).
+      MM_TEAMSETTINGS_SITENAME: ${MATTERMOST_TEAM_SITE_NAME:-Konnecct}
+      # Hide green “Preview Mode: Email notifications…” banner when SMTP not configured.
+      MM_EMAILSETTINGS_ENABLEPREVIEWMODEBANNER: "${MATTERMOST_EMAIL_PREVIEW_BANNER:-false}"
       # Single-account: no open server / email self-signup (SSO + invites only). See runbook for Clerk OIDC.
       MM_TEAMSETTINGS_ENABLEOPENSERVER: ${MATTERMOST_ENABLE_OPEN_SERVER:-false}
       MM_EMAILSETTINGS_ENABLESIGNUPWITHEMAIL: ${MATTERMOST_ENABLE_EMAIL_SIGNUP:-false}
