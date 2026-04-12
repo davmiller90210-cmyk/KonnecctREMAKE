@@ -112,11 +112,9 @@ services:
       timeout: 5s
       retries: 10
 
-  # Production alignment: System Console → Environment → Site URL must be exactly:
+  # Site URL must match nginx location (see nginx.conf) and .env MATTERMOST_SITE_URL, e.g.:
   #   https://app.konnecct.com/_konnecct/mattermost
-  # If assets break after changing URL, use mmctl per Mattermost subpath docs
-  # (mmctl config subpath --assets-dir <client dir> --path /_konnecct/mattermost).
-  # mattermost-config volume can override MM_SERVICESETTINGS_SITEURL — update Site URL in console or edit config.
+  # Stale config in mattermost-config volume can override env — fix Site URL in System Console after URL changes.
   mattermost:
     image: mattermost/mattermost-team-edition:${MATTERMOST_IMAGE_TAG:-release-10}
     restart: always
