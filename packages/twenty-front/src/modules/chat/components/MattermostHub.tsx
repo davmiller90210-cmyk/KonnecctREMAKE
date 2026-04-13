@@ -41,8 +41,8 @@ import {
 import { useMattermostWebSocket } from '@/chat/mattermost-client/useMattermostWebSocket';
 import { useMattermostWorkspace } from '@/chat/mattermost-client/useMattermostWorkspace';
 import { useMattermostRecordMentionSearch } from '@/chat/hooks/useMattermostRecordMentionSearch';
-import { useAtomValue } from 'jotai';
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 
 const StyledRoot = styled.div`
   background: ${themeCssVariables.background.noisy};
@@ -388,7 +388,7 @@ const MattermostHubErrorFallback = ({
 );
 
 const MattermostHubImpl = () => {
-  const tokenPair = useAtomValue(tokenPairState);
+  const tokenPair = useAtomStateValue(tokenPairState);
   const crmToken = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
   const navigate = useNavigate();
   const { channelId: routeChannelId } = useParams<{ channelId?: string }>();
