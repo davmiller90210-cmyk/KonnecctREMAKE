@@ -36,8 +36,12 @@ export class MattermostBridgeService {
     return t && t.length > 0 ? t : undefined;
   }
 
+  /**
+   * True when the API knows where Mattermost lives. Admin token is only
+   * required to provision a user the first time (see getSessionForTwentyUser).
+   */
   isConfigured(): boolean {
-    return Boolean(this.baseUrl && this.adminToken);
+    return Boolean(this.baseUrl);
   }
 
   /**
@@ -223,11 +227,10 @@ export class MattermostBridgeService {
     mattermostUserId: string;
   }> {
     const baseUrl = this.baseUrl;
-    const adminToken = this.adminToken;
 
-    if (!isDefined(baseUrl) || !isDefined(adminToken)) {
+    if (!isDefined(baseUrl)) {
       throw new ServiceUnavailableException(
-        'Mattermost bridge is not configured (MATTERMOST_SITE_URL, MATTERMOST_ADMIN_TOKEN).',
+        'Mattermost bridge is not configured (set MATTERMOST_SITE_URL on crm-server).',
       );
     }
 
@@ -238,8 +241,6 @@ export class MattermostBridgeService {
     if (!user) {
       throw new ServiceUnavailableException('User not found');
     }
-
-    const email = user.email.toLowerCase();
 
     const existing = await this.credentialRepository.findOne({
       where: { userId },
@@ -253,6 +254,14 @@ export class MattermostBridgeService {
         token,
         mattermostUserId: existing.mattermostUserId,
       };
+    }
+
+    const adminToken = this.adminToken;
+
+    if (!isDefined(adminToken)) {
+      throw new ServiceUnavailableException(
+        'This account has no Mattermost token yet. Set MATTERMOST_ADMIN_TOKEN on crm-server so the API can create the user and personal access token once (or insert credentials manually).',
+      );
     }
 
     const mmUserId = await this.resolveOrCreateMattermostUser(

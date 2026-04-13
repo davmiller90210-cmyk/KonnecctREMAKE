@@ -85,7 +85,7 @@ export class ChatController {
 
     if (!this.mattermostBridgeService.isConfigured()) {
       throw new ServiceUnavailableException(
-        'Mattermost bridge is not configured (MATTERMOST_SITE_URL, MATTERMOST_ADMIN_TOKEN).',
+        'Mattermost bridge is not configured (set MATTERMOST_SITE_URL on crm-server).',
       );
     }
 
