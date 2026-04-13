@@ -15,8 +15,9 @@ import { resolveMattermostProvisionToken } from 'src/engine/core-modules/matterm
 
 const TOKEN_DESCRIPTION = 'Konnecct CRM';
 
-const MM_NOT_LINKED_MESSAGE =
-  'Mattermost is not linked for this CRM user yet. Paste a Personal Access Token from Mattermost (Profile → Security) using the link below in the app, or set MATTERMOST_ADMIN_TOKEN, MATTERMOST_PROVISIONING_TOKEN, or MATTERMOST_ADMIN_TOKEN_FILE on crm-server for automatic provisioning.';
+/** Shown to API clients; never include env names, PAT steps, or host details. */
+export const MATTERMOST_USER_FACING_UNAVAILABLE =
+  'Chat could not be loaded. Please try again in a moment. If the problem continues, contact your workspace administrator.';
 
 @Injectable()
 export class MattermostBridgeService {
@@ -45,6 +46,15 @@ export class MattermostBridgeService {
    */
   isConfigured(): boolean {
     return Boolean(this.baseUrl);
+  }
+
+  async hasStoredCredential(userId: string): Promise<boolean> {
+    const row = await this.credentialRepository.findOne({
+      where: { userId },
+      select: ['id'],
+    });
+
+    return row !== null;
   }
 
   /**
@@ -275,9 +285,10 @@ export class MattermostBridgeService {
     const baseUrl = this.baseUrl;
 
     if (!isDefined(baseUrl)) {
-      throw new ServiceUnavailableException(
-        'Mattermost bridge is not configured (set MATTERMOST_SITE_URL on crm-server).',
+      this.logger.warn(
+        'linkPersonalAccessToken: MATTERMOST_SITE_URL missing on crm-server',
       );
+      throw new ServiceUnavailableException(MATTERMOST_USER_FACING_UNAVAILABLE);
     }
 
     const token = rawToken.trim();
@@ -351,9 +362,7 @@ export class MattermostBridgeService {
       this.logger.error(
         `Mattermost create token failed ${createTokenRes.status}: ${body.slice(0, 400)}`,
       );
-      throw new ServiceUnavailableException(
-        'Could not create Mattermost personal access token (check server admin permissions).',
-      );
+      throw new ServiceUnavailableException(MATTERMOST_USER_FACING_UNAVAILABLE);
     }
 
     const tokenPayload = (await createTokenRes.json()) as {
@@ -361,9 +370,10 @@ export class MattermostBridgeService {
     };
 
     if (!tokenPayload.token) {
-      throw new ServiceUnavailableException(
-        'Mattermost token response missing token field',
+      this.logger.error(
+        'Mattermost create token response missing token field',
       );
+      throw new ServiceUnavailableException(MATTERMOST_USER_FACING_UNAVAILABLE);
     }
 
     const encrypted = this.secretEncryptionService.encrypt(tokenPayload.token);
@@ -391,9 +401,10 @@ export class MattermostBridgeService {
     const baseUrl = this.baseUrl;
 
     if (!isDefined(baseUrl)) {
-      throw new ServiceUnavailableException(
-        'Mattermost bridge is not configured (set MATTERMOST_SITE_URL on crm-server).',
+      this.logger.warn(
+        'getSessionForTwentyUser: MATTERMOST_SITE_URL missing on crm-server',
       );
+      throw new ServiceUnavailableException(MATTERMOST_USER_FACING_UNAVAILABLE);
     }
 
     const user = await this.userRepository.findOne({
@@ -401,7 +412,8 @@ export class MattermostBridgeService {
     });
 
     if (!user) {
-      throw new ServiceUnavailableException('User not found');
+      this.logger.warn(`getSessionForTwentyUser: no User row for id ${userId}`);
+      throw new ServiceUnavailableException(MATTERMOST_USER_FACING_UNAVAILABLE);
     }
 
     let existing = await this.credentialRepository.findOne({
@@ -437,7 +449,10 @@ export class MattermostBridgeService {
     const adminToken = this.adminToken;
 
     if (!isDefined(adminToken)) {
-      throw new ServiceUnavailableException(MM_NOT_LINKED_MESSAGE);
+      this.logger.warn(
+        'getSessionForTwentyUser: no vault credential and no Mattermost provisioning token in env (MATTERMOST_ADMIN_TOKEN, MATTERMOST_PROVISIONING_TOKEN, MATTERMOST_ADMIN_TOKEN_FILE, etc.)',
+      );
+      throw new ServiceUnavailableException(MATTERMOST_USER_FACING_UNAVAILABLE);
     }
 
     const { token, mattermostUserId } = await this.createAndPersistPatWithAdmin(

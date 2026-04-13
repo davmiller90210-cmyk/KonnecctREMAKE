@@ -54,6 +54,8 @@ When `MATTERMOST_ADMIN_TOKEN` and `MATTERMOST_SITE_URL` are set on **crm-server*
 
 Provisioning is best-effort: failures are logged and do not block CRM flows.
 
+**Multi-tenant product behavior:** End users should never need to paste Mattermost credentials. Automatic per-user vault tokens require a **provisioning token** on **crm-server** (for example `MATTERMOST_ADMIN_TOKEN`, `MATTERMOST_PROVISIONING_TOKEN`, or `MATTERMOST_ADMIN_TOKEN_FILE` — see `mattermost-provision-token.util.ts`). Without that, chat returns a generic unavailable message while operators fix configuration using this runbook and server logs.
+
 ## 3. Iframe SSO and cookies
 
 OAuth inside a third-party iframe is fragile (cookies, SameSite). The CRM embed includes **Sign in to chat (popup)**, which opens `REACT_APP_MATTERMOST_SSO_ENTRY_PATH` on the chat host (default `/login`) so the user completes SSO in a **first-party** window; when the popup closes, the iframe reloads.

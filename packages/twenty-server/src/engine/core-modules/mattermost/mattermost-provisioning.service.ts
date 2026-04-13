@@ -1,11 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 import { createClerkClient } from '@clerk/backend';
 import { isDefined } from 'twenty-shared/utils';
 
+import { AUTH_CONTEXT_USER_SELECT_FIELDS } from 'src/engine/core-modules/auth/constants/auth-context-user-select-fields.constants';
 import { type AuthContextUser } from 'src/engine/core-modules/auth/types/auth-context.type';
 import { MattermostBridgeService } from 'src/engine/core-modules/mattermost/mattermost-bridge.service';
 import { resolveMattermostProvisionToken } from 'src/engine/core-modules/mattermost/mattermost-provision-token.util';
+import { UserEntity } from 'src/engine/core-modules/user/user.entity';
 
 /**
  * Optionally creates Mattermost users ahead of first OIDC login when
@@ -18,7 +22,25 @@ export class MattermostProvisioningService {
 
   constructor(
     private readonly mattermostBridgeService: MattermostBridgeService,
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
   ) {}
+
+  /**
+   * Same as workspace-member provisioning, keyed by CRM user id (e.g. first /chat session).
+   */
+  async ensureChatUserForTwentyUserId(userId: string): Promise<void> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      select: [...AUTH_CONTEXT_USER_SELECT_FIELDS],
+    });
+
+    if (!user) {
+      return;
+    }
+
+    await this.ensureChatUserForWorkspaceMember(user as AuthContextUser);
+  }
 
   async ensureChatUserForWorkspaceMember(user: AuthContextUser): Promise<void> {
     const baseUrl = process.env.MATTERMOST_SITE_URL?.trim();

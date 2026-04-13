@@ -23,7 +23,11 @@ import { QueryFailedError } from 'typeorm';
 
 import { ChatLayoutService } from 'src/engine/core-modules/chat/services/chat-layout.service';
 import { ChatMutationService } from 'src/engine/core-modules/chat/services/chat-mutation.service';
-import { MattermostBridgeService } from 'src/engine/core-modules/mattermost/mattermost-bridge.service';
+import {
+  MATTERMOST_USER_FACING_UNAVAILABLE,
+  MattermostBridgeService,
+} from 'src/engine/core-modules/mattermost/mattermost-bridge.service';
+import { MattermostProvisioningService } from 'src/engine/core-modules/mattermost/mattermost-provisioning.service';
 
 type VerifiedAccessPayload = {
   sub?: string;
@@ -40,6 +44,7 @@ export class ChatController {
     private readonly chatLayoutService: ChatLayoutService,
     private readonly chatMutationService: ChatMutationService,
     private readonly mattermostBridgeService: MattermostBridgeService,
+    private readonly mattermostProvisioningService: MattermostProvisioningService,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
   ) {}
@@ -84,8 +89,17 @@ export class ChatController {
     const context = await this.resolveVerifiedAccessContext(req);
 
     if (!this.mattermostBridgeService.isConfigured()) {
-      throw new ServiceUnavailableException(
-        'Mattermost bridge is not configured (set MATTERMOST_SITE_URL on crm-server).',
+      this.logger.warn(
+        'GET /chat/mattermost/session: MATTERMOST_SITE_URL not set on crm-server',
+      );
+      throw new ServiceUnavailableException(MATTERMOST_USER_FACING_UNAVAILABLE);
+    }
+
+    if (
+      !(await this.mattermostBridgeService.hasStoredCredential(context.userId))
+    ) {
+      await this.mattermostProvisioningService.ensureChatUserForTwentyUserId(
+        context.userId,
       );
     }
 
@@ -101,9 +115,10 @@ export class ChatController {
     const context = await this.resolveVerifiedAccessContext(req);
 
     if (!this.mattermostBridgeService.isConfigured()) {
-      throw new ServiceUnavailableException(
-        'Mattermost bridge is not configured (set MATTERMOST_SITE_URL on crm-server).',
+      this.logger.warn(
+        'POST /chat/mattermost/link-token: MATTERMOST_SITE_URL not set on crm-server',
       );
+      throw new ServiceUnavailableException(MATTERMOST_USER_FACING_UNAVAILABLE);
     }
 
     const raw = body?.token;
