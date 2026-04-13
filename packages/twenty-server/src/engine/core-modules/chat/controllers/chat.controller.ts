@@ -92,6 +92,34 @@ export class ChatController {
     return this.mattermostBridgeService.getSessionForTwentyUser(context.userId);
   }
 
+  @Post('mattermost/link-token')
+  @HttpCode(HttpStatus.OK)
+  async linkMattermostPersonalToken(
+    @Req() req: Request,
+    @Body() body: { token?: string },
+  ) {
+    const context = await this.resolveVerifiedAccessContext(req);
+
+    if (!this.mattermostBridgeService.isConfigured()) {
+      throw new ServiceUnavailableException(
+        'Mattermost bridge is not configured (set MATTERMOST_SITE_URL on crm-server).',
+      );
+    }
+
+    const raw = body?.token;
+
+    if (!raw || typeof raw !== 'string') {
+      throw new HttpException('token is required', HttpStatus.BAD_REQUEST);
+    }
+
+    await this.mattermostBridgeService.linkPersonalAccessTokenForTwentyUser(
+      context.userId,
+      raw,
+    );
+
+    return { linked: true as const };
+  }
+
   @Post('mattermost/files')
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(

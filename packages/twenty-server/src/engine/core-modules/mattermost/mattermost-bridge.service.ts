@@ -11,8 +11,12 @@ import { isDefined } from 'twenty-shared/utils';
 import { SecretEncryptionService } from 'src/engine/core-modules/secret-encryption/secret-encryption.service';
 import { UserEntity } from 'src/engine/core-modules/user/user.entity';
 import { MattermostUserCredentialEntity } from 'src/engine/core-modules/mattermost/mattermost-user-credential.entity';
+import { resolveMattermostProvisionToken } from 'src/engine/core-modules/mattermost/mattermost-provision-token.util';
 
 const TOKEN_DESCRIPTION = 'Konnecct CRM';
+
+const MM_NOT_LINKED_MESSAGE =
+  'Mattermost is not linked for this CRM user yet. Paste a Personal Access Token from Mattermost (Profile → Security) using the link below in the app, or set MATTERMOST_ADMIN_TOKEN, MATTERMOST_PROVISIONING_TOKEN, or MATTERMOST_ADMIN_TOKEN_FILE on crm-server for automatic provisioning.';
 
 @Injectable()
 export class MattermostBridgeService {
@@ -32,8 +36,7 @@ export class MattermostBridgeService {
   }
 
   private get adminToken(): string | undefined {
-    const t = process.env.MATTERMOST_ADMIN_TOKEN?.trim();
-    return t && t.length > 0 ? t : undefined;
+    return resolveMattermostProvisionToken();
   }
 
   /**
@@ -221,11 +224,54 @@ export class MattermostBridgeService {
     return { status: res.status, kind: 'text', text: await res.text() };
   }
 
-  async getSessionForTwentyUser(userId: string): Promise<{
-    baseUrl: string;
-    token: string;
-    mattermostUserId: string;
-  }> {
+  /**
+   * After Mattermost user exists, create a PAT with the provisioning token and store it.
+   * Used on workspace join and as a best-effort backfill when env allows.
+   */
+  async ensureVaultPatForTwentyUser(userId: string): Promise<boolean> {
+    const existing = await this.credentialRepository.findOne({
+      where: { userId },
+    });
+
+    if (existing) {
+      return true;
+    }
+
+    const baseUrl = this.baseUrl;
+    const adminToken = this.adminToken;
+
+    if (!isDefined(baseUrl) || !isDefined(adminToken)) {
+      return false;
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return false;
+    }
+
+    try {
+      await this.createAndPersistPatWithAdmin(userId, user, baseUrl, adminToken);
+
+      return true;
+    } catch (error) {
+      this.logger.warn(
+        `ensureVaultPatForTwentyUser failed for ${userId}: ${String(error)}`,
+      );
+
+      return false;
+    }
+  }
+
+  /**
+   * User pastes their own Mattermost PAT (Profile → Security). No system admin token required.
+   */
+  async linkPersonalAccessTokenForTwentyUser(
+    userId: string,
+    rawToken: string,
+  ): Promise<void> {
     const baseUrl = this.baseUrl;
 
     if (!isDefined(baseUrl)) {
@@ -234,36 +280,54 @@ export class MattermostBridgeService {
       );
     }
 
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-    });
+    const token = rawToken.trim();
 
-    if (!user) {
-      throw new ServiceUnavailableException('User not found');
+    if (token.length === 0) {
+      throw new BadRequestException('token is required');
     }
 
+    const meRes = await fetch(`${baseUrl}/api/v4/users/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!meRes.ok) {
+      const body = await meRes.text();
+
+      throw new BadRequestException(
+        `That token is not accepted by Mattermost (${meRes.status}). Create a Personal Access Token under Profile → Security and paste the full value. ${body.slice(0, 200)}`,
+      );
+    }
+
+    const me = (await meRes.json()) as { id: string };
+    const encrypted = this.secretEncryptionService.encrypt(token);
     const existing = await this.credentialRepository.findOne({
       where: { userId },
     });
 
     if (existing) {
-      const token = this.secretEncryptionService.decrypt(existing.encryptedToken);
+      existing.encryptedToken = encrypted;
+      existing.mattermostUserId = me.id;
+      await this.credentialRepository.save(existing);
 
-      return {
-        baseUrl,
-        token,
-        mattermostUserId: existing.mattermostUserId,
-      };
+      return;
     }
 
-    const adminToken = this.adminToken;
+    await this.credentialRepository.save(
+      this.credentialRepository.create({
+        userId,
+        mattermostUserId: me.id,
+        encryptedToken: encrypted,
+        tokenDescription: TOKEN_DESCRIPTION,
+      }),
+    );
+  }
 
-    if (!isDefined(adminToken)) {
-      throw new ServiceUnavailableException(
-        'This account has no Mattermost token yet. Set MATTERMOST_ADMIN_TOKEN on crm-server so the API can create the user and personal access token once (or insert credentials manually).',
-      );
-    }
-
+  private async createAndPersistPatWithAdmin(
+    userId: string,
+    user: UserEntity,
+    baseUrl: string,
+    adminToken: string,
+  ): Promise<{ token: string; mattermostUserId: string }> {
     const mmUserId = await this.resolveOrCreateMattermostUser(
       baseUrl,
       adminToken,
@@ -314,9 +378,79 @@ export class MattermostBridgeService {
     );
 
     return {
-      baseUrl,
       token: tokenPayload.token,
       mattermostUserId: mmUserId,
+    };
+  }
+
+  async getSessionForTwentyUser(userId: string): Promise<{
+    baseUrl: string;
+    token: string;
+    mattermostUserId: string;
+  }> {
+    const baseUrl = this.baseUrl;
+
+    if (!isDefined(baseUrl)) {
+      throw new ServiceUnavailableException(
+        'Mattermost bridge is not configured (set MATTERMOST_SITE_URL on crm-server).',
+      );
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new ServiceUnavailableException('User not found');
+    }
+
+    let existing = await this.credentialRepository.findOne({
+      where: { userId },
+    });
+
+    if (existing) {
+      const token = this.secretEncryptionService.decrypt(existing.encryptedToken);
+
+      return {
+        baseUrl,
+        token,
+        mattermostUserId: existing.mattermostUserId,
+      };
+    }
+
+    await this.ensureVaultPatForTwentyUser(userId);
+
+    existing = await this.credentialRepository.findOne({
+      where: { userId },
+    });
+
+    if (existing) {
+      const token = this.secretEncryptionService.decrypt(existing.encryptedToken);
+
+      return {
+        baseUrl,
+        token,
+        mattermostUserId: existing.mattermostUserId,
+      };
+    }
+
+    const adminToken = this.adminToken;
+
+    if (!isDefined(adminToken)) {
+      throw new ServiceUnavailableException(MM_NOT_LINKED_MESSAGE);
+    }
+
+    const { token, mattermostUserId } = await this.createAndPersistPatWithAdmin(
+      userId,
+      user,
+      baseUrl,
+      adminToken,
+    );
+
+    return {
+      baseUrl,
+      token,
+      mattermostUserId,
     };
   }
 

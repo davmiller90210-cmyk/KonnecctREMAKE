@@ -4,19 +4,25 @@ import { createClerkClient } from '@clerk/backend';
 import { isDefined } from 'twenty-shared/utils';
 
 import { type AuthContextUser } from 'src/engine/core-modules/auth/types/auth-context.type';
+import { MattermostBridgeService } from 'src/engine/core-modules/mattermost/mattermost-bridge.service';
+import { resolveMattermostProvisionToken } from 'src/engine/core-modules/mattermost/mattermost-provision-token.util';
 
 /**
  * Optionally creates Mattermost users ahead of first OIDC login when
- * MATTERMOST_ADMIN_TOKEN and MATTERMOST_SITE_URL are set.
+ * a provisioning token and MATTERMOST_SITE_URL are set.
  * Uses Clerk user id as openid auth_data when CLERK_SECRET_KEY is set (matches Clerk OIDC `sub`).
  */
 @Injectable()
 export class MattermostProvisioningService {
   private readonly logger = new Logger(MattermostProvisioningService.name);
 
+  constructor(
+    private readonly mattermostBridgeService: MattermostBridgeService,
+  ) {}
+
   async ensureChatUserForWorkspaceMember(user: AuthContextUser): Promise<void> {
     const baseUrl = process.env.MATTERMOST_SITE_URL?.trim();
-    const token = process.env.MATTERMOST_ADMIN_TOKEN?.trim();
+    const token = resolveMattermostProvisionToken();
 
     if (!isDefined(baseUrl) || baseUrl.length === 0) {
       return;
@@ -29,6 +35,7 @@ export class MattermostProvisioningService {
 
     try {
       await this.ensureUser(normalizedBase, token, user);
+      await this.mattermostBridgeService.ensureVaultPatForTwentyUser(user.id);
     } catch (error) {
       this.logger.warn(
         `Mattermost provisioning failed for ${user.email}: ${String(error)}`,

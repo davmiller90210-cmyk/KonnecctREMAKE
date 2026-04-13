@@ -34,6 +34,7 @@ import {
   compareMattermostChannels,
   formatMattermostRelativeTime,
 } from '@/chat/mattermost-client/mattermost-format.utils';
+import { linkMattermostPersonalToken } from '@/chat/mattermost-client/mattermostBffClient';
 import {
   getMattermostReactions,
   userHasMattermostReaction,
@@ -246,7 +247,44 @@ const StyledHeaderLeft = styled.div`
 `;
 
 const StyledRetryWrap = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${themeCssVariables.spacing[3]};
+  max-width: 520px;
   padding: ${themeCssVariables.spacing[4]};
+`;
+
+const StyledTokenHelp = styled.p`
+  color: ${themeCssVariables.font.color.secondary};
+  font-size: ${themeCssVariables.font.size.sm};
+  line-height: 1.45;
+  margin: 0;
+`;
+
+const StyledTokenTextarea = styled.textarea`
+  background: ${themeCssVariables.background.secondary};
+  border: 1px solid ${themeCssVariables.border.color.medium};
+  border-radius: ${themeCssVariables.border.radius.sm};
+  box-sizing: border-box;
+  color: ${themeCssVariables.font.color.primary};
+  font-family: inherit;
+  font-size: ${themeCssVariables.font.size.sm};
+  min-height: 88px;
+  padding: ${themeCssVariables.spacing[2]};
+  resize: vertical;
+  width: 100%;
+
+  &:focus {
+    border-color: ${themeCssVariables.color.blue};
+    outline: none;
+  }
+`;
+
+const StyledTokenActions = styled.div`
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: ${themeCssVariables.spacing[2]};
 `;
 
 const StyledTitle = styled.span`
@@ -434,6 +472,9 @@ const MattermostHubImpl = () => {
   const [threadPosts, setThreadPosts] = useState<MattermostPost[]>([]);
   const [threadDraft, setThreadDraft] = useState('');
   const [threadSending, setThreadSending] = useState(false);
+  const [pastedMattermostToken, setPastedMattermostToken] = useState('');
+  const [linkTokenError, setLinkTokenError] = useState<string | null>(null);
+  const [linkTokenSaving, setLinkTokenSaving] = useState(false);
   const [pendingFileIds, setPendingFileIds] = useState<string[]>([]);
   const [pendingThreadFileIds, setPendingThreadFileIds] = useState<string[]>(
     [],
@@ -1000,6 +1041,25 @@ const MattermostHubImpl = () => {
   }
 
   if (status === 'error') {
+    const savePastedToken = async () => {
+      if (!crmToken) {
+        return;
+      }
+
+      setLinkTokenError(null);
+      setLinkTokenSaving(true);
+
+      try {
+        await linkMattermostPersonalToken(crmToken, pastedMattermostToken);
+        setPastedMattermostToken('');
+        await reload();
+      } catch (e) {
+        setLinkTokenError(e instanceof Error ? e.message : String(e));
+      } finally {
+        setLinkTokenSaving(false);
+      }
+    };
+
     return (
       <StyledRoot>
         <Callout
@@ -1008,7 +1068,39 @@ const MattermostHubImpl = () => {
           description={errorMessage ?? 'Unknown error'}
         />
         <StyledRetryWrap>
-          <Button title="Retry" variant="secondary" onClick={() => void reload()} />
+          <StyledTokenHelp>
+            If your server cannot auto-provision a token, paste a Mattermost
+            Personal Access Token from Profile → Security → Personal Access
+            Tokens, then retry.
+          </StyledTokenHelp>
+          <StyledTokenTextarea
+            autoComplete="off"
+            placeholder="Paste Mattermost token…"
+            spellCheck={false}
+            value={pastedMattermostToken}
+            onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+              setPastedMattermostToken(e.target.value)
+            }
+          />
+          {linkTokenError ? (
+            <Callout variant="warning" title="Could not save token" description={linkTokenError} />
+          ) : null}
+          <StyledTokenActions>
+            <Button
+              title="Save token"
+              variant="primary"
+              disabled={
+                linkTokenSaving || pastedMattermostToken.trim().length === 0
+              }
+              onClick={() => void savePastedToken()}
+            />
+            <Button
+              title="Retry"
+              variant="secondary"
+              disabled={linkTokenSaving}
+              onClick={() => void reload()}
+            />
+          </StyledTokenActions>
         </StyledRetryWrap>
       </StyledRoot>
     );

@@ -1,5 +1,25 @@
 import { type MattermostSession } from '@/chat/mattermost-client/mattermost-api.types';
 
+async function readHttpErrorMessage(res: Response): Promise<string> {
+  const text = await res.text();
+
+  if (!text) {
+    return `Request failed (${res.status})`;
+  }
+
+  try {
+    const data = JSON.parse(text) as { message?: unknown };
+
+    if (typeof data.message === 'string' && data.message.length > 0) {
+      return data.message;
+    }
+  } catch {
+    // not JSON
+  }
+
+  return text;
+}
+
 export async function fetchMattermostSession(
   crmToken: string,
 ): Promise<MattermostSession> {
@@ -8,10 +28,28 @@ export async function fetchMattermostSession(
   });
 
   if (!res.ok) {
-    throw new Error(await res.text());
+    throw new Error(await readHttpErrorMessage(res));
   }
 
   return (await res.json()) as MattermostSession;
+}
+
+export async function linkMattermostPersonalToken(
+  crmToken: string,
+  token: string,
+): Promise<void> {
+  const res = await fetch('/chat/mattermost/link-token', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${crmToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ token }),
+  });
+
+  if (!res.ok) {
+    throw new Error(await readHttpErrorMessage(res));
+  }
 }
 
 export async function mattermostForwardJson<T>(
