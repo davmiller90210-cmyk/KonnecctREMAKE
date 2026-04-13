@@ -57,6 +57,11 @@ export function generateFrontConfig(): void {
         REACT_APP_MATTERMOST_WEBAPP_URL: resolveMattermostWebappUrl(),
         REACT_APP_MATTERMOST_SSO_ENTRY_PATH:
           process.env.REACT_APP_MATTERMOST_SSO_ENTRY_PATH?.trim() || '/login',
+        REACT_APP_MATTERMOST_USE_NATIVE_HUB:
+          process.env.REACT_APP_MATTERMOST_USE_NATIVE_HUB?.trim().toLowerCase() ===
+          'true'
+            ? 'true'
+            : 'false',
       },
     },
   };

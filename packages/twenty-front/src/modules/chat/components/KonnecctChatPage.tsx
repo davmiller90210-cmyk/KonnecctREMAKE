@@ -2,9 +2,18 @@ import { styled } from '@linaria/react';
 import { lazy, Suspense } from 'react';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 
-import { REACT_APP_CHAT_PROVIDER } from '~/config';
+import { MattermostChatEmbed } from '@/chat/components/MattermostChatEmbed';
+import {
+  REACT_APP_CHAT_PROVIDER,
+  REACT_APP_MATTERMOST_USE_NATIVE_HUB,
+} from '~/config';
 import { PageContentSkeletonLoader } from '~/loading/components/PageContentSkeletonLoader';
 
+/**
+ * Native Twenty-UI Mattermost client (REST + WS via crm-server PAT vault).
+ * Requires Mattermost provisioning/admin token on the API; opt in with
+ * REACT_APP_MATTERMOST_USE_NATIVE_HUB=true at build time.
+ */
 const MattermostHub = lazy(async () => {
   const m = await import('@/chat/components/MattermostHub');
 
@@ -38,7 +47,11 @@ export const KonnecctChatPage = () => {
     <StyledChatPageRoot>
       <Suspense fallback={<ChatLoadingFallback />}>
         {REACT_APP_CHAT_PROVIDER === 'mattermost' ? (
-          <MattermostHub />
+          REACT_APP_MATTERMOST_USE_NATIVE_HUB ? (
+            <MattermostHub />
+          ) : (
+            <MattermostChatEmbed />
+          )
         ) : (
           <CommunicationHub />
         )}

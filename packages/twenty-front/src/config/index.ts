@@ -67,3 +67,16 @@ export const REACT_APP_MATTERMOST_SSO_ENTRY_PATH = (() => {
   const trimmed = fromEnv.trim();
   return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
 })();
+
+/**
+ * When true, /chat uses the native Mattermost REST client (PAT vault + optional admin provisioning).
+ * Default false: iframe embed + OIDC on the chat host (no Mattermost admin token required).
+ */
+export const REACT_APP_MATTERMOST_USE_NATIVE_HUB = (() => {
+  const w = window._env_?.REACT_APP_MATTERMOST_USE_NATIVE_HUB;
+  if (typeof w === 'string') {
+    return w.trim().toLowerCase() === 'true';
+  }
+  const raw = process.env.REACT_APP_MATTERMOST_USE_NATIVE_HUB || '';
+  return raw.trim().toLowerCase() === 'true';
+})();

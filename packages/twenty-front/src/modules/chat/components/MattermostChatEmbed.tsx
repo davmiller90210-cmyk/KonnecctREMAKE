@@ -152,8 +152,8 @@ export const MattermostChatEmbed = () => {
         <StyledFallback>
           <Callout
             variant="warning"
-            title="Mattermost URL not configured"
-            description="Set MATTERMOST_SITE_URL or REACT_APP_MATTERMOST_WEBAPP_URL on the API (dedicated chat host, e.g. https://chat.konnecct.com) and rebuild crm-server."
+            title="Chat address not configured"
+            description="Your administrator must set the dedicated Mattermost web URL for this deployment."
           />
         </StyledFallback>
       </StyledShell>

@@ -46,6 +46,10 @@ After changing env, restart the `mattermost` container. If settings were persist
 
 ## 2. User provisioning (Konnecct → Mattermost API)
 
+**Default `/chat` experience:** The app embeds the Mattermost webapp in an iframe (`REACT_APP_MATTERMOST_WEBAPP_URL` / `MATTERMOST_SITE_URL`). Users sign in with **OpenID on the chat host** (see §1); **no Mattermost admin token or PAT vault is required** for that path. Set `REACT_APP_MATTERMOST_USE_NATIVE_HUB=true` (build + `crm-server` env) only if you want the native Twenty-UI client, which **does** need provisioning/PAT (§2.1–2.3).
+
+### 2.1 Admin API provisioning (optional — native hub only)
+
 When `MATTERMOST_ADMIN_TOKEN` and `MATTERMOST_SITE_URL` are set on **crm-server**, Konnecct calls the Mattermost Admin API after a workspace member row is created:
 
 1. Create a **system admin** personal access token in Mattermost (or use a dedicated admin bot account).
@@ -54,7 +58,7 @@ When `MATTERMOST_ADMIN_TOKEN` and `MATTERMOST_SITE_URL` are set on **crm-server*
 
 Provisioning is best-effort: failures are logged and do not block CRM flows.
 
-**Multi-tenant product behavior:** End users should never need to paste Mattermost credentials. Automatic per-user vault tokens require a **provisioning token** on **crm-server** (for example `MATTERMOST_ADMIN_TOKEN`, `MATTERMOST_PROVISIONING_TOKEN`, or `MATTERMOST_ADMIN_TOKEN_FILE` — see `mattermost-provision-token.util.ts`). Without that, chat returns a generic unavailable message while operators fix configuration using this runbook and server logs.
+**Native hub only:** End users should not need to paste Mattermost credentials. Per-user vault tokens require a **provisioning token** on **crm-server** (see `mattermost-provision-token.util.ts`). The default iframe chat path does not use the vault.
 
 ## 3. Iframe SSO and cookies
 
