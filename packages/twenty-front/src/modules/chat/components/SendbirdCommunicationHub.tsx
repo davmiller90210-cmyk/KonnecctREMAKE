@@ -30,6 +30,8 @@ import * as SendBirdCall from 'sendbird-calls';
 import { Button, SearchInput } from 'twenty-ui/input';
 import {
   Avatar,
+  IconChevronDown,
+  IconChevronUp,
   IconPhone,
   IconPlus,
   IconSend,
@@ -45,6 +47,7 @@ import { useChatWorkspaceLayout } from '@/chat/hooks/useChatWorkspaceLayout';
 import {
   type ChatWorkspaceLayoutChannel,
   type ChatWorkspaceLayoutDm,
+  type ChatWorkspaceMemberOption,
 } from '@/chat/types/chat-workspace-layout.type';
 import { REACT_APP_SENDBIRD_APP_ID } from '~/config';
 
@@ -87,8 +90,14 @@ const StyledSidebarHeader = styled.div`
   padding: ${themeCssVariables.spacing[3]};
   border-bottom: 1px solid ${themeCssVariables.border.color.light};
   display: flex;
+  flex-direction: column;
   gap: ${themeCssVariables.spacing[2]};
+`;
+
+const StyledSidebarActions = styled.div`
+  display: flex;
   flex-wrap: wrap;
+  gap: ${themeCssVariables.spacing[2]};
 `;
 
 const StyledSidebarScroll = styled.div`
@@ -126,6 +135,91 @@ const StyledCategoryLabel = styled.div`
   font-weight: ${themeCssVariables.font.weight.medium};
   padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[3]} 0;
   text-transform: uppercase;
+`;
+
+const StyledChannelName = styled.span`
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+`;
+
+const StyledSidebarFooter = styled.div`
+  border-top: 1px solid ${themeCssVariables.border.color.light};
+  padding: ${themeCssVariables.spacing[3]};
+  display: flex;
+  align-items: center;
+  gap: ${themeCssVariables.spacing[2]};
+  flex-shrink: 0;
+`;
+
+const StyledSidebarFooterText = styled.div`
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: ${themeCssVariables.font.size.sm};
+`;
+
+const StyledSidebarFooterName = styled.span`
+  font-weight: ${themeCssVariables.font.weight.medium};
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+const StyledSidebarFooterHint = styled.span`
+  color: ${themeCssVariables.font.color.tertiary};
+  font-size: ${themeCssVariables.font.size.xs};
+`;
+
+const StyledCollapsibleCalls = styled.div`
+  border-top: 1px solid ${themeCssVariables.border.color.light};
+  background: ${themeCssVariables.background.secondary};
+`;
+
+const StyledCallsToggle = styled.button`
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: ${themeCssVariables.font.color.secondary};
+  cursor: pointer;
+  display: flex;
+  font-family: ${themeCssVariables.font.family};
+  font-size: ${themeCssVariables.font.size.sm};
+  gap: ${themeCssVariables.spacing[2]};
+  padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[3]};
+  width: 100%;
+  text-align: left;
+
+  &:hover {
+    background: ${themeCssVariables.background.transparent.light};
+  }
+`;
+
+const StyledCallsBody = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: ${themeCssVariables.spacing[2]};
+  padding: 0 ${themeCssVariables.spacing[3]} ${themeCssVariables.spacing[3]};
+`;
+
+const StyledRoomField = styled.input`
+  flex: 1 1 160px;
+  min-width: 120px;
+  padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[3]};
+  border-radius: ${themeCssVariables.border.radius.sm};
+  border: 1px solid ${themeCssVariables.border.color.medium};
+  background: ${themeCssVariables.background.primary};
+  color: ${themeCssVariables.font.color.primary};
+  font-family: ${themeCssVariables.font.family};
+  font-size: ${themeCssVariables.font.size.sm};
+`;
+
+const StyledMessageSender = styled.div`
+  font-size: ${themeCssVariables.font.size.xs};
+  font-weight: ${themeCssVariables.font.weight.medium};
+  margin-bottom: 4px;
+  opacity: 0.9;
 `;
 
 const StyledMain = styled.main`
@@ -237,16 +331,6 @@ const StyledError = styled.div`
   padding: ${themeCssVariables.spacing[3]};
 `;
 
-const StyledGroupCallBar = styled.div`
-  align-items: center;
-  background: ${themeCssVariables.background.secondary};
-  border-top: 1px solid ${themeCssVariables.border.color.medium};
-  display: flex;
-  flex-wrap: wrap;
-  gap: ${themeCssVariables.spacing[2]};
-  padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[3]};
-`;
-
 const StyledIncomingBackdrop = styled.div`
   position: fixed;
   inset: 0;
@@ -265,6 +349,23 @@ const StyledIncomingPanel = styled.div`
   max-width: 400px;
   padding: ${themeCssVariables.spacing[5]};
   width: 100%;
+`;
+
+const StyledIncomingTitle = styled.div`
+  font-weight: ${themeCssVariables.font.weight.semiBold};
+  margin-bottom: ${themeCssVariables.spacing[2]};
+`;
+
+const StyledIncomingBody = styled.div`
+  color: ${themeCssVariables.font.color.secondary};
+  font-size: ${themeCssVariables.font.size.sm};
+  margin-bottom: ${themeCssVariables.spacing[4]};
+`;
+
+const StyledIncomingActions = styled.div`
+  display: flex;
+  gap: ${themeCssVariables.spacing[2]};
+  justify-content: flex-end;
 `;
 
 const StyledVideoDock = styled.div<{ $expanded: boolean }>`
@@ -295,12 +396,34 @@ async function fetchSendbirdSession(
     headers: { Authorization: `Bearer ${bearer}` },
   });
 
+  const text = await response.text();
+
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text.trim() || `HTTP ${response.status}`);
+    let msg = text.trim() || `HTTP ${response.status}`;
+    try {
+      const parsed = JSON.parse(text) as {
+        message?: string | string[];
+      };
+      if (Array.isArray(parsed.message)) {
+        msg = parsed.message.join('. ');
+      } else if (typeof parsed.message === 'string') {
+        msg = parsed.message;
+      }
+    } catch {
+      // keep plain-text body
+    }
+    if (msg.length > 420) {
+      msg = `${msg.slice(0, 420)}…`;
+    }
+    throw new Error(msg);
   }
 
-  return (await response.json()) as SendbirdSessionResponse;
+  return JSON.parse(text) as SendbirdSessionResponse;
+}
+
+function memberDisplayName(m: ChatWorkspaceMemberOption): string {
+  const name = [m.firstName, m.lastName].filter(Boolean).join(' ').trim();
+  return name || m.email || m.streamUserId;
 }
 
 function selectionTitle(sel: HubSelection | null): string {
@@ -386,6 +509,115 @@ export const SendbirdCommunicationHub = () => {
   const sbInstanceRef = useRef<SendbirdClient | null>(null);
 
   const viewerUserWorkspaceId = layout?.viewer.userWorkspaceId;
+  const isWorkspaceAdmin = layout?.viewer.isWorkspaceAdmin === true;
+
+  const iconSm = themeCssVariables.icon.size.sm;
+
+  const [workspaceMembers, setWorkspaceMembers] = useState<
+    ChatWorkspaceMemberOption[]
+  >([]);
+  const [callsPanelOpen, setCallsPanelOpen] = useState(false);
+  const sendbirdBulkEnsuredKeyRef = useRef<string>('');
+
+  useEffect(() => {
+    if (!crmToken) {
+      setWorkspaceMembers([]);
+      sendbirdBulkEnsuredKeyRef.current = '';
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const response = await fetch('/chat/workspace-members', {
+          headers: { Authorization: `Bearer ${crmToken}` },
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = (await response.json()) as ChatWorkspaceMemberOption[];
+
+        if (!cancelled) {
+          setWorkspaceMembers(data);
+        }
+      } catch {
+        if (!cancelled) {
+          setWorkspaceMembers([]);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [crmToken]);
+
+  useEffect(() => {
+    if (!crmToken || workspaceMembers.length === 0 || !layout) {
+      return;
+    }
+
+    const key = `${layout.viewer.userWorkspaceId}:${workspaceMembers
+      .map((m) => m.streamUserId)
+      .sort()
+      .join(',')}`;
+
+    if (sendbirdBulkEnsuredKeyRef.current === key) {
+      return;
+    }
+
+    sendbirdBulkEnsuredKeyRef.current = key;
+
+    void (async () => {
+      const ids = workspaceMembers.map((m) => m.streamUserId);
+      for (let i = 0; i < ids.length; i += 100) {
+        const chunk = ids.slice(i, i + 100);
+        try {
+          const res = await fetch('/sendbird/ensure-users', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${crmToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ scopedUserIds: chunk }),
+          });
+
+          if (!res.ok) {
+            sendbirdBulkEnsuredKeyRef.current = '';
+            return;
+          }
+        } catch {
+          sendbirdBulkEnsuredKeyRef.current = '';
+          return;
+        }
+      }
+    })();
+  }, [crmToken, layout, workspaceMembers]);
+
+  const memberByScopedId = useMemo(() => {
+    const map = new Map<string, ChatWorkspaceMemberOption>();
+
+    for (const m of workspaceMembers) {
+      map.set(m.streamUserId, m);
+    }
+
+    return map;
+  }, [workspaceMembers]);
+
+  const viewerMember = useMemo(() => {
+    if (!viewerUserWorkspaceId) {
+      return null;
+    }
+
+    return (
+      workspaceMembers.find(
+        (m) => m.userWorkspaceId === viewerUserWorkspaceId,
+      ) ?? null
+    );
+  }, [viewerUserWorkspaceId, workspaceMembers]);
 
   useEffect(() => {
     if (!pendingDmThreadId || !layout) {
@@ -667,6 +899,25 @@ export const SendbirdCommunicationHub = () => {
       ? selection.dm.peerAgoraUserId
       : null;
 
+  const dmRowMeta = useCallback(
+    (dm: ChatWorkspaceLayoutDm) => {
+      if (dm.kind === 'direct' && dm.peerAgoraUserId) {
+        const peer = memberByScopedId.get(dm.peerAgoraUserId);
+        if (peer) {
+          return {
+            avatarUrl: peer.avatarUrl,
+            label: dm.title?.trim() || memberDisplayName(peer),
+          };
+        }
+      }
+      return {
+        avatarUrl: null as string | null,
+        label: dm.title?.trim() || t`Direct message`,
+      };
+    },
+    [memberByScopedId],
+  );
+
   const handleVoiceDm = () => {
     if (!callsReady || !peerScopedIdForDm) {
       return;
@@ -802,19 +1053,23 @@ export const SendbirdCommunicationHub = () => {
             value={search}
             onChange={setSearch}
           />
-          <Button
-            accent="blue"
-            variant="primary"
-            title={t`New channel`}
-            onClick={() => setCreateChannelOpen(true)}
-            Icon={IconPlus}
-          />
-          <Button
-            variant="secondary"
-            title={t`New DM`}
-            onClick={() => setDmModalOpen(true)}
-            Icon={IconUsers}
-          />
+          <StyledSidebarActions>
+            {isWorkspaceAdmin ? (
+              <Button
+                accent="blue"
+                variant="primary"
+                title={t`New channel`}
+                onClick={() => setCreateChannelOpen(true)}
+                Icon={IconPlus}
+              />
+            ) : null}
+            <Button
+              variant="secondary"
+              title={t`New DM`}
+              onClick={() => setDmModalOpen(true)}
+              Icon={IconUsers}
+            />
+          </StyledSidebarActions>
         </StyledSidebarHeader>
         <StyledSidebarScroll>
           {filteredCategories.map((cat) => (
@@ -831,36 +1086,60 @@ export const SendbirdCommunicationHub = () => {
                   onClick={() => setSelection({ kind: 'channel', channel: ch })}
                 >
                   {ch.visibility === 'public' ? (
-                    <IconWorld size="small" />
+                    <IconWorld size={iconSm} />
                   ) : (
-                    <IconUsers size="small" />
+                    <IconUsers size={iconSm} />
                   )}
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {ch.name}
-                  </span>
+                  <StyledChannelName>{ch.name}</StyledChannelName>
                 </StyledChannelButton>
               ))}
             </div>
           ))}
           <StyledCategoryLabel>{t`Direct messages`}</StyledCategoryLabel>
-          {filteredDms.map((dm) => (
-            <StyledChannelButton
-              key={dm.id}
-              type="button"
-              $active={selection?.kind === 'dm' && selection.dm.id === dm.id}
-              onClick={() => setSelection({ kind: 'dm', dm })}
-            >
-              <Avatar
-                placeholder={dm.title || t`DM`}
-                placeholderColorSeed={dm.id}
-                size="sm"
-              />
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {dm.title || t`Direct message`}
-              </span>
-            </StyledChannelButton>
-          ))}
+          {filteredDms.map((dm) => {
+            const row = dmRowMeta(dm);
+            return (
+              <StyledChannelButton
+                key={dm.id}
+                type="button"
+                $active={selection?.kind === 'dm' && selection.dm.id === dm.id}
+                onClick={() => setSelection({ kind: 'dm', dm })}
+              >
+                <Avatar
+                  avatarUrl={row.avatarUrl}
+                  placeholder={row.label}
+                  placeholderColorSeed={dm.id}
+                  size="sm"
+                />
+                <StyledChannelName>{row.label}</StyledChannelName>
+              </StyledChannelButton>
+            );
+          })}
         </StyledSidebarScroll>
+        <StyledSidebarFooter>
+          <Avatar
+            avatarUrl={viewerMember?.avatarUrl ?? null}
+            placeholder={
+              viewerMember
+                ? memberDisplayName(viewerMember)
+                : layout?.viewer.userWorkspaceId ?? '?'
+            }
+            placeholderColorSeed={viewerUserWorkspaceId ?? 'me'}
+            size="sm"
+          />
+          <StyledSidebarFooterText>
+            <StyledSidebarFooterName>
+              {viewerMember
+                ? memberDisplayName(viewerMember)
+                : t`Workspace member`}
+            </StyledSidebarFooterName>
+            <StyledSidebarFooterHint>
+              {isWorkspaceAdmin
+                ? t`Workspace admin · can create channels`
+                : t`Workspace chat`}
+            </StyledSidebarFooterHint>
+          </StyledSidebarFooterText>
+        </StyledSidebarFooter>
       </StyledSidebar>
 
       <StyledMain>
@@ -870,12 +1149,22 @@ export const SendbirdCommunicationHub = () => {
               {selection ? selectionTitle(selection) : t`Chat`}
             </StyledTitle>
             {channelUrl ? (
-              <StyledSub>{channelUrl}</StyledSub>
+              <StyledSub>
+                {selection?.kind === 'channel'
+                  ? selection.channel.visibility === 'public'
+                    ? t`Channel · everyone in this workspace`
+                    : t`Channel · invited workspace members`
+                  : t`Direct message · workspace members only`}
+              </StyledSub>
             ) : selection ? (
               <StyledSub>
-                {t`Waiting for Sendbird channel URL (server provisioning)…`}
+                {t`Preparing chat link…`}
               </StyledSub>
-            ) : null}
+            ) : (
+              <StyledSub>
+                {t`Channels and DMs stay inside this workspace.`}
+              </StyledSub>
+            )}
           </StyledTitleBlock>
           <StyledCallActions>
             {selection?.kind === 'dm' &&
@@ -890,30 +1179,18 @@ export const SendbirdCommunicationHub = () => {
                 Icon={IconPhone}
               />
             ) : null}
-            {selection?.kind === 'channel' ? (
-              <>
-                <Button
-                  accent="blue"
-                  disabled={!callsReady}
-                  title={t`Start group room`}
-                  variant="secondary"
-                  onClick={() => void handleCreateGroupRoom()}
-                  Icon={IconUsers}
-                />
-              </>
-            ) : null}
           </StyledCallActions>
         </StyledMainHeader>
 
         {connectError ? <StyledError>{connectError}</StyledError> : null}
 
         {!sb ? (
-          <StyledMuted>{t`Connecting to Sendbird…`}</StyledMuted>
+          <StyledMuted>{t`Connecting to workspace chat…`}</StyledMuted>
         ) : !channelUrl ? (
           <StyledMuted>
             {selection
-              ? t`This conversation is not linked to Sendbird yet. Create it again or wait for provisioning.`
-              : t`Select a channel or direct message.`}
+              ? t`Almost ready — syncing this conversation with chat.`
+              : t`Select a channel or direct message on the left.`}
           </StyledMuted>
         ) : (
           <>
@@ -921,8 +1198,15 @@ export const SendbirdCommunicationHub = () => {
               {messages.map((m) => {
                 const sid = senderUserId(m);
                 const own = sid === sessionUserIdRef.current;
+                const member = sid ? memberByScopedId.get(sid) : undefined;
+                const senderLabel =
+                  member && !own ? memberDisplayName(member) : null;
+
                 return (
                   <StyledMessageRow key={m.messageId} $own={!!own}>
+                    {senderLabel ? (
+                      <StyledMessageSender>{senderLabel}</StyledMessageSender>
+                    ) : null}
                     <div>{messageBody(m)}</div>
                     <StyledMessageMeta>
                       {formatDistanceToNow(m.createdAt, { addSuffix: true })}
@@ -933,7 +1217,7 @@ export const SendbirdCommunicationHub = () => {
             </StyledMessages>
             <StyledComposer>
               <StyledTextarea
-                placeholder={t`Message`}
+                placeholder={t`Write a message…`}
                 value={composer}
                 onChange={(e) => setComposer(e.target.value)}
                 onKeyDown={onComposerKeyDown}
@@ -952,34 +1236,51 @@ export const SendbirdCommunicationHub = () => {
         )}
 
         {selection?.kind === 'channel' ? (
-          <StyledGroupCallBar>
-            <input
-              value={groupRoomIdInput}
-              onChange={(e) => setGroupRoomIdInput(e.target.value)}
-              placeholder={t`Room ID`}
-              style={{
-                flex: '1 1 160px',
-                minWidth: 120,
-                padding: '8px 10px',
-                borderRadius: 6,
-                border: `1px solid ${themeCssVariables.border.color.medium}`,
-              }}
-            />
-            <Button
-              accent="blue"
-              disabled={!callsReady}
-              title={t`Join room`}
-              variant="secondary"
-              onClick={() => void handleJoinGroupRoom()}
-            />
-            {activeGroupRoom ? (
-              <Button
-                title={t`Leave room`}
-                variant="secondary"
-                onClick={handleLeaveGroupRoom}
-              />
+          <StyledCollapsibleCalls>
+            <StyledCallsToggle
+              type="button"
+              onClick={() => setCallsPanelOpen((o) => !o)}
+            >
+              {callsPanelOpen ? (
+                <IconChevronUp size={iconSm} />
+              ) : (
+                <IconChevronDown size={iconSm} />
+              )}
+              {t`Voice & video (group)`}
+            </StyledCallsToggle>
+            {callsPanelOpen ? (
+              <StyledCallsBody>
+                <Button
+                  accent="blue"
+                  disabled={!callsReady}
+                  title={t`Start a group room`}
+                  variant="secondary"
+                  onClick={() => void handleCreateGroupRoom()}
+                  Icon={IconUsers}
+                />
+                <StyledRoomField
+                  value={groupRoomIdInput}
+                  onChange={(e) => setGroupRoomIdInput(e.target.value)}
+                  placeholder={t`Room ID to join`}
+                  aria-label={t`Room ID to join`}
+                />
+                <Button
+                  accent="blue"
+                  disabled={!callsReady}
+                  title={t`Join room`}
+                  variant="secondary"
+                  onClick={() => void handleJoinGroupRoom()}
+                />
+                {activeGroupRoom ? (
+                  <Button
+                    title={t`Leave room`}
+                    variant="secondary"
+                    onClick={handleLeaveGroupRoom}
+                  />
+                ) : null}
+              </StyledCallsBody>
             ) : null}
-          </StyledGroupCallBar>
+          </StyledCollapsibleCalls>
         ) : null}
 
       </StyledMain>
@@ -1016,13 +1317,20 @@ export const SendbirdCommunicationHub = () => {
       {incomingCall ? (
         <StyledIncomingBackdrop role="dialog" aria-modal="true">
           <StyledIncomingPanel>
-            <div style={{ fontWeight: 600, marginBottom: 8 }}>
-              {t`Incoming call`}
-            </div>
-            <div style={{ fontSize: 13, marginBottom: 16 }}>
-              {incomingCall.caller.userId}
-            </div>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <StyledIncomingTitle>{t`Incoming call`}</StyledIncomingTitle>
+            <StyledIncomingBody>
+              {(() => {
+                const fromMember = memberByScopedId.get(
+                  incomingCall.caller.userId,
+                );
+                const label =
+                  (fromMember ? memberDisplayName(fromMember) : '') ||
+                  incomingCall.caller.nickname?.trim() ||
+                  incomingCall.caller.userId;
+                return label;
+              })()}
+            </StyledIncomingBody>
+            <StyledIncomingActions>
               <Button
                 title={t`Decline`}
                 variant="secondary"
@@ -1034,7 +1342,7 @@ export const SendbirdCommunicationHub = () => {
                 variant="primary"
                 onClick={handleAcceptIncoming}
               />
-            </div>
+            </StyledIncomingActions>
           </StyledIncomingPanel>
         </StyledIncomingBackdrop>
       ) : null}

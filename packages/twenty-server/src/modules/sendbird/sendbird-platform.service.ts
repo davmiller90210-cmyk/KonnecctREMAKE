@@ -41,7 +41,7 @@ export class SendbirdPlatformService {
     const res = await fetch(url, {
       method,
       headers: {
-        'Content-Type': 'application/json; charset=utf8',
+        'Content-Type': 'application/json',
         'Api-Token': this.apiToken,
       },
       body: body ? JSON.stringify(body) : undefined,
@@ -70,6 +70,44 @@ export class SendbirdPlatformService {
     return parsed as T;
   }
 
+  /**
+   * Sendbird may reject profile_url (dashboard domain filter, unreachable URL, etc.).
+   * A failed POST with profile_url caused a mistaken PUT fallback and "User not found."
+   */
+  private sanitizeProfileUrl(url: string | undefined): string | undefined {
+    if (!url?.trim()) {
+      return undefined;
+    }
+    const trimmed = url.trim();
+    if (trimmed.length > 2048) {
+      return undefined;
+    }
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+        return undefined;
+      }
+      return trimmed;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private isMissingUserGetError(error: unknown): boolean {
+    const msg = error instanceof Error ? error.message : String(error);
+    return (
+      /\b404\b/.test(msg) ||
+      /user not found/i.test(msg) ||
+      /\b4001\b/.test(msg) ||
+      /\b400111\b/.test(msg)
+    );
+  }
+
+  private isDuplicateUserCreateError(error: unknown): boolean {
+    const msg = error instanceof Error ? error.message : String(error);
+    return /400202|unique constraint|already exists|duplicate/i.test(msg);
+  }
+
   async ensureUser(params: {
     userId: string;
     nickname: string;
@@ -79,26 +117,54 @@ export class SendbirdPlatformService {
       return;
     }
 
-    const payload: Record<string, unknown> = {
-      user_id: params.userId,
-      nickname: params.nickname.slice(0, 80),
-    };
+    const nickname = (params.nickname?.trim() || params.userId).slice(0, 80);
+    const profileUrl = this.sanitizeProfileUrl(params.profileUrl);
+    const userPath = `/v3/users/${encodeURIComponent(params.userId)}`;
 
-    if (params.profileUrl) {
-      payload.profile_url = params.profileUrl;
+    let userExists = false;
+
+    try {
+      await this.request<unknown>('GET', userPath);
+      userExists = true;
+    } catch (error) {
+      if (this.isMissingUserGetError(error)) {
+        userExists = false;
+      } else {
+        throw error;
+      }
+    }
+
+    if (!userExists) {
+      try {
+        await this.request<unknown>('POST', '/v3/users', {
+          user_id: params.userId,
+          nickname,
+        });
+      } catch (error) {
+        if (this.isDuplicateUserCreateError(error)) {
+          userExists = true;
+        } else {
+          throw error;
+        }
+      }
+    }
+
+    const updatePayload: Record<string, unknown> = { nickname };
+    if (profileUrl) {
+      updatePayload.profile_url = profileUrl;
     }
 
     try {
-      await this.request<unknown>('POST', '/v3/users', payload);
-    } catch {
-      await this.request<unknown>(
-        'PUT',
-        `/v3/users/${encodeURIComponent(params.userId)}`,
-        {
-          nickname: payload.nickname,
-          ...(params.profileUrl ? { profile_url: params.profileUrl } : {}),
-        },
-      );
+      await this.request<unknown>('PUT', userPath, updatePayload);
+    } catch (error) {
+      if (profileUrl) {
+        this.logger.warn(
+          `Sendbird: profile_url rejected for ${params.userId} (${error instanceof Error ? error.message : String(error)}). Updating nickname only.`,
+        );
+        await this.request<unknown>('PUT', userPath, { nickname });
+      } else {
+        throw error;
+      }
     }
   }
 

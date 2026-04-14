@@ -40,6 +40,7 @@ Official references:
 
 - **Authentication:** Enable settings that require session/token login for production (e.g. deny non-token login per Sendbird’s security docs) so user access matches the server-issued session flow.
 - **Chat:** Group channels are used for workspace channels and DMs (`isDistinct` for 1:1). Ensure app limits (members per channel, rate limits) fit your workspace sizes.
+- **Profile images:** If user creation fails or nicknames work but avatars do not, check **Settings → Application → (security / filters)** for **profile URL domain allowlists**. The CRM’s `defaultAvatarUrl` host (e.g. Clerk or your CDN) must be allowed, or Sendbird rejects `profile_url` — Konnecct falls back to nickname-only sync and logs a warning server-side.
 - **Calls:** Confirm Calls is enabled for the same application ID. Billing is typically by connected minutes; use a staging app with low caps for development.
 
 ## 5. Konnecct integration touchpoints

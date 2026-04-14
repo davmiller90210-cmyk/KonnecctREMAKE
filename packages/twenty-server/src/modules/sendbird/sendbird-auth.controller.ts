@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpException,
   HttpStatus,
+  Logger,
   NotFoundException,
   Post,
   Req,
@@ -26,6 +27,8 @@ import { SendbirdPlatformService } from './sendbird-platform.service';
 
 @Controller('sendbird')
 export class SendbirdAuthController {
+  private readonly logger = new Logger(SendbirdAuthController.name);
+
   constructor(
     private readonly agoraAuthService: AgoraAuthService,
     private readonly configService: ConfigService,
@@ -121,13 +124,13 @@ export class SendbirdAuthController {
         throw error;
       }
 
-      const message = error instanceof Error ? error.message : String(error);
+      const detail = error instanceof Error ? error.message : String(error);
 
-      throw new UnauthorizedException({
-        error: 'Unauthorized',
-        message,
-        statusCode: HttpStatus.UNAUTHORIZED,
-      });
+      this.logger.warn(`Sendbird session error: ${detail}`);
+
+      throw new BadRequestException(
+        'Could not connect to workspace chat. Your account will be synced automatically; if this continues, ask an admin to verify Sendbird settings (and profile image URLs allowed by Sendbird).',
+      );
     }
   }
 

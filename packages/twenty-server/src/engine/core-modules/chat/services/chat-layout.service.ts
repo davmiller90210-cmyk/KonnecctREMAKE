@@ -47,6 +47,8 @@ export type ChatWorkspaceMemberRowDTO = {
   firstName: string;
   lastName: string;
   email: string;
+  /** CRM avatar URL (Sendbird profile_url when provisioned). */
+  avatarUrl: string | null;
   /** Stream / Agora-scoped user id (matches `GET /stream/token` user id for this user in this workspace). */
   streamUserId: string;
 };
@@ -97,6 +99,7 @@ export class ChatLayoutService {
       firstName: uw.user?.firstName ?? '',
       lastName: uw.user?.lastName ?? '',
       email: uw.user?.email ?? '',
+      avatarUrl: uw.user?.defaultAvatarUrl ?? null,
       streamUserId: this.agoraAuthService.scopedUserIdFor(
         uw.userId,
         workspaceId,

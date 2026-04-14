@@ -40,6 +40,8 @@ export type ChatWorkspaceMemberOption = {
   firstName: string;
   lastName: string;
   email: string;
+  /** Profile image from CRM (also used for Sendbird). */
+  avatarUrl: string | null;
   /** Same id the Stream client uses for this user in this workspace. */
   streamUserId: string;
 };
