@@ -30,6 +30,9 @@ export class ChatDmThreadEntity extends WorkspaceRelatedEntity {
   @Column({ type: 'varchar', nullable: true })
   agoraGroupId: string | null;
 
+  @Column({ type: 'varchar', nullable: true })
+  sendbirdChannelUrl: string | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 

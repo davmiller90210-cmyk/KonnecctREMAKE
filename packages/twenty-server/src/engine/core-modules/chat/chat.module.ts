@@ -17,6 +17,7 @@ import { RoleEntity } from 'src/engine/metadata-modules/role/role.entity';
 import { UserRoleModule } from 'src/engine/metadata-modules/user-role/user-role.module';
 import { MattermostModule } from 'src/engine/core-modules/mattermost/mattermost.module';
 import { AgoraModule } from 'src/modules/agora/agora.module';
+import { SendbirdModule } from 'src/modules/sendbird/sendbird.module';
 import { StreamModule } from 'src/modules/stream/stream.module';
 
 @Module({
@@ -35,6 +36,7 @@ import { StreamModule } from 'src/modules/stream/stream.module';
     UserRoleModule,
     MattermostModule,
     AgoraModule,
+    SendbirdModule,
     StreamModule,
   ],
   controllers: [ChatController],

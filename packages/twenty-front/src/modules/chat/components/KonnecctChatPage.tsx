@@ -26,6 +26,12 @@ const CommunicationHub = lazy(async () => {
   return { default: m.CommunicationHub };
 });
 
+const SendbirdCommunicationHub = lazy(async () => {
+  const m = await import('@/chat/components/SendbirdCommunicationHub');
+
+  return { default: m.SendbirdCommunicationHub };
+});
+
 /** Fills DefaultLayout main column (flex chain + min-height) for full-viewport chat. */
 const StyledChatPageRoot = styled.div`
   background: ${themeCssVariables.background.noisy};
@@ -52,6 +58,8 @@ export const KonnecctChatPage = () => {
           ) : (
             <MattermostChatEmbed />
           )
+        ) : REACT_APP_CHAT_PROVIDER === 'sendbird' ? (
+          <SendbirdCommunicationHub />
         ) : (
           <CommunicationHub />
         )}

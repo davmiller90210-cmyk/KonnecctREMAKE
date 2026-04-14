@@ -38,14 +38,20 @@ export const REACT_APP_STREAM_API_KEY =
   process.env.STREAM_API_KEY ||
   '';
 
-/** `mattermost` (Konnecct default) | `stream` */
+/** `sendbird` | `mattermost` | `stream` */
 export const REACT_APP_CHAT_PROVIDER = (
   window._env_?.REACT_APP_CHAT_PROVIDER ||
   process.env.REACT_APP_CHAT_PROVIDER ||
-  'mattermost'
+  'sendbird'
 )
   .trim()
   .toLowerCase();
+
+export const REACT_APP_SENDBIRD_APP_ID = (
+  window._env_?.REACT_APP_SENDBIRD_APP_ID ||
+  process.env.REACT_APP_SENDBIRD_APP_ID ||
+  ''
+).trim();
 
 /**
  * Mattermost web URL (no trailing slash). Prefer dedicated host, e.g. `https://chat.<domain>` — injected at runtime by the API.

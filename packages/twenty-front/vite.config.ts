@@ -21,6 +21,8 @@ export default defineConfig(({ mode }) => {
 
   const {
     REACT_APP_SERVER_BASE_URL,
+    REACT_APP_CHAT_PROVIDER: envChatProvider,
+    REACT_APP_SENDBIRD_APP_ID: envSendbirdAppId,
     VITE_BUILD_SOURCEMAP,
     VITE_HOST,
     SSL_CERT_PATH,
@@ -28,6 +30,9 @@ export default defineConfig(({ mode }) => {
     REACT_APP_PORT,
     IS_DEBUG_MODE,
   } = env;
+
+  const REACT_APP_CHAT_PROVIDER = envChatProvider ?? 'sendbird';
+  const REACT_APP_SENDBIRD_APP_ID = envSendbirdAppId ?? '';
 
   const port = isNonEmptyString(REACT_APP_PORT)
     ? parseInt(REACT_APP_PORT)
@@ -244,9 +249,13 @@ export default defineConfig(({ mode }) => {
     define: {
       _env_: {
         REACT_APP_SERVER_BASE_URL,
+        REACT_APP_CHAT_PROVIDER,
+        REACT_APP_SENDBIRD_APP_ID,
       },
       'process.env': {
         REACT_APP_SERVER_BASE_URL,
+        REACT_APP_CHAT_PROVIDER,
+        REACT_APP_SENDBIRD_APP_ID,
         IS_DEBUG_MODE,
         IS_DEV_ENV: mode === 'development' ? 'true' : 'false',
       },

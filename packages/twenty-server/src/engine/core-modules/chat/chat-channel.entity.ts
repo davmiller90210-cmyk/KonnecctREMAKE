@@ -49,6 +49,10 @@ export class ChatChannelEntity extends WorkspaceRelatedEntity {
   @Column({ type: 'varchar', nullable: true })
   agoraGroupId: string | null;
 
+  /** Sendbird group channel URL (Chat) for native Sendbird client. */
+  @Column({ type: 'varchar', nullable: true })
+  sendbirdChannelUrl: string | null;
+
   @Column({ type: 'int', default: 0 })
   position: number;
 

@@ -7,6 +7,7 @@ export type ChatWorkspaceLayoutChannel = {
   canPost: boolean;
   canManage: boolean;
   agoraGroupId: string | null;
+  sendbirdChannelUrl: string | null;
 };
 
 export type ChatWorkspaceLayoutCategory = {
@@ -21,6 +22,7 @@ export type ChatWorkspaceLayoutDm = {
   kind: 'direct' | 'group';
   title: string | null;
   agoraGroupId: string | null;
+  sendbirdChannelUrl: string | null;
   peerAgoraUserId: string | null;
 };
 

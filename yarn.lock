@@ -21313,6 +21313,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@sendbird/chat@npm:^4.22.0":
+  version: 4.22.0
+  resolution: "@sendbird/chat@npm:4.22.0"
+  peerDependencies:
+    "@react-native-async-storage/async-storage": ^1.17.6
+    react-native-mmkv: ">=2.0.0"
+  peerDependenciesMeta:
+    "@react-native-async-storage/async-storage":
+      optional: true
+    react-native-mmkv:
+      optional: true
+  checksum: 10c0/97db410babeb9fd48eb6a77e31d705ba1b7ab93702548b355ed368b10f5cc6c7c78d9fc1e39110c4a6599ec68966324e79af910afc6cf6f87c65e2ca801ac50d
+  languageName: node
+  linkType: hard
+
 "@sentry-internal/browser-utils@npm:10.27.0":
   version: 10.27.0
   resolution: "@sentry-internal/browser-utils@npm:10.27.0"
@@ -56504,6 +56519,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"sendbird-calls@npm:^1.10.21":
+  version: 1.10.21
+  resolution: "sendbird-calls@npm:1.10.21"
+  checksum: 10c0/e03f92ce7bf4c160c8a046f5481f0c5473c55417fad3d90956b9bdcf47100563eae4d36670cfa7fc8688e17c8ee33feda2ecbcef999c6044e787eba2f9a1026c
+  languageName: node
+  linkType: hard
+
 "sentence-case@npm:^3.0.4":
   version: 3.0.4
   resolution: "sentence-case@npm:3.0.4"
@@ -60150,6 +60172,7 @@ __metadata:
     "@react-email/components": "npm:^0.5.3"
     "@react-pdf/renderer": "npm:^4.1.6"
     "@scalar/api-reference-react": "npm:^0.4.36"
+    "@sendbird/chat": "npm:^4.22.0"
     "@sentry/react": "npm:^10.27.0"
     "@stream-io/video-react-sdk": "npm:^1.35.1"
     "@tiptap/core": "npm:3.4.2"
@@ -60221,6 +60244,7 @@ __metadata:
     react-textarea-autosize: "npm:^8.4.1"
     remark-gfm: "npm:^4.0.1"
     rollup-plugin-visualizer: "npm:^5.14.0"
+    sendbird-calls: "npm:^1.10.21"
     stream-chat: "npm:^9.41.0"
     transliteration: "npm:^2.3.5"
     twenty-sdk: "workspace:*"

@@ -28,7 +28,8 @@ services:
       args:
         REACT_APP_STREAM_API_KEY: ${REACT_APP_STREAM_API_KEY:-${STREAM_API_KEY:-}}
         STREAM_API_KEY: ${STREAM_API_KEY:-}
-        REACT_APP_CHAT_PROVIDER: ${REACT_APP_CHAT_PROVIDER:-mattermost}
+        REACT_APP_CHAT_PROVIDER: ${REACT_APP_CHAT_PROVIDER:-sendbird}
+        REACT_APP_SENDBIRD_APP_ID: ${REACT_APP_SENDBIRD_APP_ID:-${SENDBIRD_APPLICATION_ID:-}}
         REACT_APP_MATTERMOST_WEBAPP_URL: ${REACT_APP_MATTERMOST_WEBAPP_URL:-https://chat.konnecct.com}
     depends_on:
       crm-db:
@@ -48,8 +49,12 @@ services:
       STREAM_API_KEY: ${STREAM_API_KEY:-}
       STREAM_API_SECRET: ${STREAM_API_SECRET:-}
       REACT_APP_STREAM_API_KEY: ${REACT_APP_STREAM_API_KEY:-${STREAM_API_KEY:-}}
-      REACT_APP_CHAT_PROVIDER: ${REACT_APP_CHAT_PROVIDER:-mattermost}
+      REACT_APP_CHAT_PROVIDER: ${REACT_APP_CHAT_PROVIDER:-sendbird}
+      REACT_APP_SENDBIRD_APP_ID: ${REACT_APP_SENDBIRD_APP_ID:-${SENDBIRD_APPLICATION_ID:-}}
       REACT_APP_MATTERMOST_WEBAPP_URL: ${REACT_APP_MATTERMOST_WEBAPP_URL:-https://chat.konnecct.com}
+      SENDBIRD_APPLICATION_ID: ${SENDBIRD_APPLICATION_ID:-}
+      SENDBIRD_API_TOKEN: ${SENDBIRD_API_TOKEN:-}
+      SENDBIRD_CHAT_API_BASE: ${SENDBIRD_CHAT_API_BASE:-}
       # Dedicated chat host (nginx server_name chat.konnecct.com) — avoids Mattermost subpath redirect loops on app.*
       MATTERMOST_SITE_URL: ${MATTERMOST_SITE_URL:-https://chat.konnecct.com}
       # Optional: Mattermost Admin API (system admin personal access token) to pre-create users for OIDC (see docs/mattermost-konnecct-runbook.md).

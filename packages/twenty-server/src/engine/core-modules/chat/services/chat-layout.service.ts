@@ -23,6 +23,7 @@ export type ChatLayoutChannelDTO = {
   canPost: boolean;
   canManage: boolean;
   agoraGroupId: string | null;
+  sendbirdChannelUrl: string | null;
 };
 
 export type ChatLayoutCategoryDTO = {
@@ -37,6 +38,7 @@ export type ChatLayoutDmDTO = {
   kind: 'direct' | 'group';
   title: string | null;
   agoraGroupId: string | null;
+  sendbirdChannelUrl: string | null;
   peerAgoraUserId: string | null;
 };
 
@@ -195,6 +197,7 @@ export class ChatLayoutService {
         canPost: member?.canPost ?? true,
         canManage: member?.canManage ?? isWorkspaceAdmin,
         agoraGroupId: channel.agoraGroupId,
+        sendbirdChannelUrl: channel.sendbirdChannelUrl,
       };
     }
 
@@ -207,6 +210,7 @@ export class ChatLayoutService {
       canPost: member?.canPost === true,
       canManage: member?.canManage === true,
       agoraGroupId: channel.agoraGroupId,
+      sendbirdChannelUrl: channel.sendbirdChannelUrl,
     };
   }
 
@@ -293,6 +297,7 @@ export class ChatLayoutService {
         kind: thread.kind,
         title: thread.title,
         agoraGroupId: thread.agoraGroupId,
+        sendbirdChannelUrl: thread.sendbirdChannelUrl,
         peerAgoraUserId,
       };
     });
