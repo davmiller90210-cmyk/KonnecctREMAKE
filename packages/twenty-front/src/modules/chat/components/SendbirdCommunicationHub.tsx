@@ -1,15 +1,17 @@
+/* oxlint-disable twenty/no-state-useref -- Sendbird/Calls SDK needs stable DOM refs and mirrored channel/session handles inside async handlers */
 import {
   useCallback,
   useEffect,
   useMemo,
+  useReducer,
   useRef,
   useState,
+  type ChangeEvent,
   type KeyboardEvent,
 } from 'react';
-import { styled } from '@linaria/react';
 import { t } from '@lingui/core/macro';
 import { useAtomValue } from 'jotai';
-import { formatDistanceToNow } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 import SendbirdChat, {
   SessionHandler,
   type SendbirdChatWith,
@@ -22,30 +24,43 @@ import {
 import {
   MessageType,
   MessageTypeFilter,
+  ReplyType,
   type BaseMessage,
   type FileMessage,
+  type Member,
   type UserMessage,
 } from '@sendbird/chat/message';
 import * as SendBirdCall from 'sendbird-calls';
-import { Button, SearchInput } from 'twenty-ui/input';
+import { Button } from 'twenty-ui/input';
 import {
   Avatar,
-  IconChevronDown,
-  IconChevronUp,
+  IconMicrophone,
+  IconMicrophoneOff,
   IconPhone,
-  IconPlus,
+  IconPhoneOff,
+  IconScreenShare,
   IconSend,
-  IconUsers,
-  IconWorld,
+  IconVideo,
+  IconVideoOff,
+  IconX,
 } from 'twenty-ui/display';
-import { themeCssVariables } from 'twenty-ui/theme-constants';
 
+import { currentWorkspaceState } from '@/auth/states/currentWorkspaceState';
 import { tokenPairState } from '@/auth/states/tokenPairState';
 import { CreateChannelModal } from '@/chat/components/CreateChannelModal';
 import { NewDmModal } from '@/chat/components/NewDmModal';
 import { useChatWorkspaceLayout } from '@/chat/hooks/useChatWorkspaceLayout';
 import {
-  type ChatWorkspaceLayoutChannel,
+  COLLAB_NOTE_CUSTOM_TYPE,
+  filterMainFeedMessages,
+  isCollabNoteMessage,
+} from '@/chat/sendbird/collabNote';
+import { EditorialDetailsPanel } from '@/chat/sendbird-suite/EditorialDetailsPanel';
+import { EditorialWorkspaceRail } from '@/chat/sendbird-suite/EditorialWorkspaceRail';
+import * as Ed from '@/chat/sendbird-suite/editorialLayout';
+import { editorialChatTheme } from '@/chat/theme/editorialChatTheme';
+import {
+  type ChatHubSelection,
   type ChatWorkspaceLayoutDm,
   type ChatWorkspaceMemberOption,
 } from '@/chat/types/chat-workspace-layout.type';
@@ -56,338 +71,14 @@ type SendbirdClient = SendbirdChatWith<[GroupChannelModule]>;
 const HANDLER_KEY = 'konnecct-sendbird-hub';
 const CALL_LISTENER_KEY = 'konnecct-sendbird-calls';
 
+const REACTION_EMOJI = ['\u{1F680}', '\u{2728}'] as const;
+
 type SendbirdSessionResponse = {
   appId: string;
   userId: string;
   sessionToken: string;
   expiresAt?: number;
 };
-
-type HubSelection =
-  | { kind: 'channel'; channel: ChatWorkspaceLayoutChannel }
-  | { kind: 'dm'; dm: ChatWorkspaceLayoutDm };
-
-const StyledRoot = styled.div`
-  display: flex;
-  flex: 1 1 auto;
-  min-height: 0;
-  min-width: 0;
-  width: 100%;
-  background: ${themeCssVariables.background.noisy};
-`;
-
-const StyledSidebar = styled.aside`
-  border-right: 1px solid ${themeCssVariables.border.color.medium};
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  width: 280px;
-  flex-shrink: 0;
-  background: ${themeCssVariables.background.primary};
-`;
-
-const StyledSidebarHeader = styled.div`
-  padding: ${themeCssVariables.spacing[3]};
-  border-bottom: 1px solid ${themeCssVariables.border.color.light};
-  display: flex;
-  flex-direction: column;
-  gap: ${themeCssVariables.spacing[2]};
-`;
-
-const StyledSidebarActions = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: ${themeCssVariables.spacing[2]};
-`;
-
-const StyledSidebarScroll = styled.div`
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-`;
-
-const StyledChannelButton = styled.button<{ $active: boolean }>`
-  align-items: center;
-  background: ${({ $active }) =>
-    $active
-      ? themeCssVariables.background.transparent.medium
-      : 'transparent'};
-  border: none;
-  border-bottom: 1px solid ${themeCssVariables.border.color.light};
-  color: ${themeCssVariables.font.color.primary};
-  cursor: pointer;
-  display: flex;
-  font-family: ${themeCssVariables.font.family};
-  font-size: ${themeCssVariables.font.size.sm};
-  gap: ${themeCssVariables.spacing[2]};
-  padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[3]};
-  text-align: left;
-  width: 100%;
-
-  &:hover {
-    background: ${themeCssVariables.background.transparent.light};
-  }
-`;
-
-const StyledCategoryLabel = styled.div`
-  color: ${themeCssVariables.font.color.tertiary};
-  font-size: ${themeCssVariables.font.size.xs};
-  font-weight: ${themeCssVariables.font.weight.medium};
-  padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[3]} 0;
-  text-transform: uppercase;
-`;
-
-const StyledChannelName = styled.span`
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
-`;
-
-const StyledSidebarFooter = styled.div`
-  border-top: 1px solid ${themeCssVariables.border.color.light};
-  padding: ${themeCssVariables.spacing[3]};
-  display: flex;
-  align-items: center;
-  gap: ${themeCssVariables.spacing[2]};
-  flex-shrink: 0;
-`;
-
-const StyledSidebarFooterText = styled.div`
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  font-size: ${themeCssVariables.font.size.sm};
-`;
-
-const StyledSidebarFooterName = styled.span`
-  font-weight: ${themeCssVariables.font.weight.medium};
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-`;
-
-const StyledSidebarFooterHint = styled.span`
-  color: ${themeCssVariables.font.color.tertiary};
-  font-size: ${themeCssVariables.font.size.xs};
-`;
-
-const StyledCollapsibleCalls = styled.div`
-  border-top: 1px solid ${themeCssVariables.border.color.light};
-  background: ${themeCssVariables.background.secondary};
-`;
-
-const StyledCallsToggle = styled.button`
-  align-items: center;
-  background: transparent;
-  border: none;
-  color: ${themeCssVariables.font.color.secondary};
-  cursor: pointer;
-  display: flex;
-  font-family: ${themeCssVariables.font.family};
-  font-size: ${themeCssVariables.font.size.sm};
-  gap: ${themeCssVariables.spacing[2]};
-  padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[3]};
-  width: 100%;
-  text-align: left;
-
-  &:hover {
-    background: ${themeCssVariables.background.transparent.light};
-  }
-`;
-
-const StyledCallsBody = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: ${themeCssVariables.spacing[2]};
-  padding: 0 ${themeCssVariables.spacing[3]} ${themeCssVariables.spacing[3]};
-`;
-
-const StyledRoomField = styled.input`
-  flex: 1 1 160px;
-  min-width: 120px;
-  padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[3]};
-  border-radius: ${themeCssVariables.border.radius.sm};
-  border: 1px solid ${themeCssVariables.border.color.medium};
-  background: ${themeCssVariables.background.primary};
-  color: ${themeCssVariables.font.color.primary};
-  font-family: ${themeCssVariables.font.family};
-  font-size: ${themeCssVariables.font.size.sm};
-`;
-
-const StyledMessageSender = styled.div`
-  font-size: ${themeCssVariables.font.size.xs};
-  font-weight: ${themeCssVariables.font.weight.medium};
-  margin-bottom: 4px;
-  opacity: 0.9;
-`;
-
-const StyledMain = styled.main`
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  min-height: 0;
-  min-width: 0;
-`;
-
-const StyledMainHeader = styled.div`
-  align-items: center;
-  border-bottom: 1px solid ${themeCssVariables.border.color.medium};
-  display: flex;
-  flex-shrink: 0;
-  gap: ${themeCssVariables.spacing[2]};
-  justify-content: space-between;
-  padding: ${themeCssVariables.spacing[3]};
-`;
-
-const StyledTitleBlock = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-`;
-
-const StyledTitle = styled.h2`
-  font-size: ${themeCssVariables.font.size.md};
-  font-weight: ${themeCssVariables.font.weight.semiBold};
-  margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-`;
-
-const StyledSub = styled.div`
-  color: ${themeCssVariables.font.color.tertiary};
-  font-size: ${themeCssVariables.font.size.xs};
-`;
-
-const StyledCallActions = styled.div`
-  display: flex;
-  flex-shrink: 0;
-  gap: ${themeCssVariables.spacing[2]};
-`;
-
-const StyledMessages = styled.div`
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  padding: ${themeCssVariables.spacing[3]};
-  display: flex;
-  flex-direction: column;
-  gap: ${themeCssVariables.spacing[2]};
-`;
-
-const StyledMessageRow = styled.div<{ $own: boolean }>`
-  align-self: ${({ $own }) => ($own ? 'flex-end' : 'flex-start')};
-  background: ${({ $own }) =>
-    $own
-      ? themeCssVariables.color.blue3
-      : themeCssVariables.background.secondary};
-  border-radius: ${themeCssVariables.border.radius.sm};
-   color: ${({ $own }) =>
-    $own ? themeCssVariables.grayScale.gray12 : themeCssVariables.font.color.primary};
-  max-width: min(560px, 85%);
-  padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[3]};
-`;
-
-const StyledMessageMeta = styled.div`
-  font-size: 10px;
-  margin-top: 4px;
-  opacity: 0.85;
-`;
-
-const StyledComposer = styled.div`
-  border-top: 1px solid ${themeCssVariables.border.color.medium};
-  display: flex;
-  flex-shrink: 0;
-  gap: ${themeCssVariables.spacing[2]};
-  padding: ${themeCssVariables.spacing[3]};
-  align-items: flex-end;
-`;
-
-const StyledTextarea = styled.textarea`
-  background: ${themeCssVariables.background.secondary};
-  border: 1px solid ${themeCssVariables.border.color.medium};
-  border-radius: ${themeCssVariables.border.radius.sm};
-  color: ${themeCssVariables.font.color.primary};
-  flex: 1 1 auto;
-  font-family: ${themeCssVariables.font.family};
-  font-size: ${themeCssVariables.font.size.sm};
-  min-height: 40px;
-  max-height: 120px;
-  padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[3]};
-  resize: vertical;
-`;
-
-const StyledMuted = styled.div`
-  color: ${themeCssVariables.font.color.tertiary};
-  font-size: ${themeCssVariables.font.size.sm};
-  padding: ${themeCssVariables.spacing[4]};
-`;
-
-const StyledError = styled.div`
-  color: ${themeCssVariables.color.red5};
-  font-size: ${themeCssVariables.font.size.sm};
-  padding: ${themeCssVariables.spacing[3]};
-`;
-
-const StyledIncomingBackdrop = styled.div`
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 12000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: ${themeCssVariables.spacing[4]};
-`;
-
-const StyledIncomingPanel = styled.div`
-  background: ${themeCssVariables.background.primary};
-  border-radius: ${themeCssVariables.border.radius.md};
-  border: 1px solid ${themeCssVariables.border.color.medium};
-  max-width: 400px;
-  padding: ${themeCssVariables.spacing[5]};
-  width: 100%;
-`;
-
-const StyledIncomingTitle = styled.div`
-  font-weight: ${themeCssVariables.font.weight.semiBold};
-  margin-bottom: ${themeCssVariables.spacing[2]};
-`;
-
-const StyledIncomingBody = styled.div`
-  color: ${themeCssVariables.font.color.secondary};
-  font-size: ${themeCssVariables.font.size.sm};
-  margin-bottom: ${themeCssVariables.spacing[4]};
-`;
-
-const StyledIncomingActions = styled.div`
-  display: flex;
-  gap: ${themeCssVariables.spacing[2]};
-  justify-content: flex-end;
-`;
-
-const StyledVideoDock = styled.div<{ $expanded: boolean }>`
-  position: fixed;
-  right: ${themeCssVariables.spacing[3]};
-  bottom: ${themeCssVariables.spacing[3]};
-  display: flex;
-  gap: ${themeCssVariables.spacing[2]};
-  z-index: 50;
-  max-width: ${({ $expanded }) => ($expanded ? 'min(360px, 90vw)' : '2px')};
-  opacity: ${({ $expanded }) => ($expanded ? 1 : 0.01)};
-  overflow: hidden;
-  pointer-events: ${({ $expanded }) => ($expanded ? 'auto' : 'none')};
-
-  video {
-    flex: 1 1 50%;
-    max-height: 160px;
-    width: ${({ $expanded }) => ($expanded ? 'auto' : '1px')};
-    background: #000;
-    border-radius: ${themeCssVariables.border.radius.sm};
-  }
-`;
 
 async function fetchSendbirdSession(
   bearer: string,
@@ -426,7 +117,7 @@ function memberDisplayName(m: ChatWorkspaceMemberOption): string {
   return name || m.email || m.streamUserId;
 }
 
-function selectionTitle(sel: HubSelection | null): string {
+function selectionTitle(sel: ChatHubSelection | null): string {
   if (!sel) {
     return '';
   }
@@ -448,31 +139,44 @@ function senderUserId(m: BaseMessage): string | undefined {
 
 function messageBody(m: BaseMessage): string {
   if (m.messageType === MessageType.USER) {
-    return m.message;
+    return (m as UserMessage).message;
   }
   if (m.messageType === MessageType.FILE) {
-    return t`[File]`;
+    return (m as FileMessage).name || t`File`;
   }
   if (m.messageType === MessageType.ADMIN) {
-    return m.message || t`[System]`;
+    return m.message || t`System`;
   }
-  return t`[Message]`;
+  return t`Message`;
+}
+
+function isThreadChild(m: BaseMessage): boolean {
+  return m.parentMessageId > 0;
+}
+
+function isImageFileMessage(m: FileMessage): boolean {
+  return (
+    m.type.startsWith('image/') ||
+    (m.thumbnails?.length ?? 0) > 0
+  );
 }
 
 export const SendbirdCommunicationHub = () => {
   const tokenPair = useAtomValue(tokenPairState.atom);
   const crmToken = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
+  const currentWorkspace = useAtomValue(currentWorkspaceState.atom);
 
   const { layout, isLoading: layoutLoading, error: layoutError, reload } =
     useChatWorkspaceLayout();
 
   const [connectError, setConnectError] = useState<string | null>(null);
+  const [sessionAttempt, setSessionAttempt] = useState(0);
   const [sb, setSb] = useState<SendbirdClient | null>(null);
   const [callsReady, setCallsReady] = useState(false);
   const sessionUserIdRef = useRef<string | null>(null);
   const fetchSessionRef = useRef<() => Promise<string>>(async () => '');
 
-  const [selection, setSelection] = useState<HubSelection | null>(null);
+  const [selection, setSelection] = useState<ChatHubSelection | null>(null);
   const [pendingDmThreadId, setPendingDmThreadId] = useState<string | null>(
     null,
   );
@@ -481,9 +185,36 @@ export const SendbirdCommunicationHub = () => {
   );
   const [channelUrl, setChannelUrl] = useState<string | null>(null);
   const [groupChannel, setGroupChannel] = useState<GroupChannel | null>(null);
+  const groupChannelRef = useRef<GroupChannel | null>(null);
+  groupChannelRef.current = groupChannel;
+
   const [messages, setMessages] = useState<BaseMessage[]>([]);
+  const [noteMessages, setNoteMessages] = useState<UserMessage[]>([]);
+  const [pinnedMessages, setPinnedMessages] = useState<
+    { messageId: number; preview: string }[]
+  >([]);
+  const [typingMembers, setTypingMembers] = useState<Member[]>([]);
   const [composer, setComposer] = useState('');
+  const [threadComposer, setThreadComposer] = useState('');
+  const [noteDraft, setNoteDraft] = useState('');
   const [search, setSearch] = useState('');
+  const [mainSearch, setMainSearch] = useState('');
+
+  const [threadRoot, setThreadRoot] = useState<BaseMessage | null>(null);
+  const [threadReplies, setThreadReplies] = useState<BaseMessage[]>([]);
+
+  useEffect(() => {
+    if (!threadRoot) {
+      return;
+    }
+    const onKeyDown = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setThreadRoot(null);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [threadRoot]);
 
   const [createChannelOpen, setCreateChannelOpen] = useState(false);
   const [dmModalOpen, setDmModalOpen] = useState(false);
@@ -499,9 +230,13 @@ export const SendbirdCommunicationHub = () => {
   const [outgoingCall, setOutgoingCall] = useState<SendBirdCall.DirectCall | null>(
     null,
   );
+  const [, refreshCallUi] = useReducer((x: number) => x + 1, 0);
 
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
+  const composerTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const threadTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const activeChannelUrlRef = useRef<string | null>(null);
   activeChannelUrlRef.current = channelUrl;
@@ -511,13 +246,16 @@ export const SendbirdCommunicationHub = () => {
   const viewerUserWorkspaceId = layout?.viewer.userWorkspaceId;
   const isWorkspaceAdmin = layout?.viewer.isWorkspaceAdmin === true;
 
-  const iconSm = themeCssVariables.icon.size.sm;
-
   const [workspaceMembers, setWorkspaceMembers] = useState<
     ChatWorkspaceMemberOption[]
   >([]);
-  const [callsPanelOpen, setCallsPanelOpen] = useState(false);
   const sendbirdBulkEnsuredKeyRef = useRef<string>('');
+
+  const workspaceTitle =
+    currentWorkspace?.displayName?.trim() || t`Workspace`;
+  const planLabel =
+    currentWorkspace?.currentBillingSubscription?.billingSubscriptionItems?.[0]
+      ?.billingProduct?.name ?? null;
 
   useEffect(() => {
     if (!crmToken) {
@@ -659,6 +397,7 @@ export const SendbirdCommunicationHub = () => {
       setSb(null);
       setCallsReady(false);
       sessionUserIdRef.current = null;
+      setSessionAttempt(0);
       return;
     }
 
@@ -706,9 +445,95 @@ export const SendbirdCommunicationHub = () => {
 
         const groupHandler = new GroupChannelHandler({
           onMessageReceived: (ch, message) => {
-            if (ch.url === activeChannelUrlRef.current) {
-              setMessages((prev) => [...prev, message]);
+            if (ch.url !== activeChannelUrlRef.current) {
+              return;
             }
+            if (isCollabNoteMessage(message)) {
+              setNoteMessages((prev) => [...prev, message as UserMessage]);
+              return;
+            }
+            if (isThreadChild(message)) {
+              return;
+            }
+            setMessages((prev) => {
+              if (prev.some((m) => m.messageId === message.messageId)) {
+                return prev;
+              }
+              return filterMainFeedMessages([...prev, message]);
+            });
+          },
+          onMessageUpdated: (ch, message) => {
+            if (ch.url !== activeChannelUrlRef.current) {
+              return;
+            }
+            if (isCollabNoteMessage(message)) {
+              setNoteMessages((prev) =>
+                prev.map((m) =>
+                  m.messageId === message.messageId ? (message as UserMessage) : m,
+                ),
+              );
+              return;
+            }
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.messageId === message.messageId ? message : m,
+              ),
+            );
+          },
+          onMessageDeleted: (ch, messageId) => {
+            if (ch.url !== activeChannelUrlRef.current) {
+              return;
+            }
+            setMessages((prev) => prev.filter((m) => m.messageId !== messageId));
+            setNoteMessages((prev) =>
+              prev.filter((m) => m.messageId !== messageId),
+            );
+          },
+          onReactionUpdated: (_ch, reactionEvent) => {
+            if (_ch.url !== activeChannelUrlRef.current) {
+              return;
+            }
+            setMessages((prev) => {
+              const next = [...prev];
+              const idx = next.findIndex(
+                (m) => m.messageId === reactionEvent.messageId,
+              );
+              if (idx >= 0) {
+                next[idx].applyReactionEvent(reactionEvent);
+              }
+              return next;
+            });
+            setThreadReplies((prev) => {
+              const next = [...prev];
+              const idx = next.findIndex(
+                (m) => m.messageId === reactionEvent.messageId,
+              );
+              if (idx >= 0) {
+                next[idx].applyReactionEvent(reactionEvent);
+              }
+              return next;
+            });
+          },
+          onThreadInfoUpdated: (ch, ev) => {
+            if (ch.url !== activeChannelUrlRef.current) {
+              return;
+            }
+            setMessages((prev) => {
+              const next = [...prev];
+              const idx = next.findIndex(
+                (m) => m.messageId === ev.targetMessageId,
+              );
+              if (idx >= 0) {
+                next[idx].applyThreadInfoUpdateEvent(ev);
+              }
+              return next;
+            });
+          },
+          onTypingStatusUpdated: (ch) => {
+            if (ch.url !== activeChannelUrlRef.current) {
+              return;
+            }
+            setTypingMembers(ch.getTypingUsers());
           },
         });
         instance.groupChannel.addGroupChannelHandler(HANDLER_KEY, groupHandler);
@@ -760,7 +585,7 @@ export const SendbirdCommunicationHub = () => {
       setSb(null);
       setCallsReady(false);
     };
-  }, [crmToken]);
+  }, [crmToken, sessionAttempt]);
 
   useEffect(() => {
     if (!selection) {
@@ -778,6 +603,11 @@ export const SendbirdCommunicationHub = () => {
     if (!sb || !channelUrl) {
       setGroupChannel(null);
       setMessages([]);
+      setNoteMessages([]);
+      setPinnedMessages([]);
+      setTypingMembers([]);
+      setThreadRoot(null);
+      setThreadReplies([]);
       return;
     }
 
@@ -791,15 +621,49 @@ export const SendbirdCommunicationHub = () => {
         }
         setGroupChannel(ch);
         await ch.markAsRead();
+
         const query = ch.createPreviousMessageListQuery({
-          limit: 50,
+          limit: 80,
           reverse: true,
           messageTypeFilter: MessageTypeFilter.ALL,
+          replyType: ReplyType.NONE,
+          includeReactions: true,
+          includeThreadInfo: true,
         });
         const loaded = await query.load();
-        if (!cancelled) {
-          setMessages([...loaded].reverse());
+        if (cancelled) {
+          return;
         }
+        setMessages(filterMainFeedMessages([...loaded].reverse()));
+
+        const noteQuery = ch.createPreviousMessageListQuery({
+          limit: 40,
+          reverse: true,
+          messageTypeFilter: MessageTypeFilter.USER,
+          customTypesFilter: [COLLAB_NOTE_CUSTOM_TYPE],
+        });
+        const notesLoaded = await noteQuery.load();
+        if (cancelled) {
+          return;
+        }
+        setNoteMessages(
+          [...notesLoaded].reverse().filter(isCollabNoteMessage) as UserMessage[],
+        );
+
+        const pinQ = ch.createPinnedMessageListQuery({ limit: 12 });
+        const pins = await pinQ.next();
+        if (cancelled) {
+          return;
+        }
+        setPinnedMessages(
+          pins
+            .map((p) => p.message)
+            .filter((m): m is BaseMessage => !!m)
+            .map((m) => ({
+              messageId: m.messageId,
+              preview: messageBody(m).slice(0, 120),
+            })),
+        );
       } catch (e) {
         if (!cancelled) {
           setConnectError(e instanceof Error ? e.message : String(e));
@@ -819,8 +683,9 @@ export const SendbirdCommunicationHub = () => {
       return;
     }
     const hasUrl =
-      (selection.kind === 'channel' && selection.channel.sendbirdChannelUrl) ||
-      (selection.kind === 'dm' && selection.dm.sendbirdChannelUrl);
+      (selection.kind === 'channel' &&
+        Boolean(selection.channel.sendbirdChannelUrl)) ||
+      (selection.kind === 'dm' && Boolean(selection.dm.sendbirdChannelUrl));
     if (hasUrl) {
       return;
     }
@@ -830,14 +695,66 @@ export const SendbirdCommunicationHub = () => {
     return () => window.clearInterval(tmr);
   }, [layout, reload, selection]);
 
-  const sendMessage = useCallback(() => {
-    const text = composer.trim();
-    if (!groupChannel || !text) {
+  useEffect(() => {
+    if (!threadRoot || groupChannel == null) {
+      setThreadReplies([]);
       return;
     }
-    const pending = groupChannel.sendUserMessage({ message: text });
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const res = await threadRoot.getThreadedMessagesByTimestamp(
+          threadRoot.createdAt,
+          {
+            prevResultSize: 60,
+            nextResultSize: 0,
+            reverse: true,
+            includeReactions: true,
+          },
+        );
+        if (cancelled) {
+          return;
+        }
+        setThreadReplies([...res.threadedMessages].reverse());
+      } catch {
+        if (!cancelled) {
+          setThreadReplies([]);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [threadRoot, groupChannel]);
+
+  const typingThrottleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fireTyping = useCallback(() => {
+    const ch = groupChannelRef.current;
+    if (!ch) {
+      return;
+    }
+    void ch.startTyping().catch(() => undefined);
+    if (typingThrottleRef.current) {
+      clearTimeout(typingThrottleRef.current);
+    }
+    typingThrottleRef.current = setTimeout(() => {
+      void ch.endTyping().catch(() => undefined);
+      typingThrottleRef.current = null;
+    }, 2800);
+  }, []);
+
+  const sendMainMessage = useCallback(() => {
+    const text = composer.trim();
+    const ch = groupChannelRef.current;
+    if (!ch || !text) {
+      return;
+    }
+    const pending = ch.sendUserMessage({ message: text });
     pending.onPending((msg) => {
-      setMessages((prev) => [...prev, msg]);
+      setMessages((prev) => filterMainFeedMessages([...prev, msg]));
     });
     pending.onFailed(() => {
       void reload();
@@ -848,19 +765,80 @@ export const SendbirdCommunicationHub = () => {
         if (i >= 0) {
           const next = [...prev];
           next[i] = msg;
-          return next;
+          return filterMainFeedMessages(next);
         }
-        return [...prev, msg];
+        return filterMainFeedMessages([...prev, msg]);
       });
     });
     setComposer('');
-  }, [composer, groupChannel, reload]);
+    void ch.endTyping().catch(() => undefined);
+  }, [composer, reload]);
+
+  const sendThreadMessage = useCallback(() => {
+    const text = threadComposer.trim();
+    const ch = groupChannelRef.current;
+    const root = threadRoot;
+    if (!ch || !text || !root) {
+      return;
+    }
+    const pending = ch.sendUserMessage({
+      message: text,
+      parentMessageId: root.messageId,
+    });
+    pending.onSucceeded((msg) => {
+      setThreadReplies((prev) => [...prev, msg]);
+    });
+    pending.onFailed(() => void reload());
+    setThreadComposer('');
+  }, [threadComposer, threadRoot, reload]);
+
+  const sendNote = useCallback(() => {
+    const text = noteDraft.trim();
+    const ch = groupChannelRef.current;
+    if (!ch || !text) {
+      return;
+    }
+    const pending = ch.sendUserMessage({
+      message: text,
+      customType: COLLAB_NOTE_CUSTOM_TYPE,
+    });
+    pending.onSucceeded((msg) => {
+      setNoteMessages((prev) => [...prev, msg as UserMessage]);
+    });
+    pending.onFailed(() => void reload());
+    setNoteDraft('');
+  }, [noteDraft, reload]);
 
   const onComposerKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      sendMainMessage();
     }
+  };
+
+  const onThreadKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendThreadMessage();
+    }
+  };
+
+  const insertAround = (
+    ref: React.RefObject<HTMLTextAreaElement | null>,
+    value: string,
+    open: string,
+    close: string,
+  ) => {
+    const ta = ref.current;
+    if (!ta) {
+      return;
+    }
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const sel = value.slice(start, end);
+    const next =
+      value.slice(0, start) + open + sel + close + value.slice(end);
+    return { next, caret: start + open.length + sel.length + close.length };
   };
 
   const filteredCategories = useMemo(() => {
@@ -894,10 +872,41 @@ export const SendbirdCommunicationHub = () => {
     );
   }, [layout, search]);
 
+  const mainMessagesFiltered = useMemo(() => {
+    const q = mainSearch.trim().toLowerCase();
+    if (!q) {
+      return messages;
+    }
+    return messages.filter((m) =>
+      messageBody(m).toLowerCase().includes(q),
+    );
+  }, [messages, mainSearch]);
+
+  const mediaThumbs = useMemo(() => {
+    const imgs: { url: string; id: number }[] = [];
+    for (let i = messages.length - 1; i >= 0 && imgs.length < 9; i--) {
+      const m = messages[i];
+      if (m.messageType === MessageType.FILE) {
+        const fm = m as FileMessage;
+        if (isImageFileMessage(fm)) {
+          const url = fm.thumbnails?.[0]?.plainUrl || fm.plainUrl;
+          if (url) {
+            imgs.push({ url, id: fm.messageId });
+          }
+        }
+      }
+    }
+    return imgs;
+  }, [messages]);
+
   const peerScopedIdForDm =
     selection?.kind === 'dm' && selection.dm.kind === 'direct'
       ? selection.dm.peerAgoraUserId
       : null;
+
+  const dmPeerMember = peerScopedIdForDm
+    ? memberByScopedId.get(peerScopedIdForDm)
+    : undefined;
 
   const dmRowMeta = useCallback(
     (dm: ChatWorkspaceLayoutDm) => {
@@ -918,7 +927,7 @@ export const SendbirdCommunicationHub = () => {
     [memberByScopedId],
   );
 
-  const handleVoiceDm = () => {
+  const startDmCall = (video: boolean) => {
     if (!callsReady || !peerScopedIdForDm) {
       return;
     }
@@ -930,10 +939,10 @@ export const SendbirdCommunicationHub = () => {
     try {
       const call = SendBirdCall.dial({
         userId: peerScopedIdForDm,
-        isVideoCall: false,
+        isVideoCall: video,
         callOption: {
           audioEnabled: true,
-          videoEnabled: false,
+          videoEnabled: video,
           localMediaView: localEl,
           remoteMediaView: remoteEl,
         },
@@ -952,7 +961,7 @@ export const SendbirdCommunicationHub = () => {
       await room.localParticipant.setLocalMediaView(localEl);
     }
     const firstRemote = room.remoteParticipants[0];
-    if (remoteEl && firstRemote) {
+    if (remoteEl && firstRemote !== undefined) {
       await firstRemote.setMediaView(remoteEl);
     }
   };
@@ -1033,262 +1042,822 @@ export const SendbirdCommunicationHub = () => {
   };
 
   const directCallActive = !!(outgoingCall && outgoingCall.isOngoing);
-  const showVideoPreview =
-    directCallActive || !!incomingCall || !!activeGroupRoom;
+  const activeCall = outgoingCall;
+
+  const toggleMute = () => {
+    if (!activeCall) {
+      return;
+    }
+    if (activeCall.isLocalAudioEnabled) {
+      activeCall.muteMicrophone();
+    } else {
+      activeCall.unmuteMicrophone();
+    }
+    refreshCallUi();
+  };
+
+  const toggleVideo = () => {
+    if (!activeCall?.isVideoCall) {
+      return;
+    }
+    if (activeCall.isLocalVideoEnabled) {
+      activeCall.stopVideo();
+    } else {
+      activeCall.startVideo();
+    }
+    refreshCallUi();
+  };
+
+  const toggleScreenShare = () => {
+    if (!activeCall) {
+      return;
+    }
+    void (async () => {
+      try {
+        if (activeCall.isLocalScreenShareEnabled) {
+          activeCall.stopScreenShare();
+        } else {
+          await activeCall.startScreenShare();
+        }
+      } catch {
+        setConnectError(t`Screen share is not available`);
+      }
+    })();
+  };
+
+  const leaveDirectCall = () => {
+    activeCall?.end();
+    setOutgoingCall(null);
+    setIncomingCall(null);
+  };
+
+  const handleFilePick = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const ch = groupChannelRef.current;
+    e.target.value = '';
+    if (!file || !ch) {
+      return;
+    }
+    const pending = ch.sendFileMessage({ file });
+    pending.onSucceeded((msg) => {
+      setMessages((prev) => filterMainFeedMessages([...prev, msg]));
+    });
+    pending.onFailed(() => void reload());
+  };
+
+  const addReaction = (m: BaseMessage, key: string) => {
+    const ch = groupChannelRef.current;
+    if (!ch) {
+      return;
+    }
+    void ch.addReaction(m, key).catch(() => undefined);
+  };
+
+  const pinMessage = (m: BaseMessage) => {
+    const ch = groupChannelRef.current;
+    if (!ch) {
+      return;
+    }
+    void ch
+      .pinMessage(m.messageId)
+      .then(() => {
+        setPinnedMessages((prev) => [
+          {
+            messageId: m.messageId,
+            preview: messageBody(m).slice(0, 120),
+          },
+          ...prev.filter((p) => p.messageId !== m.messageId),
+        ]);
+      })
+      .catch(() => undefined);
+  };
+
+  const leaveChannel = () => {
+    const ch = groupChannelRef.current;
+    if (!ch || selection?.kind !== 'channel') {
+      return;
+    }
+    void ch.leave().then(() => {
+      setSelection(null);
+      void reload();
+    });
+  };
+
+  const channelTopic =
+    groupChannel?.data?.trim() ||
+    (selection?.kind === 'channel' ? selection.channel.name : '');
+
+  const renderMessageBlock = (m: BaseMessage, opts: { inThread?: boolean }) => {
+    const sid = senderUserId(m);
+    const own = sid === sessionUserIdRef.current;
+    const member = sid ? memberByScopedId.get(sid) : undefined;
+    const senderLabel = own
+      ? t`You`
+      : member
+        ? memberDisplayName(member)
+        : (sid ?? t`Member`);
+
+    const replyCount =
+      m.threadInfo?.replyCount && m.threadInfo.replyCount > 0
+        ? m.threadInfo.replyCount
+        : 0;
+
+    return (
+      <Ed.MsgRow key={`${opts.inThread ? 't' : 'm'}-${m.messageId}`} $own={!!own}>
+        {!own && sid ? (
+          <Avatar
+            avatarUrl={member?.avatarUrl ?? null}
+            placeholder={senderLabel}
+            placeholderColorSeed={sid}
+            size="sm"
+          />
+        ) : null}
+        <Ed.MsgStack>
+          <Ed.MsgMeta $own={!!own}>
+            <Ed.MsgAuthor>{senderLabel}</Ed.MsgAuthor>
+            <Ed.MsgTime>
+              {format(m.createdAt, 'p')}
+            </Ed.MsgTime>
+          </Ed.MsgMeta>
+          {m.messageType === MessageType.FILE ? (
+            (() => {
+              const fm = m as FileMessage;
+              if (isImageFileMessage(fm)) {
+                const src = fm.thumbnails?.[0]?.plainUrl || fm.plainUrl;
+                return (
+                  <Ed.FileCard href={fm.url} target="_blank" rel="noreferrer">
+                    {src ? (
+                      <img
+                        alt=""
+                        src={src}
+                        style={{
+                          width: 72,
+                          height: 72,
+                          objectFit: 'cover',
+                          borderRadius: 8,
+                        }}
+                      />
+                    ) : null}
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>
+                        {fm.name}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: editorialChatTheme.onSurfaceVariant,
+                        }}
+                      >
+                        {(fm.size / 1024).toFixed(1)} KB
+                      </div>
+                    </div>
+                  </Ed.FileCard>
+                );
+              }
+              return (
+                <Ed.FileCard href={fm.url} target="_blank" rel="noreferrer">
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>
+                      {fm.name}
+                    </div>
+                    <div style={{ fontSize: 11 }}>{fm.type}</div>
+                  </div>
+                </Ed.FileCard>
+              );
+            })()
+          ) : (
+            <Ed.MsgText $own={!!own}>{messageBody(m)}</Ed.MsgText>
+          )}
+          {m.reactions?.length ? (
+            <Ed.ReactionRow>
+              {m.reactions.map((r) => (
+                <Ed.ReactionChip
+                  key={r.key}
+                  type="button"
+                  title={r.key}
+                  onClick={() => addReaction(m, r.key)}
+                >
+                  <span>{r.key}</span>
+                  <span>{r.userIds.length}</span>
+                </Ed.ReactionChip>
+              ))}
+            </Ed.ReactionRow>
+          ) : null}
+          <Ed.MsgActionRow>
+            {REACTION_EMOJI.map((emoji) => (
+              <Ed.SmallLinkBtn
+                key={emoji}
+                type="button"
+                onClick={() => addReaction(m, emoji)}
+              >
+                {emoji}
+              </Ed.SmallLinkBtn>
+            ))}
+            <Ed.SmallLinkBtn type="button" onClick={() => pinMessage(m)}>
+              {t`Pin`}
+            </Ed.SmallLinkBtn>
+            {!opts.inThread && replyCount > 0 ? (
+              <Ed.ThreadHint
+                type="button"
+                onClick={() => setThreadRoot(m)}
+              >
+                {replyCount}{' '}
+                {replyCount === 1 ? t`reply` : t`replies`}
+              </Ed.ThreadHint>
+            ) : null}
+            {!opts.inThread && replyCount === 0 ? (
+              <Ed.ThreadHint type="button" onClick={() => setThreadRoot(m)}>
+                {t`Reply in thread`}
+              </Ed.ThreadHint>
+            ) : null}
+          </Ed.MsgActionRow>
+        </Ed.MsgStack>
+      </Ed.MsgRow>
+    );
+  };
+
+  const renderFeed = (opts: { inCallRail?: boolean }) => {
+    let lastDay: number | null = null;
+    return (
+      <Ed.MessageScroll>
+        {mainMessagesFiltered.map((m) => {
+          const day = m.createdAt;
+          const showDate =
+            lastDay === null || !isSameDay(lastDay, day);
+          if (showDate) {
+            lastDay = day;
+          }
+          return (
+            <div key={m.messageId}>
+              {showDate ? (
+                <Ed.DatePill>
+                  <Ed.DatePillInner>
+                    {format(day, 'EEEE, MMM d')}
+                  </Ed.DatePillInner>
+                </Ed.DatePill>
+              ) : null}
+              {renderMessageBlock(m, { inThread: false })}
+            </div>
+          );
+        })}
+        {typingMembers.length > 0 ? (
+          <Ed.TypingLine>
+            <span>
+              {typingMembers.map((u) => u.nickname || u.userId).join(', ')}{' '}
+              {typingMembers.length === 1 ? t`is typing…` : t`are typing…`}
+            </span>
+          </Ed.TypingLine>
+        ) : null}
+        {!opts.inCallRail && channelUrl && groupChannel ? (
+          <Ed.ComposerWrap>
+            <input
+              ref={fileInputRef}
+              type="file"
+              hidden
+              onChange={handleFilePick}
+            />
+            <Ed.ComposerBox>
+              <Ed.ComposerToolbar>
+                <Ed.ToolbarBtn
+                  type="button"
+                  aria-label={t`Bold`}
+                  onClick={() => {
+                    const r = insertAround(
+                      composerTextareaRef,
+                      composer,
+                      '**',
+                      '**',
+                    );
+                    if (r) {
+                      setComposer(r.next);
+                      requestAnimationFrame(() => {
+                        const ta = composerTextareaRef.current;
+                        if (ta) {
+                          ta.setSelectionRange(r.caret, r.caret);
+                        }
+                      });
+                    }
+                  }}
+                >
+                  B
+                </Ed.ToolbarBtn>
+                <Ed.ToolbarBtn
+                  type="button"
+                  aria-label={t`Italic`}
+                  onClick={() => {
+                    const r = insertAround(
+                      composerTextareaRef,
+                      composer,
+                      '_',
+                      '_',
+                    );
+                    if (r) {
+                      setComposer(r.next);
+                      requestAnimationFrame(() => {
+                        const ta = composerTextareaRef.current;
+                        if (ta) {
+                          ta.setSelectionRange(r.caret, r.caret);
+                        }
+                      });
+                    }
+                  }}
+                >
+                  I
+                </Ed.ToolbarBtn>
+                <Ed.ToolbarBtn
+                  type="button"
+                  aria-label={t`Code`}
+                  onClick={() => {
+                    const r = insertAround(
+                      composerTextareaRef,
+                      composer,
+                      '`',
+                      '`',
+                    );
+                    if (r) {
+                      setComposer(r.next);
+                      requestAnimationFrame(() => {
+                        const ta = composerTextareaRef.current;
+                        if (ta) {
+                          ta.setSelectionRange(r.caret, r.caret);
+                        }
+                      });
+                    }
+                  }}
+                >
+                  {'<>'}
+                </Ed.ToolbarBtn>
+                <Ed.ToolbarBtn
+                  type="button"
+                  aria-label={t`Attach file`}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  +
+                </Ed.ToolbarBtn>
+              </Ed.ComposerToolbar>
+              <Ed.ComposerTextarea
+                ref={composerTextareaRef}
+                placeholder={
+                  selection
+                    ? t`Message ${selectionTitle(selection)}`
+                    : t`Write a message…`
+                }
+                value={composer}
+                onChange={(e) => {
+                  setComposer(e.target.value);
+                  fireTyping();
+                }}
+                onKeyDown={onComposerKeyDown}
+                onBlur={() => {
+                  void groupChannelRef.current?.endTyping().catch(() => undefined);
+                }}
+                disabled={groupChannel == null}
+              />
+              <Ed.ComposerBottom>
+                <Ed.ComposerIconGroup />
+                <Ed.SendFab
+                  type="button"
+                  disabled={groupChannel == null || !composer.trim()}
+                  aria-label={t`Send`}
+                  onClick={sendMainMessage}
+                >
+                  <IconSend size={18} />
+                </Ed.SendFab>
+              </Ed.ComposerBottom>
+            </Ed.ComposerBox>
+          </Ed.ComposerWrap>
+        ) : null}
+      </Ed.MessageScroll>
+    );
+  };
 
   if (layoutLoading && !layout) {
-    return <StyledMuted>{t`Loading workspace…`}</StyledMuted>;
+    return (
+      <Ed.Shell>
+        <Ed.CenterBlock>
+          <Ed.CenterTitle>{t`Loading workspace…`}</Ed.CenterTitle>
+        </Ed.CenterBlock>
+      </Ed.Shell>
+    );
   }
 
   if (layoutError) {
-    return <StyledError>{layoutError}</StyledError>;
+    return (
+      <Ed.Shell>
+        <Ed.CenterError>
+          <Ed.CenterTitle>{t`Could not load chat layout`}</Ed.CenterTitle>
+          <span>{layoutError}</span>
+        </Ed.CenterError>
+      </Ed.Shell>
+    );
   }
 
+  const headerSubtitle =
+    channelUrl && selection
+      ? selection.kind === 'channel'
+        ? selection.channel.visibility === 'public'
+          ? t`Everyone in this workspace`
+          : t`Invited members`
+        : t`Direct message`
+      : selection
+        ? t`Preparing…`
+        : t`Select a conversation`;
+
+  const groupCallRemoteCount =
+    activeGroupRoom?.remoteParticipants?.length ?? 0;
+
   return (
-    <StyledRoot>
-      <StyledSidebar>
-        <StyledSidebarHeader>
-          <SearchInput
-            placeholder={t`Search channels…`}
-            value={search}
-            onChange={setSearch}
-          />
-          <StyledSidebarActions>
-            {isWorkspaceAdmin ? (
-              <Button
-                accent="blue"
-                variant="primary"
-                title={t`New channel`}
-                onClick={() => setCreateChannelOpen(true)}
-                Icon={IconPlus}
-              />
-            ) : null}
-            <Button
-              variant="secondary"
-              title={t`New DM`}
-              onClick={() => setDmModalOpen(true)}
-              Icon={IconUsers}
-            />
-          </StyledSidebarActions>
-        </StyledSidebarHeader>
-        <StyledSidebarScroll>
-          {filteredCategories.map((cat) => (
-            <div key={cat.id}>
-              <StyledCategoryLabel>{cat.name}</StyledCategoryLabel>
-              {cat.channels.map((ch) => (
-                <StyledChannelButton
-                  key={ch.id}
-                  type="button"
-                  $active={
-                    selection?.kind === 'channel' &&
-                    selection.channel.id === ch.id
-                  }
-                  onClick={() => setSelection({ kind: 'channel', channel: ch })}
-                >
-                  {ch.visibility === 'public' ? (
-                    <IconWorld size={iconSm} />
-                  ) : (
-                    <IconUsers size={iconSm} />
-                  )}
-                  <StyledChannelName>{ch.name}</StyledChannelName>
-                </StyledChannelButton>
-              ))}
-            </div>
-          ))}
-          <StyledCategoryLabel>{t`Direct messages`}</StyledCategoryLabel>
-          {filteredDms.map((dm) => {
-            const row = dmRowMeta(dm);
-            return (
-              <StyledChannelButton
-                key={dm.id}
-                type="button"
-                $active={selection?.kind === 'dm' && selection.dm.id === dm.id}
-                onClick={() => setSelection({ kind: 'dm', dm })}
-              >
-                <Avatar
-                  avatarUrl={row.avatarUrl}
-                  placeholder={row.label}
-                  placeholderColorSeed={dm.id}
-                  size="sm"
+    <Ed.Shell>
+      <Ed.BodyRow>
+        <EditorialWorkspaceRail
+          workspaceTitle={workspaceTitle}
+          planLabel={planLabel}
+          isWorkspaceAdmin={isWorkspaceAdmin}
+          onOpenCreateChannel={() => setCreateChannelOpen(true)}
+          onOpenNewDm={() => setDmModalOpen(true)}
+          search={search}
+          onSearchChange={setSearch}
+          filteredCategories={filteredCategories}
+          filteredDms={filteredDms}
+          selection={selection}
+          onSelectChannel={(channel) =>
+            setSelection({ kind: 'channel', channel })
+          }
+          onSelectDm={(dm) => setSelection({ kind: 'dm', dm })}
+          dmRowMeta={dmRowMeta}
+          viewerAvatarUrl={viewerMember?.avatarUrl ?? null}
+          viewerFooterTitle={
+            viewerMember ? memberDisplayName(viewerMember) : t`Member`
+          }
+          viewerAvatarPlaceholder={
+            viewerMember
+              ? memberDisplayName(viewerMember)
+              : layout?.viewer.userWorkspaceId ?? '?'
+          }
+          viewerAvatarPlaceholderSeed={viewerUserWorkspaceId ?? 'me'}
+        />
+
+        {activeGroupRoom ? (
+          <>
+            <Ed.MainColumn style={{ position: 'relative' }}>
+              <Ed.LiveBadge>
+                <Ed.Dot $tone="live" />
+                {t`Live call`} · {workspaceTitle}
+              </Ed.LiveBadge>
+              <Ed.CallStage>
+                <Ed.CallStageVideo
+                  ref={remoteVideoRef}
+                  autoPlay
+                  playsInline
                 />
-                <StyledChannelName>{row.label}</StyledChannelName>
-              </StyledChannelButton>
-            );
-          })}
-        </StyledSidebarScroll>
-        <StyledSidebarFooter>
-          <Avatar
-            avatarUrl={viewerMember?.avatarUrl ?? null}
-            placeholder={
-              viewerMember
-                ? memberDisplayName(viewerMember)
-                : layout?.viewer.userWorkspaceId ?? '?'
-            }
-            placeholderColorSeed={viewerUserWorkspaceId ?? 'me'}
-            size="sm"
-          />
-          <StyledSidebarFooterText>
-            <StyledSidebarFooterName>
-              {viewerMember
-                ? memberDisplayName(viewerMember)
-                : t`Workspace member`}
-            </StyledSidebarFooterName>
-            <StyledSidebarFooterHint>
-              {isWorkspaceAdmin
-                ? t`Workspace admin · can create channels`
-                : t`Workspace chat`}
-            </StyledSidebarFooterHint>
-          </StyledSidebarFooterText>
-        </StyledSidebarFooter>
-      </StyledSidebar>
-
-      <StyledMain>
-        <StyledMainHeader>
-          <StyledTitleBlock>
-            <StyledTitle>
-              {selection ? selectionTitle(selection) : t`Chat`}
-            </StyledTitle>
-            {channelUrl ? (
-              <StyledSub>
-                {selection?.kind === 'channel'
-                  ? selection.channel.visibility === 'public'
-                    ? t`Channel · everyone in this workspace`
-                    : t`Channel · invited workspace members`
-                  : t`Direct message · workspace members only`}
-              </StyledSub>
-            ) : selection ? (
-              <StyledSub>
-                {t`Preparing chat link…`}
-              </StyledSub>
-            ) : (
-              <StyledSub>
-                {t`Channels and DMs stay inside this workspace.`}
-              </StyledSub>
-            )}
-          </StyledTitleBlock>
-          <StyledCallActions>
-            {selection?.kind === 'dm' &&
-            selection.dm.kind === 'direct' &&
-            peerScopedIdForDm ? (
-              <Button
-                accent="blue"
-                disabled={!callsReady}
-                title={t`Voice call`}
-                variant="secondary"
-                onClick={handleVoiceDm}
-                Icon={IconPhone}
-              />
-            ) : null}
-          </StyledCallActions>
-        </StyledMainHeader>
-
-        {connectError ? <StyledError>{connectError}</StyledError> : null}
-
-        {!sb ? (
-          <StyledMuted>{t`Connecting to workspace chat…`}</StyledMuted>
-        ) : !channelUrl ? (
-          <StyledMuted>
-            {selection
-              ? t`Almost ready — syncing this conversation with chat.`
-              : t`Select a channel or direct message on the left.`}
-          </StyledMuted>
+                <Ed.PipVideo
+                  ref={localVideoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                />
+              </Ed.CallStage>
+              <Ed.GroupCallGrid>
+                {Array.from({
+                  length: Math.max(1, groupCallRemoteCount + 1),
+                }).map((_, i) => (
+                  <Ed.ParticipantTile key={i} $highlight={i === 0}>
+                    <div
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 12,
+                        color: editorialChatTheme.onSurfaceVariant,
+                      }}
+                    >
+                      {i === 0 ? t`You / remote` : `${t`Participant`} ${i}`}
+                    </div>
+                  </Ed.ParticipantTile>
+                ))}
+              </Ed.GroupCallGrid>
+              <Ed.GlassControlBar>
+                <Ed.RoundCtrl
+                  type="button"
+                  aria-label={t`Mute`}
+                  onClick={() => {
+                    const room = activeGroupRoom;
+                    const local = room.localParticipant;
+                    if (local.isAudioEnabled) {
+                      local.muteMicrophone();
+                    } else {
+                      local.unmuteMicrophone();
+                    }
+                  }}
+                >
+                  <IconMicrophone size={20} />
+                </Ed.RoundCtrl>
+                <Ed.LeaveCallBtn type="button" onClick={handleLeaveGroupRoom}>
+                  <IconPhoneOff size={18} /> {t`Leave`}
+                </Ed.LeaveCallBtn>
+              </Ed.GlassControlBar>
+            </Ed.MainColumn>
+            <Ed.NotesPanel style={{ width: 320 }}>
+              <Ed.NotesHeader>
+                <Ed.NotesTitle>{t`Group chat`}</Ed.NotesTitle>
+              </Ed.NotesHeader>
+              {renderFeed({ inCallRail: true })}
+              <Ed.ComposerWrap
+                style={{
+                  borderTop: `1px solid ${editorialChatTheme.outlineVariantGhost}`,
+                }}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  hidden
+                  onChange={handleFilePick}
+                />
+                <Ed.ComposerBox>
+                  <Ed.ComposerTextarea
+                    ref={composerTextareaRef}
+                    placeholder={t`Send a message…`}
+                    value={composer}
+                    onChange={(e) => {
+                      setComposer(e.target.value);
+                      fireTyping();
+                    }}
+                    onKeyDown={onComposerKeyDown}
+                    disabled={groupChannel == null}
+                  />
+                  <Ed.ComposerBottom>
+                    <Ed.SendFab
+                      type="button"
+                      disabled={groupChannel == null || !composer.trim()}
+                      onClick={sendMainMessage}
+                    >
+                      <IconSend size={18} />
+                    </Ed.SendFab>
+                  </Ed.ComposerBottom>
+                </Ed.ComposerBox>
+              </Ed.ComposerWrap>
+            </Ed.NotesPanel>
+          </>
+        ) : directCallActive && selection?.kind === 'dm' ? (
+          <>
+            <Ed.MainColumn style={{ position: 'relative' }}>
+              <Ed.CallStage>
+                <Ed.CallStageVideo
+                  ref={remoteVideoRef}
+                  autoPlay
+                  playsInline
+                />
+                <Ed.PipVideo
+                  ref={localVideoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                />
+              </Ed.CallStage>
+              <Ed.GlassControlBar>
+                <Ed.RoundCtrl
+                  type="button"
+                  aria-label={t`Mute`}
+                  onClick={() => toggleMute()}
+                >
+                  {activeCall?.isLocalAudioEnabled ? (
+                    <IconMicrophone size={20} />
+                  ) : (
+                    <IconMicrophoneOff size={20} />
+                  )}
+                </Ed.RoundCtrl>
+                {activeCall?.isVideoCall ? (
+                  <Ed.RoundCtrl
+                    type="button"
+                    aria-label={t`Camera`}
+                    onClick={() => toggleVideo()}
+                  >
+                    {activeCall.isLocalVideoEnabled ? (
+                      <IconVideo size={20} />
+                    ) : (
+                      <IconVideoOff size={20} />
+                    )}
+                  </Ed.RoundCtrl>
+                ) : null}
+                {activeCall?.isVideoCall ? (
+                  <Ed.RoundCtrl
+                    type="button"
+                    aria-label={t`Screen share`}
+                    onClick={() => toggleScreenShare()}
+                  >
+                    <IconScreenShare size={20} />
+                  </Ed.RoundCtrl>
+                ) : null}
+                <Ed.LeaveCallBtn type="button" onClick={leaveDirectCall}>
+                  <IconPhoneOff size={18} /> {t`Leave call`}
+                </Ed.LeaveCallBtn>
+              </Ed.GlassControlBar>
+            </Ed.MainColumn>
+            <Ed.NotesPanel>
+              <Ed.NotesHeader>
+                <Ed.NotesTitle>{t`Collaborative notes`}</Ed.NotesTitle>
+              </Ed.NotesHeader>
+              <Ed.NotesScroll>
+                {noteMessages.map((n) => (
+                  <Ed.NoteCard key={n.messageId}>{n.message}</Ed.NoteCard>
+                ))}
+              </Ed.NotesScroll>
+              <Ed.NotesInputRow>
+                <Ed.NotesField
+                  placeholder={t`Add a quick note…`}
+                  value={noteDraft}
+                  onChange={(e) => setNoteDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      sendNote();
+                    }
+                  }}
+                />
+                <Button
+                  title={t`Save note`}
+                  variant="secondary"
+                  onClick={sendNote}
+                  disabled={!noteDraft.trim() || groupChannel == null}
+                />
+              </Ed.NotesInputRow>
+            </Ed.NotesPanel>
+          </>
         ) : (
           <>
-            <StyledMessages>
-              {messages.map((m) => {
-                const sid = senderUserId(m);
-                const own = sid === sessionUserIdRef.current;
-                const member = sid ? memberByScopedId.get(sid) : undefined;
-                const senderLabel =
-                  member && !own ? memberDisplayName(member) : null;
+            <Ed.MainColumn style={{ position: 'relative' }}>
+              <Ed.TopBar>
+                <Ed.TopBarLeft>
+                  {selection?.kind === 'channel' ? (
+                    <span
+                      style={{
+                        color: editorialChatTheme.onSurfaceVariant,
+                        fontSize: 18,
+                      }}
+                    >
+                      #
+                    </span>
+                  ) : null}
+                  <div style={{ minWidth: 0 }}>
+                    <Ed.TopBarTitle>
+                      {selection ? selectionTitle(selection) : t`Chat`}
+                    </Ed.TopBarTitle>
+                    <Ed.TopBarMeta>{headerSubtitle}</Ed.TopBarMeta>
+                  </div>
+                </Ed.TopBarLeft>
+                <Ed.TopBarActions>
+                  <Ed.SearchField
+                    placeholder={t`Search in conversation…`}
+                    value={mainSearch}
+                    onChange={(e) => setMainSearch(e.target.value)}
+                  />
+                  {selection?.kind === 'channel' ? (
+                    <>
+                      <Ed.IconButtonPrimary
+                        type="button"
+                        disabled={!callsReady}
+                        onClick={() => void handleCreateGroupRoom()}
+                      >
+                        <IconVideo size={16} /> {t`Join call`}
+                      </Ed.IconButtonPrimary>
+                      <Ed.IconButtonGhost
+                        type="button"
+                        disabled={!callsReady}
+                        onClick={() => void handleJoinGroupRoom()}
+                        title={t`Join room by ID`}
+                      >
+                        {t`Room ID`}
+                      </Ed.IconButtonGhost>
+                      <Ed.SearchField
+                        style={{ maxWidth: 120 }}
+                        placeholder={t`ID`}
+                        value={groupRoomIdInput}
+                        onChange={(e) => setGroupRoomIdInput(e.target.value)}
+                      />
+                    </>
+                  ) : null}
+                  {selection?.kind === 'dm' &&
+                  selection.dm.kind === 'direct' &&
+                  peerScopedIdForDm ? (
+                    <>
+                      <Ed.IconButtonGhost
+                        type="button"
+                        disabled={!callsReady}
+                        onClick={() => startDmCall(false)}
+                      >
+                        <IconPhone size={16} /> {t`Call`}
+                      </Ed.IconButtonGhost>
+                      <Ed.IconButtonPrimary
+                        type="button"
+                        disabled={!callsReady}
+                        onClick={() => startDmCall(true)}
+                      >
+                        <IconVideo size={16} /> {t`Video`}
+                      </Ed.IconButtonPrimary>
+                    </>
+                  ) : null}
+                </Ed.TopBarActions>
+              </Ed.TopBar>
 
-                return (
-                  <StyledMessageRow key={m.messageId} $own={!!own}>
-                    {senderLabel ? (
-                      <StyledMessageSender>{senderLabel}</StyledMessageSender>
-                    ) : null}
-                    <div>{messageBody(m)}</div>
-                    <StyledMessageMeta>
-                      {formatDistanceToNow(m.createdAt, { addSuffix: true })}
-                    </StyledMessageMeta>
-                  </StyledMessageRow>
-                );
-              })}
-            </StyledMessages>
-            <StyledComposer>
-              <StyledTextarea
-                placeholder={t`Write a message…`}
-                value={composer}
-                onChange={(e) => setComposer(e.target.value)}
-                onKeyDown={onComposerKeyDown}
-                disabled={!groupChannel}
-              />
-              <Button
-                accent="blue"
-                disabled={!groupChannel || !composer.trim()}
-                title={t`Send`}
-                variant="primary"
-                onClick={sendMessage}
-                Icon={IconSend}
-              />
-            </StyledComposer>
+              {connectError ? (
+                <Ed.CenterError>
+                  <Ed.CenterTitle>{t`Could not connect to chat`}</Ed.CenterTitle>
+                  <span>{connectError}</span>
+                  <Button
+                    accent="blue"
+                    title={t`Try again`}
+                    variant="primary"
+                    onClick={() => {
+                      setConnectError(null);
+                      setSessionAttempt((n) => n + 1);
+                    }}
+                  />
+                </Ed.CenterError>
+              ) : !sb ? (
+                <Ed.CenterBlock>
+                  <Ed.CenterTitle>{t`Connecting…`}</Ed.CenterTitle>
+                                   <span style={{ color: editorialChatTheme.onSurfaceVariant }}>
+                    {t`Signing you in to workspace chat`}
+                  </span>
+                </Ed.CenterBlock>
+              ) : !channelUrl ? (
+                <Ed.CenterBlock>
+                  <Ed.CenterTitle>
+                    {selection ? t`Almost there` : t`Select a conversation`}
+                  </Ed.CenterTitle>
+                  <span style={{ color: editorialChatTheme.onSurfaceVariant }}>
+                    {selection
+                      ? t`Linking this thread to chat.`
+                      : t`Choose a channel or DM in the list.`}
+                  </span>
+                </Ed.CenterBlock>
+              ) : (
+                renderFeed({ inCallRail: false })
+              )}
+
+              {threadRoot ? (
+                <Ed.ThreadDrawer role="dialog" aria-modal="true">
+                  <Ed.ThreadDrawerHeader>
+                    <Ed.DetailsTitle>{t`Thread`}</Ed.DetailsTitle>
+                    <button
+                      type="button"
+                      aria-label={t`Close thread`}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: editorialChatTheme.onSurfaceVariant,
+                        cursor: 'pointer',
+                      }}
+                      onClick={() => setThreadRoot(null)}
+                    >
+                      <IconX size={18} />
+                    </button>
+                  </Ed.ThreadDrawerHeader>
+                  <Ed.ThreadDrawerScroll>
+                    {renderMessageBlock(threadRoot, { inThread: true })}
+                    {threadReplies.map((tm) =>
+                      renderMessageBlock(tm, { inThread: true }),
+                    )}
+                  </Ed.ThreadDrawerScroll>
+                  <Ed.ComposerWrap>
+                    <Ed.ComposerBox>
+                      <Ed.ComposerTextarea
+                        ref={threadTextareaRef}
+                        placeholder={t`Reply in thread…`}
+                        value={threadComposer}
+                        onChange={(e) => setThreadComposer(e.target.value)}
+                        onKeyDown={onThreadKeyDown}
+                      />
+                      <Ed.ComposerBottom>
+                        <Ed.SendFab
+                          type="button"
+                          disabled={!threadComposer.trim()}
+                          onClick={sendThreadMessage}
+                        >
+                          <IconSend size={18} />
+                        </Ed.SendFab>
+                      </Ed.ComposerBottom>
+                    </Ed.ComposerBox>
+                  </Ed.ComposerWrap>
+                </Ed.ThreadDrawer>
+              ) : null}
+            </Ed.MainColumn>
+
+            <EditorialDetailsPanel
+              selection={selection}
+              groupChannel={groupChannel}
+              channelTopic={channelTopic}
+              pinnedMessages={pinnedMessages}
+              mediaThumbs={mediaThumbs}
+              onLeaveChannel={leaveChannel}
+              dmPeerMember={dmPeerMember}
+              memberDisplayName={memberDisplayName}
+            />
           </>
         )}
-
-        {selection?.kind === 'channel' ? (
-          <StyledCollapsibleCalls>
-            <StyledCallsToggle
-              type="button"
-              onClick={() => setCallsPanelOpen((o) => !o)}
-            >
-              {callsPanelOpen ? (
-                <IconChevronUp size={iconSm} />
-              ) : (
-                <IconChevronDown size={iconSm} />
-              )}
-              {t`Voice & video (group)`}
-            </StyledCallsToggle>
-            {callsPanelOpen ? (
-              <StyledCallsBody>
-                <Button
-                  accent="blue"
-                  disabled={!callsReady}
-                  title={t`Start a group room`}
-                  variant="secondary"
-                  onClick={() => void handleCreateGroupRoom()}
-                  Icon={IconUsers}
-                />
-                <StyledRoomField
-                  value={groupRoomIdInput}
-                  onChange={(e) => setGroupRoomIdInput(e.target.value)}
-                  placeholder={t`Room ID to join`}
-                  aria-label={t`Room ID to join`}
-                />
-                <Button
-                  accent="blue"
-                  disabled={!callsReady}
-                  title={t`Join room`}
-                  variant="secondary"
-                  onClick={() => void handleJoinGroupRoom()}
-                />
-                {activeGroupRoom ? (
-                  <Button
-                    title={t`Leave room`}
-                    variant="secondary"
-                    onClick={handleLeaveGroupRoom}
-                  />
-                ) : null}
-              </StyledCallsBody>
-            ) : null}
-          </StyledCollapsibleCalls>
-        ) : null}
-
-      </StyledMain>
-
-      <StyledVideoDock $expanded={showVideoPreview} aria-hidden={!showVideoPreview}>
-        <video ref={localVideoRef} autoPlay playsInline muted />
-        <video ref={remoteVideoRef} autoPlay playsInline />
-      </StyledVideoDock>
+      </Ed.BodyRow>
 
       <CreateChannelModal
         isOpen={createChannelOpen}
@@ -1315,22 +1884,30 @@ export const SendbirdCommunicationHub = () => {
       />
 
       {incomingCall ? (
-        <StyledIncomingBackdrop role="dialog" aria-modal="true">
-          <StyledIncomingPanel>
-            <StyledIncomingTitle>{t`Incoming call`}</StyledIncomingTitle>
-            <StyledIncomingBody>
+        <Ed.ModalBackdrop role="dialog" aria-modal="true">
+          <Ed.ModalPanel>
+            <Ed.CenterTitle style={{ display: 'block', marginBottom: 8 }}>
+              {t`Incoming call`}
+            </Ed.CenterTitle>
+            <p
+              style={{
+                color: editorialChatTheme.onSurfaceVariant,
+                fontSize: 14,
+                marginBottom: 16,
+              }}
+            >
               {(() => {
                 const fromMember = memberByScopedId.get(
                   incomingCall.caller.userId,
                 );
-                const label =
+                return (
                   (fromMember ? memberDisplayName(fromMember) : '') ||
                   incomingCall.caller.nickname?.trim() ||
-                  incomingCall.caller.userId;
-                return label;
+                  incomingCall.caller.userId
+                );
               })()}
-            </StyledIncomingBody>
-            <StyledIncomingActions>
+            </p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <Button
                 title={t`Decline`}
                 variant="secondary"
@@ -1342,10 +1919,10 @@ export const SendbirdCommunicationHub = () => {
                 variant="primary"
                 onClick={handleAcceptIncoming}
               />
-            </StyledIncomingActions>
-          </StyledIncomingPanel>
-        </StyledIncomingBackdrop>
+            </div>
+          </Ed.ModalPanel>
+        </Ed.ModalBackdrop>
       ) : null}
-    </StyledRoot>
+    </Ed.Shell>
   );
 };

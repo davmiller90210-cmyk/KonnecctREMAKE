@@ -320,6 +320,11 @@ msgstr "{jobCount, plural, one {Dit sal dit permanent uit die waglyn verwyder. H
 msgid "{jobCount, plural, one {This will retry the selected job. It will be re-executed from the beginning.} other {This will retry the selected jobs. They will be re-executed from the beginning.}}"
 msgstr "{jobCount, plural, one {Dit sal die geselekteerde werk herprobeer. Dit sal van vooraf weer uitgevoer word.} other {Dit sal die geselekteerde werke herprobeer. Hulle sal van vooraf weer uitgevoer word.}}"
 
+#. js-lingui-id: guhZ4u
+#: src/modules/chat/components/ChatInfoPanel.tsx
+msgid "{memberCount} members (preview)"
+msgstr ""
+
 #. js-lingui-id: Koe99p
 #: src/modules/settings/data-model/object-details/components/SettingsObjectRelationItemTableRow.tsx
 #: src/modules/settings/data-model/object-details/components/SettingsObjectFieldItemTableRow.tsx
@@ -664,6 +669,11 @@ msgstr "Oor hierdie gebruiker"
 msgid "About this workspace"
 msgstr "Oor hierdie werkruimte"
 
+#. js-lingui-id: g3UF2V
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Accept"
+msgstr ""
+
 #. js-lingui-id: pNW+Rt
 #: src/pages/settings/admin-panel/SettingsAdminNewAiProvider.tsx
 msgid "Access Key ID"
@@ -708,6 +718,11 @@ msgstr "Rekening suksesvol bygevoeg. Sinchronisering begin."
 #: src/modules/settings/profile/components/DeleteAccount.tsx
 msgid "Account Deletion"
 msgstr "Rekeningverwydering"
+
+#. js-lingui-id: z5nX9v
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Account Troubleshooter"
+msgstr ""
 
 #. js-lingui-id: bPwFdf
 #: src/pages/settings/accounts/SettingsNewAccount.tsx
@@ -818,6 +833,7 @@ msgstr "Aktiewe sinkronisering"
 #. js-lingui-id: m16xKo
 #: src/pages/settings/applications/tabs/SettingsApplicationRegistrationOAuthTab.tsx
 #: src/pages/settings/ai/components/SettingsAgentEvalsTab.tsx
+#: src/pages/ai/SuperagentsPage.tsx
 msgid "Add"
 msgstr "Voeg by"
 
@@ -848,6 +864,11 @@ msgstr "Voeg 'n nuwe maatskappy by met wie ons in kontak is (bv. naam, webwerf, 
 #: src/modules/command-menu-item/record/constants/WorkflowCommandMenuItemsConfig.tsx
 msgid "Add a node"
 msgstr "Voeg 'n nodus by"
+
+#. js-lingui-id: 2JNhdf
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Add a quick note…"
+msgstr ""
 
 #. js-lingui-id: nGv1DN
 #: src/modules/side-panel/utils/getSidePanelSubPageTitle.ts
@@ -1199,6 +1220,7 @@ msgstr "Adres 2"
 
 #. js-lingui-id: U3pytU
 #: src/modules/settings/members/components/MemberInfosTab.tsx
+#: src/modules/chat/sendbird-suite/EditorialWorkspaceRail.tsx
 msgid "Admin"
 msgstr ""
 
@@ -1283,6 +1305,11 @@ msgstr "Agent"
 msgid "Agent execution"
 msgstr "Agentuitvoering"
 
+#. js-lingui-id: qCvN5k
+#: src/pages/settings/ai/SettingsAI.tsx
+msgid "Agent hub"
+msgstr ""
+
 #. js-lingui-id: WrQ+BN
 #: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
 msgid "Agent interactions will appear here once the agent is used in conversations"
@@ -1303,8 +1330,15 @@ msgstr ""
 msgid "Agent tokens"
 msgstr "Agent-tekens"
 
+#. js-lingui-id: eENNyq
+#: src/modules/ai/components/internal/AgentRoutingIndicator.tsx
+msgid "Agent unavailable or malformed token. Default routing will be used."
+msgstr ""
+
 #. js-lingui-id: 8Uv5e6
 #: src/pages/settings/applications/tabs/SettingsApplicationDetailContentTab.tsx
+#: src/pages/settings/ai/SettingsAI.tsx
+#: src/pages/ai/SuperagentsPage.tsx
 #: src/modules/settings/roles/role-assignment/components/SettingsRoleAssignmentTable.tsx
 msgid "Agents"
 msgstr "Agente"
@@ -1324,19 +1358,16 @@ msgstr ""
 #: src/pages/settings/roles/SettingsRoleAddObjectLevel.tsx
 #: src/pages/settings/logic-functions/SettingsLogicFunctionDetail.tsx
 #: src/pages/settings/ai/SettingsSkillForm.tsx
+#: src/pages/settings/ai/SettingsAIPrompts.tsx
 #: src/pages/settings/ai/SettingsAgentTurnDetail.tsx
 #: src/pages/settings/ai/SettingsAgentTurnDetail.tsx
 #: src/pages/settings/ai/SettingsAgentTurnDetail.tsx
 #: src/pages/settings/ai/SettingsAgentForm.tsx
-#: src/pages/settings/ai/SettingsAIPrompts.tsx
-#: src/pages/settings/ai/SettingsAI.tsx
-#: src/pages/settings/ai/SettingsAI.tsx
 #: src/pages/settings/admin-panel/SettingsAdminAiProviderDetail.tsx
 #: src/modules/workflow/workflow-steps/workflow-actions/utils/getActionHeaderTypeOrThrow.ts
 #: src/modules/side-panel/pages/workflow/action/components/SidePanelWorkflowSelectAction.tsx
 #: src/modules/settings/roles/role-permissions/permission-flags/hooks/useSettingsRolePermissionFlagConfig.ts
 #: src/modules/settings/roles/role-permissions/object-level-permissions/object-form/components/SettingsRolePermissionsObjectLevelObjectForm.tsx
-#: src/modules/settings/hooks/useSettingsNavigationItems.tsx
 #: src/modules/settings/admin-panel/components/SettingsAdminContent.tsx
 msgid "AI"
 msgstr "KI"
@@ -1451,6 +1482,16 @@ msgstr "Alle lyne"
 msgid "All Members"
 msgstr "Alle lede"
 
+#. js-lingui-id: dtwyLS
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "All messages"
+msgstr ""
+
+#. js-lingui-id: rimT/D
+#: src/modules/navigation/components/MainNavigationDrawerRecentChats.tsx
+msgid "All Messages"
+msgstr ""
+
 #. js-lingui-id: ypSiuQ
 #: src/modules/settings/developers/components/WebhookEntitySelect.tsx
 msgid "All Metadata"
@@ -1554,11 +1595,6 @@ msgstr "Laat aanmeldings toe deur Microsoft se 'enkel-aanteken' funksionaliteit.
 msgid "Allow Microsoft-based login for users with SSO bypass permissions."
 msgstr "Laat Microsoft-gebaseerde aanmelding toe vir gebruikers met SSO omseil toestemmings."
 
-#. js-lingui-id: U6bnfj
-#: src/modules/settings/workspace/components/ToggleImpersonate.tsx
-msgid "Allow Support Team Access"
-msgstr "Laat Ondersteuningspan Toegang"
-
 #. js-lingui-id: wMg43c
 #: src/modules/settings/security/components/SettingsSecurityAuthProvidersOptionsList.tsx
 msgid "Allow the invitation of new users by sharing an invite link."
@@ -1579,6 +1615,11 @@ msgstr "Laat toe dat gebruikers aanmeld met 'n e-pos en wagwoord."
 msgid "Allowed redirect URIs for OAuth flows"
 msgstr "Toegelate herleidings-URI's vir OAuth-vloeie"
 
+#. js-lingui-id: bruUug
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Almost there"
+msgstr ""
+
 #. js-lingui-id: Yn0ZH1
 #: src/modules/side-panel/pages/page-layout/utils/getSortLabelSuffixForFieldType.ts
 #: src/modules/side-panel/pages/page-layout/utils/getSortLabelSuffixForFieldType.ts
@@ -1589,6 +1630,16 @@ msgstr "alfabeties"
 #: src/modules/navigation-menu-item/edit/side-panel/components/SidePanelObjectMenuItem.tsx
 msgid "Already in navbar"
 msgstr "Reeds in die navigasiebalk"
+
+#. js-lingui-id: SXGR8p
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Always ask"
+msgstr ""
+
+#. js-lingui-id: iBcSp9
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Always require approval"
+msgstr ""
 
 #. js-lingui-id: uprOiC
 #: src/modules/settings/data-model/fields/forms/select/components/SettingsDataModelFieldSelectFormOptionRow.tsx
@@ -1844,6 +1895,11 @@ msgstr "App op hierdie werkruimte geïnstalleer"
 msgid "Appearance"
 msgstr "Voorkoms"
 
+#. js-lingui-id: q1epTc
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Append"
+msgstr ""
+
 #. js-lingui-id: QsDjlD
 #: src/pages/onboarding/CreateWorkspace.tsx
 #: src/modules/settings/workspace/components/NameField.tsx
@@ -1904,15 +1960,40 @@ msgstr "Toepassing suksesvol opgegradeer."
 msgid "Applications"
 msgstr "Toepassings"
 
+#. js-lingui-id: 7hnxch
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Applies refund guidelines"
+msgstr ""
+
 #. js-lingui-id: DB8zMK
 #: src/modules/object-record/record-update-multiple/components/UpdateMultipleRecordsFooter.tsx
 msgid "Apply"
 msgstr "Pas toe"
 
+#. js-lingui-id: VIzKdt
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Apply our refund policy consistently and draft customer replies"
+msgstr ""
+
 #. js-lingui-id: 9re43z
 #: src/modules/object-record/record-update-multiple/components/UpdateMultipleRecordsFooter.tsx
 msgid "Apply{progressText}"
 msgstr "Pas toe{progressText}"
+
+#. js-lingui-id: vdnsnn
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Approval mode"
+msgstr ""
+
+#. js-lingui-id: Z7ZXbT
+#: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
+msgid "Approve"
+msgstr ""
+
+#. js-lingui-id: 7kb4LU
+#: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
+msgid "Approved"
+msgstr ""
 
 #. js-lingui-id: UDlRcx
 #: src/modules/settings/security/components/approvedAccessDomains/SettingsSecurityApprovedAccessDomainValidationEffect.tsx
@@ -1939,6 +2020,11 @@ msgstr "Arabies"
 #: src/modules/activities/files/components/DocumentViewer.tsx
 msgid "Archive files cannot be previewed. Please download the file to access its contents."
 msgstr "Argieflêers kan nie voorskou word nie. Laai asseblief die lêer af om toegang tot die inhoud daarvan te kry."
+
+#. js-lingui-id: GeXcpY
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "are typing…"
+msgstr ""
 
 #. js-lingui-id: 4CHeVx
 #: src/pages/settings/ai/components/SettingsAgentEvalsTab.tsx
@@ -2010,6 +2096,16 @@ msgstr "oplopend"
 msgid "Ascending"
 msgstr "Oplopend"
 
+#. js-lingui-id: F+vBv0
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Ask"
+msgstr ""
+
+#. js-lingui-id: vw3pKo
+#: src/modules/command-menu-item/record/constants/DefaultRecordCommandMenuItemsConfig.tsx
+msgid "Ask Agent"
+msgstr ""
+
 #. js-lingui-id: xWEvuo
 #: src/modules/side-panel/hooks/useOpenAskAIPageInSidePanel.ts
 #: src/modules/side-panel/components/SidePanelAskAIInfo.tsx
@@ -2021,10 +2117,20 @@ msgstr "Oplopend"
 msgid "Ask AI"
 msgstr "Vra AI"
 
+#. js-lingui-id: OGqmb4
+#: src/modules/command-menu-item/record/constants/DefaultRecordCommandMenuItemsConfig.tsx
+msgid "Ask Konnecct Agent"
+msgstr ""
+
 #. js-lingui-id: mc9nK2
 #: src/modules/ai/hooks/useAIChatEditor.ts
 msgid "Ask, search or make anything..."
 msgstr "Vra, soek of doen enigiets..."
+
+#. js-lingui-id: +GfNPU
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Ask, search, or create anything..."
+msgstr ""
 
 #. js-lingui-id: OBqG7p
 #: src/modules/settings/roles/role-assignment/components/SettingsRoleAssignmentConfirmationModal.tsx
@@ -2146,10 +2252,20 @@ msgstr "op minute {remainingValues} en {lastValue}"
 msgid "at the top of the hour"
 msgstr "op die uur"
 
+#. js-lingui-id: x9ecE4
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Attach file"
+msgstr ""
+
 #. js-lingui-id: N7m8E+
 #: src/modules/ai/components/internal/AgentChatFileUploadButton.tsx
 msgid "Attach files"
 msgstr "Heg lêers aan"
+
+#. js-lingui-id: eNw730
+#: src/modules/chat/sendbird-suite/EditorialDetailsPanel.tsx
+msgid "Attachment preview"
+msgstr ""
 
 #. js-lingui-id: w/Sphq
 #: src/modules/workflow/workflow-steps/workflow-actions/components/WorkflowEditActionEmailBase.tsx
@@ -2304,6 +2420,11 @@ msgstr "Avatar-lêerveld nie vir persoon-objek gevind nie"
 msgid "Average"
 msgstr "Gemiddelde"
 
+#. js-lingui-id: V76PAO
+#: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
+msgid "Avg score"
+msgstr ""
+
 #. js-lingui-id: li9In6
 #: src/modules/side-panel/pages/page-layout/constants/settings/ChartConfigurationSettingLabels.ts
 msgid "Axis name"
@@ -2435,6 +2556,11 @@ msgstr "Inhoud"
 msgid "Body Input"
 msgstr "Liggaam Invoer"
 
+#. js-lingui-id: KmydK6
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Bold"
+msgstr ""
+
 #. js-lingui-id: 2yl5lQ
 #: src/pages/onboarding/internal/ChooseYourPlanContent.tsx
 msgid "Book a Call"
@@ -2474,6 +2600,11 @@ msgstr "Brons"
 #: src/modules/settings/data-model/fields/forms/select/components/SettingsDataModelFieldSelectFormOptionRow.tsx
 msgid "Brown"
 msgstr "Bruin"
+
+#. js-lingui-id: mTTRi+
+#: src/pages/settings/ai/SettingsAI.tsx
+msgid "Browse all workspace agents, open profiles, and update teammate behaviors."
+msgstr ""
 
 #. js-lingui-id: vwZV+4
 #: src/modules/ai/components/suggested-prompts/default-suggested-prompts.ts
@@ -2522,8 +2653,8 @@ msgstr "deur {author}"
 
 #. js-lingui-id: 8Pfllj
 #: src/modules/auth/sign-in-up/components/FooterNote.tsx
-msgid "By using Konnecct, you agree to the"
-msgstr "Deur gebruik te maak van Konnecct, stem jy in tot die"
+msgid "By using Twenty, you agree to the"
+msgstr ""
 
 #. js-lingui-id: Yx41df
 #: src/modules/auth/sign-in-up/components/FooterNote.tsx
@@ -2631,10 +2762,25 @@ msgstr "Kalender aansig"
 msgid "Calendars"
 msgstr "Kalenders"
 
+#. js-lingui-id: 8hvxGX
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Call"
+msgstr ""
+
+#. js-lingui-id: Dy4Q9Z
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "Call (preview)"
+msgstr ""
+
 #. js-lingui-id: qIlodj
 #: src/modules/object-record/record-field/ui/form-types/components/FormPhoneFieldInput.tsx
 msgid "Calling Code"
 msgstr "Roepkode"
+
+#. js-lingui-id: rT2cV+
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Camera"
+msgstr ""
 
 #. js-lingui-id: msssZq
 #: src/modules/settings/data-model/objects/forms/components/SettingsDataModelObjectAboutForm.tsx
@@ -2661,6 +2807,9 @@ msgstr "Kan nie skandeer nie? Kopieer die"
 #: src/modules/settings/components/SaveAndCancelButtons/CancelButton.tsx
 #: src/modules/object-record/record-update-multiple/components/UpdateMultipleRecordsFooter.tsx
 #: src/modules/command-menu-item/record/constants/DashboardCommandMenuItemsConfig.tsx
+#: src/modules/chat/components/StreamDmModal.tsx
+#: src/modules/chat/components/NewDmModal.tsx
+#: src/modules/chat/components/CreateChannelModal.tsx
 msgid "Cancel"
 msgstr "Kanselleer"
 
@@ -2737,12 +2886,6 @@ msgstr "Kan nie die enigste aansig uitvee nie"
 msgid "Cannot display message"
 msgstr ""
 
-#. js-lingui-id: W3MumH
-#: src/pages/settings/members/SettingsWorkspaceMember.tsx
-#: src/pages/settings/members/SettingsWorkspaceMember.tsx
-msgid "Cannot impersonate selected user"
-msgstr "Kan nie gekose gebruiker naboots nie"
-
 #. js-lingui-id: H1Ddy9
 #: src/modules/object-record/record-field/ui/meta-types/input/hooks/useOpenFilesFieldInput.tsx
 #: src/modules/object-record/record-field/ui/meta-types/input/components/FilesFieldInput.tsx
@@ -2762,8 +2905,19 @@ msgstr "Captcha (anti-bot greep) laai steeds, probeer weer"
 msgid "Catalan"
 msgstr "Katalaans"
 
+#. js-lingui-id: kDAtt8
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Categorize and triage support tickets by urgency and topic"
+msgstr ""
+
+#. js-lingui-id: 2W8ykM
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Categorizes support tickets"
+msgstr ""
+
 #. js-lingui-id: K7tIrx
 #: src/pages/settings/applications/SettingsAvailableApplicationDetails.tsx
+#: src/modules/chat/components/CreateChannelModal.tsx
 msgid "Category"
 msgstr "Kategorie"
 
@@ -2819,6 +2973,26 @@ msgstr "Verander na Pro Plan?"
 msgid "Change to Yearly?"
 msgstr "Verander na jaarliks?"
 
+#. js-lingui-id: jPfDbj
+#: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
+msgid "Changes requested before autonomous execution"
+msgstr ""
+
+#. js-lingui-id: HdE1If
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "Channel"
+msgstr ""
+
+#. js-lingui-id: CXcvq4
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "Channel name"
+msgstr ""
+
+#. js-lingui-id: G+8qH5
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "Channel name is required"
+msgstr ""
+
 #. js-lingui-id: nuBbBr
 #: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutWidgetTypeSelect.tsx
 #: src/modules/side-panel/components/hooks/usePageLayoutHeaderInfo.ts
@@ -2827,6 +3001,8 @@ msgstr "Grafiek"
 
 #. js-lingui-id: AHZflp
 #: src/modules/navigation/components/MainNavigationDrawerTabsRow.tsx
+#: src/modules/navigation/components/MainNavigationDrawerScrollableItems.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
 msgid "Chat"
 msgstr "Gesels"
 
@@ -2834,6 +3010,11 @@ msgstr "Gesels"
 #: src/modules/settings/roles/role-permissions/permission-flags/hooks/useActionRolePermissionFlagConfig.ts
 msgid "Chat with AI agents and use AI features"
 msgstr "Gesels met KI-agente en gebruik KI-funksies"
+
+#. js-lingui-id: ZtBRi9
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Chat with the AI below, then tap Create when you are ready"
+msgstr ""
 
 #. js-lingui-id: xK2nU3
 #: src/pages/settings/updates/SettingsUpdates.tsx
@@ -2857,8 +3038,8 @@ msgstr "Kontroleer jou inkassie om jou nuwe e-posadres te bevestig."
 
 #. js-lingui-id: SxwQE8
 #: src/modules/settings/billing/hooks/useHandleCheckoutSession.ts
-msgid "Checkout session error. Please retry or contact Konnecct team"
-msgstr "Betaalafhandeling sessie fout. Probeer asseblief weer of kontak Konnecct-span"
+msgid "Checkout session error. Please retry or contact Twenty team"
+msgstr ""
 
 #. js-lingui-id: SviKkE
 #: src/pages/settings/profile/appearance/components/LocalePicker.tsx
@@ -2869,6 +3050,11 @@ msgstr "Chinees — Vereenvoudig"
 #: src/pages/settings/profile/appearance/components/LocalePicker.tsx
 msgid "Chinese — Traditional"
 msgstr "Chinees — Tradisioneel"
+
+#. js-lingui-id: b2BhRt
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Choose a channel or DM in the list."
+msgstr ""
 
 #. js-lingui-id: NFfUic
 #: src/pages/auth/SignInUp.tsx
@@ -2932,6 +3118,11 @@ msgstr "Kies jou Proeflopie"
 #: src/modules/object-record/record-field/ui/form-types/components/FormAddressFieldInput.tsx
 msgid "City"
 msgstr "Stad"
+
+#. js-lingui-id: JVDBvk
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Clarification behavior"
+msgstr ""
 
 #. js-lingui-id: xCJdfg
 #: src/modules/ui/input/components/internal/date/components/DateTimePicker.tsx
@@ -3018,6 +3209,7 @@ msgstr "Knipbord vereis 'n veilige verbinding (HTTPS). Gebruik asseblief hierdie
 
 #. js-lingui-id: yz7wBu
 #: src/modules/ui/feedback/snack-bar-manager/components/SnackBar.tsx
+#: src/modules/chat/components/ChatInfoPanel.tsx
 msgid "Close"
 msgstr "Maak toe"
 
@@ -3032,8 +3224,14 @@ msgstr "Sluit banier"
 msgid "Close side panel"
 msgstr "Maak sypaneel toe"
 
+#. js-lingui-id: /k5ck8
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Close thread"
+msgstr ""
+
 #. js-lingui-id: EWPtMO
 #: src/modules/workflow/workflow-steps/workflow-actions/code-action/components/WorkflowEditActionCode.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
 #: src/modules/ai/components/CodeExecutionDisplay.tsx
 msgid "Code"
 msgstr "Kode"
@@ -3052,6 +3250,11 @@ msgstr "Uitvoering van kode"
 #: src/modules/settings/logic-functions/components/tabs/SettingsLogicFunctionCodeEditorTab.tsx
 msgid "Code your function"
 msgstr "Kodeer jou funksie"
+
+#. js-lingui-id: 8z2hU9
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Collaborative notes"
+msgstr ""
 
 #. js-lingui-id: H86f9p
 #: src/pages/settings/security/event-logs/components/EventLogJsonCell.tsx
@@ -3168,6 +3371,12 @@ msgstr "Voltooi"
 msgid "Completed jobs kept for {completedDuration}, failed jobs kept for {failedDuration} (max {maxCount} each)"
 msgstr "Voltooide werke behou vir {completedDuration}, mislukte werke behou vir {failedDuration} (maks {maxCount} elk)"
 
+#. js-lingui-id: QOhkyl
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "Compose"
+msgstr ""
+
 #. js-lingui-id: 0CuAor
 #: src/modules/workflow/workflow-steps/workflow-actions/if-else-action/components/WorkflowEditActionIfElseBody.tsx
 #: src/modules/workflow/workflow-steps/workflow-actions/filter-action/components/WorkflowEditActionFilterBody.tsx
@@ -3237,6 +3446,11 @@ msgstr "Konfigureer terugval-aanmeldmetodes vir gebruikers met SSO omseil toeste
 #. js-lingui-id: OLqG0t
 #: src/modules/settings/data-model/object-details/components/tabs/ObjectSettings.tsx
 msgid "Configure how this object appears in search results"
+msgstr ""
+
+#. js-lingui-id: ej4gD/
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Configure how this teammate remembers context, handles autonomous runs, and requests approval for risky actions."
 msgstr ""
 
 #. js-lingui-id: ghdb7+
@@ -3351,6 +3565,11 @@ msgstr "Verbind met Microsoft"
 #: src/pages/settings/accounts/SettingsAccounts.tsx
 msgid "Connected accounts"
 msgstr "Verbonde rekeninge"
+
+#. js-lingui-id: JrFTcr
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Connecting…"
+msgstr ""
 
 #. js-lingui-id: W4Kgwq
 #: src/modules/settings/accounts/components/SettingsAccountsRowDropdownMenu.tsx
@@ -3620,10 +3839,20 @@ msgstr "Koste per miljoen tokens (USD)"
 msgid "Cost per million tokens for cached input (USD)"
 msgstr "Koste per miljoen tokens vir gekasde invoer (USD)"
 
+#. js-lingui-id: tpTVX2
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Could not connect to chat"
+msgstr ""
+
 #. js-lingui-id: VVRHmR
 #: src/modules/settings/security/components/approvedAccessDomains/SettingsSecurityApprovedAccessDomainRowDropdownMenu.tsx
 msgid "Could not delete approved access domain"
 msgstr "Kon nie goedgekeurde toegangsdomein uitvee nie"
+
+#. js-lingui-id: QzcnlG
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Could not load chat layout"
+msgstr ""
 
 #. js-lingui-id: KqYYBp
 #: src/pages/settings/enterprise/SettingsEnterprise.tsx
@@ -3639,6 +3868,11 @@ msgstr "Kon nie Stripe oopmaak nie. Kontak asseblief ondersteuning."
 #: src/pages/settings/enterprise/SettingsEnterprise.tsx
 msgid "Could not refresh validity token. Please contact support."
 msgstr "Kon nie die geldigheidstoken vernuwe nie. Kontak asseblief ondersteuning."
+
+#. js-lingui-id: r0+Hun
+#: src/pages/onboarding/InviteTeam.tsx
+msgid "Could not send invitations"
+msgstr ""
 
 #. js-lingui-id: s8lFtq
 #: src/hooks/useCopyToClipboard.tsx
@@ -3703,6 +3937,7 @@ msgstr "skep"
 #. js-lingui-id: hYgDIe
 #: src/modules/views/view-picker/components/ViewPickerEditButton.tsx
 #: src/modules/views/view-picker/components/ViewPickerCreateButton.tsx
+#: src/modules/chat/components/CreateChannelModal.tsx
 msgid "Create"
 msgstr "Skep"
 
@@ -3762,6 +3997,11 @@ msgstr "Skep 'n werksruimte"
 msgid "Create and configure AI agents"
 msgstr "Skep en konfigureer KI-agente"
 
+#. js-lingui-id: eUmxrE
+#: src/pages/settings/ai/SettingsAI.tsx
+msgid "Create and manage AI teammates that can reason, use tools, and execute workspace actions with role-aware permissions."
+msgstr ""
+
 #. js-lingui-id: uXGLuq
 #: src/pages/settings/workspace/SettingsApiWebhooks.tsx
 #: src/pages/settings/developers/api-keys/SettingsApiKeys.tsx
@@ -3777,6 +4017,11 @@ msgstr "Skep persoonlike aansig"
 #: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownCalendarFieldsContent.tsx
 msgid "Create date field"
 msgstr "Skep datumveld"
+
+#. js-lingui-id: 8s4FtJ
+#: src/pages/settings/ai/SettingsAI.tsx
+msgid "Create Konnecct Agent"
+msgstr ""
 
 #. js-lingui-id: kCNBJG
 #: src/modules/command-menu-item/record/constants/DashboardCommandMenuItemsConfig.tsx
@@ -3828,6 +4073,11 @@ msgstr "Skep kiesveld"
 #: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownLayoutContent.tsx
 msgid "Create Select..."
 msgstr "Skep Kies..."
+
+#. js-lingui-id: MAi21V
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Create superagent from conversation"
+msgstr ""
 
 #. js-lingui-id: zt6Erc
 #: src/modules/views/view-picker/components/ViewPickerContentCreateMode.tsx
@@ -3892,6 +4142,16 @@ msgstr "Besig om jou datamodel te skep..."
 #: src/pages/onboarding/CreateWorkspace.tsx
 msgid "Creating your workspace"
 msgstr "Besig om jou werksruimte te skep"
+
+#. js-lingui-id: HM56Bx
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Creating..."
+msgstr ""
+
+#. js-lingui-id: /DwR+n
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "Creating…"
+msgstr ""
 
 #. js-lingui-id: HAzhV7
 #: src/pages/settings/admin-panel/SettingsAdminAiProviderDetail.tsx
@@ -4387,6 +4647,11 @@ msgstr "Ontfoutingsinligting"
 msgid "Decide which Sub-address fields you want to display"
 msgstr "Besluit watter Subadresvelde jy wil vertoon"
 
+#. js-lingui-id: jbq7j2
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Decline"
+msgstr ""
+
 #. js-lingui-id: Bn9+El
 #: src/modules/ai/components/AIChatEditorSection.tsx
 msgid "default"
@@ -4455,6 +4720,11 @@ msgstr "Verstek waarde"
 #: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownDefaultView.tsx
 msgid "Default View"
 msgstr "Verstek aansig"
+
+#. js-lingui-id: 7X9u6R
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Define restrictions, escalation paths, and rollback requirements for risky operations."
+msgstr ""
 
 #. js-lingui-id: Y2ImVJ
 #: src/pages/settings/data-model/SettingsNewObject.tsx
@@ -4557,6 +4827,11 @@ msgstr "Verwyder {objectLabelPlural}"
 #: src/modules/object-record/record-field-list/record-detail-section/relation/components/RecordDetailRelationRecordsListItem.tsx
 msgid "Delete {relationObjectTypeName}"
 msgstr "Verwyder {relationObjectTypeName}"
+
+#. js-lingui-id: XmXCwH
+#: src/modules/chat/components/ChatInfoPanel.tsx
+msgid "Delete & Leave"
+msgstr ""
 
 #. js-lingui-id: ZDGm40
 #: src/modules/settings/profile/components/DeleteAccount.tsx
@@ -4762,6 +5037,11 @@ msgstr "aflopend"
 msgid "Descending"
 msgstr "Aflopend"
 
+#. js-lingui-id: OhOmJv
+#: src/pages/settings/ai/components/SettingsAgentSettingsTab.tsx
+msgid "Describe the superagent in plain language. Example: \"Qualify inbound leads, ask for budget/timeline, and create follow-up tasks.\""
+msgstr ""
+
 #. js-lingui-id: g+5exC
 #: src/modules/workflow/workflow-steps/workflow-actions/ai-agent-action/components/WorkflowAiAgentPromptTab.tsx
 msgid "Describe what you want the AI to do..."
@@ -4815,6 +5095,16 @@ msgstr "Vernietig rekords"
 msgid "Destroy Records on All Objects"
 msgstr "Vernietig rekords op alle voorwerpe"
 
+#. js-lingui-id: ZT1QrJ
+#: src/modules/chat/components/ChatInfoPanel.tsx
+msgid "Destructive actions are disabled in this preview."
+msgstr ""
+
+#. js-lingui-id: FwbVtz
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Destructive only"
+msgstr ""
+
 #. js-lingui-id: FOcBn3
 #: src/modules/object-record/record-field-list/record-detail-section/relation/components/RecordDetailRelationRecordsListItem.tsx
 msgid "Detach"
@@ -4822,6 +5112,8 @@ msgstr "Ontkoppel"
 
 #. js-lingui-id: URmyfc
 #: src/pages/settings/security/event-logs/components/EventLogResultsTable.tsx
+#: src/modules/chat/sendbird-suite/EditorialDetailsPanel.tsx
+#: src/modules/chat/components/ChatInfoPanel.tsx
 #: src/modules/ai/components/RoutingDebugDisplay.tsx
 msgid "Details"
 msgstr "Besonderhede"
@@ -4835,6 +5127,50 @@ msgstr "Ontwikkelaar"
 #: src/pages/settings/applications/SettingsAvailableApplicationDetails.tsx
 msgid "Developers links"
 msgstr "Skakels vir ontwikkelaars"
+
+#. js-lingui-id: gdl7k/
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Diagnose account and login access issues step by step"
+msgstr ""
+
+#. js-lingui-id: ykpsPH
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Diagnoses access issues"
+msgstr ""
+
+#. js-lingui-id: fYUNRJ
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "Direct"
+msgstr ""
+
+#. js-lingui-id: EzajJc
+#: src/modules/chat/components/ChatInfoPanel.tsx
+msgid "Direct conversation"
+msgstr ""
+
+#. js-lingui-id: DcvMPg
+#: src/modules/chat/sendbird-suite/EditorialDetailsPanel.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "Direct message"
+msgstr ""
+
+#. js-lingui-id: 23aX1b
+#: src/modules/chat/sendbird-suite/EditorialWorkspaceRail.tsx
+msgid "Direct messages"
+msgstr ""
+
+#. js-lingui-id: TMYrdQ
+#: src/modules/navigation/components/MainNavigationDrawerRecentChats.tsx
+msgid "Direct Messages"
+msgstr ""
+
+#. js-lingui-id: GhgbAN
+#: src/pages/settings/ai/SettingsAI.tsx
+msgid "Directory"
+msgstr ""
 
 #. js-lingui-id: zAg2B9
 #: src/modules/command-menu-item/record/constants/WorkflowCommandMenuItemsConfig.tsx
@@ -5060,6 +5396,11 @@ msgstr "Duplicasies"
 msgid "Dutch"
 msgstr "Nederlands"
 
+#. js-lingui-id: uXY5v7
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "e.g. 0 9 * * 1-5"
+msgstr ""
+
 #. js-lingui-id: 8zfXiN
 #: src/pages/settings/admin-panel/SettingsAdminNewAiModel.tsx
 msgid "e.g. 1.25"
@@ -5089,6 +5430,16 @@ msgstr "bv. 2.50"
 #: src/pages/settings/admin-panel/SettingsAdminNewAiModel.tsx
 msgid "e.g. 3.75"
 msgstr "bv. 3.75"
+
+#. js-lingui-id: +NXtLs
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "e.g. 30"
+msgstr ""
+
+#. js-lingui-id: JTOXt8
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "e.g. announcements"
+msgstr ""
 
 #. js-lingui-id: QVVmxi
 #: src/pages/settings/developers/api-keys/SettingsDevelopersApiKeysNew.tsx
@@ -5745,6 +6096,11 @@ msgstr "Voer die stelselprompt in wat hierdie agent se gedrag en vermoëns defin
 msgid "Enter the workspace subdomain to transfer this app to. You will lose access to manage it."
 msgstr "Voer die werkruimte se subdomein in waarna hierdie app oorgedra moet word. Jy sal toegang verloor om dit te bestuur."
 
+#. js-lingui-id: cr8uEw
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Enter to send · Shift+Enter for new line"
+msgstr ""
+
 #. js-lingui-id: rYIISB
 #: src/modules/settings/admin-panel/components/SettingsAdminGeneral.tsx
 msgid "Enter user ID or email address"
@@ -5832,6 +6188,11 @@ msgstr "Omgewingsveranderlikes"
 #: src/modules/settings/logic-functions/components/SettingsLogicFunctionTabEnvironmentVariablesSection.tsx
 msgid "Environment variables are defined at application level for all functions. Please check <0/>."
 msgstr "Omgewingsveranderlikes word op toepassingsvlak vir alle funksies gedefinieer. Gaan asseblief na <0/>."
+
+#. js-lingui-id: 4IBQ3B
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Ephemeral"
+msgstr ""
 
 #. js-lingui-id: BlLvRP
 #: src/pages/settings/security/SettingsSecurity.tsx
@@ -5985,8 +6346,8 @@ msgstr "Fout tydens die kansellasie van planwisseling."
 
 #. js-lingui-id: QmR+2U
 #: src/modules/settings/billing/hooks/useEndSubscriptionTrialPeriod.ts
-msgid "Error while ending trial period. Please contact Konnecct team."
-msgstr "Fout tydens die beëindiging van die proefperiode. Kontak asseblief die Konnecct-span."
+msgid "Error while ending trial period. Please contact Twenty team."
+msgstr ""
 
 #. js-lingui-id: 5g78zo
 #: src/pages/settings/members/SettingsWorkspaceMember.tsx
@@ -6032,6 +6393,7 @@ msgstr ""
 #. js-lingui-id: 0pC/y6
 #: src/pages/settings/security/event-logs/components/EventLogResultsTable.tsx
 #: src/pages/settings/security/event-logs/components/EventLogResultsTable.tsx
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
 #: src/modules/activities/calendar/components/CalendarEventDetails.tsx
 msgid "Event"
 msgstr "Geleentheid"
@@ -6126,6 +6488,11 @@ msgstr "elke minuut"
 #: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownVisibilityContent.tsx
 msgid "Everyone"
 msgstr "Almal"
+
+#. js-lingui-id: X/l25Q
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Everyone in this workspace"
+msgstr ""
 
 #. js-lingui-id: wqF3jl
 #: src/modules/settings/accounts/components/SettingsAccountsMessageVisibilityCard.tsx
@@ -6447,11 +6814,6 @@ msgstr ""
 msgid "Failed to get response"
 msgstr "Kon nie antwoord kry nie"
 
-#. js-lingui-id: CUzkVp
-#: src/modules/settings/admin-panel/components/SettingsAdminWorkspaceContent.tsx
-msgid "Failed to impersonate user. {errorMessage}"
-msgstr "Kon nie gebruiker naboots nie. {errorMessage}"
-
 #. js-lingui-id: qZwtAi
 #: src/modules/marketplace/hooks/useInstallApp.ts
 msgid "Failed to install the application."
@@ -6501,6 +6863,12 @@ msgstr "Kon nie verskaffer verwyder nie"
 #: src/modules/settings/admin-panel/health-status/hooks/useRetryJobs.ts
 msgid "Failed to retry jobs. Please try again later."
 msgstr "Kon nie werke herprobeer nie. Probeer asseblief later weer."
+
+#. js-lingui-id: XyEkn/
+#: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
+#: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
+msgid "Failed to save approval decision"
+msgstr ""
 
 #. js-lingui-id: farFvy
 #: src/modules/layout-customization/hooks/useSaveLayoutCustomization.ts
@@ -6762,6 +7130,11 @@ msgstr "vyfde"
 msgid "Fifth"
 msgstr "Vyfde"
 
+#. js-lingui-id: J2eKUI
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "File"
+msgstr ""
+
 #. js-lingui-id: sWmIx3
 #: src/modules/advanced-text-editor/hooks/useUploadWorkflowFile.ts
 msgid "File \"{fileName}\" exceeds {maxUploadSize}"
@@ -6902,6 +7275,16 @@ msgstr "Voornaam kan nie leeg wees nie"
 #: src/pages/settings/enterprise/SettingsEnterprise.tsx
 msgid "Fix the payment issue to keep your enterprise features active."
 msgstr "Los die betalingsprobleem op om jou ondernemingsfunksies aktief te hou."
+
+#. js-lingui-id: WedjF8
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Flag sensitive or inappropriate messages and escalate when needed"
+msgstr ""
+
+#. js-lingui-id: +T/wbL
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Flags inappropriate messages"
+msgstr ""
 
 #. js-lingui-id: ylQd2j
 #: src/modules/workflow/workflow-steps/workflow-actions/utils/getActionHeaderTypeOrThrow.ts
@@ -7185,11 +7568,6 @@ msgstr "Google"
 msgid "Google OIDC"
 msgstr "Google OIDC"
 
-#. js-lingui-id: 6eo66Q
-#: src/modules/settings/workspace/components/ToggleImpersonate.tsx
-msgid "Grant access to your workspace so we can troubleshoot problems."
-msgstr "Gee toegang tot u werkspasie sodat ons probleme kan oplos."
-
 #. js-lingui-id: WUgtid
 #: src/modules/settings/roles/role-permissions/object-level-permissions/object-form/components/SettingsRolePermissionsObjectLevelObjectFormObjectLevelTableRow.tsx
 msgid "Granted for this object"
@@ -7250,6 +7628,16 @@ msgstr "Groepeer"
 msgid "Group by"
 msgstr "Groepeer volgens"
 
+#. js-lingui-id: alTOiF
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Group chat"
+msgstr ""
+
+#. js-lingui-id: GoNgIy
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "Group chats"
+msgstr ""
+
 #. js-lingui-id: tyyaxS
 #: src/modules/page-layout/widgets/components/RecordPageAddWidgetSection.tsx
 msgid "Group multiple fields from this record"
@@ -7264,6 +7652,11 @@ msgstr "Groepsnaam"
 #: src/modules/object-record/record-group/components/RecordGroupReorderConfirmationModal.tsx
 msgid "Group sorting"
 msgstr "Groepe sorteer"
+
+#. js-lingui-id: G8NEo0
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Guardrails"
+msgstr ""
 
 #. js-lingui-id: eKiSkN
 #: src/modules/advanced-text-editor/extensions/slash-command/DefaultSlashCommands.ts
@@ -7513,6 +7906,11 @@ msgstr "Menslike Invoer"
 msgid "Hungarian"
 msgstr "Hongaars"
 
+#. js-lingui-id: Z2hVSb
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Hybrid"
+msgstr ""
+
 #. js-lingui-id: YUJ1ey
 #: src/modules/ai/components/suggested-prompts/default-suggested-prompts.ts
 msgid "I need a dashboard for lead conversion: number of new leads by source this month, how many moved to opportunity, and conversion rate by source. Include a simple table and a bar chart."
@@ -7552,6 +7950,7 @@ msgstr "Ikon en Naam"
 #. js-lingui-id: S0kLOH
 #: src/modules/settings/admin-panel/components/SettingsAdminWorkspaceContent.tsx
 #: src/modules/settings/admin-panel/components/SettingsAdminGeneral.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
 msgid "ID"
 msgstr "ID"
 
@@ -7653,7 +8052,6 @@ msgstr "imap.example.com"
 #. js-lingui-id: tSVr6t
 #: src/modules/settings/roles/role-permissions/permission-flags/hooks/useSettingsRolePermissionFlagConfig.ts
 #: src/modules/settings/members/components/MemberInfosTab.tsx
-#: src/modules/settings/admin-panel/components/SettingsAdminWorkspaceContent.tsx
 msgid "Impersonate"
 msgstr "Naboots"
 
@@ -7661,11 +8059,6 @@ msgstr "Naboots"
 #: src/modules/settings/roles/role-permissions/permission-flags/hooks/useSettingsRolePermissionFlagConfig.ts
 msgid "Impersonate workspace users"
 msgstr "Naboots werksruimte gebruikers"
-
-#. js-lingui-id: yImXof
-#: src/modules/settings/admin-panel/components/SettingsAdminWorkspaceContent.tsx
-msgid "Impersonation is disabled for this workspace"
-msgstr "Nabootsing is gedeaktiveer vir hierdie werksruimte"
 
 #. js-lingui-id: l3s5ri
 #: src/modules/settings/accounts/components/SettingsAccountsMessageChannelDetails.tsx
@@ -7753,6 +8146,11 @@ msgstr "Inboks"
 #. js-lingui-id: Wyip/m
 #: src/modules/settings/data-model/object-details/components/tabs/SettingsObjectSearchSection.tsx
 msgid "Include in default search"
+msgstr ""
+
+#. js-lingui-id: RLj2uV
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Incoming call"
 msgstr ""
 
 #. js-lingui-id: mtGDyy
@@ -8038,6 +8436,11 @@ msgstr ""
 msgid "Invite"
 msgstr "Nooi uit"
 
+#. js-lingui-id: 1vRTUZ
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "Invite {label}"
+msgstr ""
+
 #. js-lingui-id: 0M8+El
 #: src/pages/settings/members/SettingsWorkspaceMembers.tsx
 msgid "Invite by email"
@@ -8053,10 +8456,25 @@ msgstr "Nooi per skakel"
 msgid "Invite by Link"
 msgstr "Nooi per Skakel"
 
+#. js-lingui-id: /EpVMP
+#: src/modules/chat/components/ChatInfoPanel.tsx
+msgid "Invite flow will use workspace invitations."
+msgstr ""
+
 #. js-lingui-id: 5IfmKA
 #: src/pages/onboarding/InviteTeam.tsx
 msgid "Invite link sent to email addresses"
 msgstr "Nooiskakel na e-posadresse gestuur"
+
+#. js-lingui-id: 7atO7I
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "Invite members"
+msgstr ""
+
+#. js-lingui-id: NJorPJ
+#: src/modules/chat/components/ChatInfoPanel.tsx
+msgid "Invite others"
+msgstr ""
 
 #. js-lingui-id: x1m5RZ
 #: src/modules/ui/navigation/navigation-drawer/components/MultiWorkspaceDropdown/internal/MultiWorkspaceDropdownDefaultComponents.tsx
@@ -8067,6 +8485,11 @@ msgstr "Nooi gebruiker"
 #: src/pages/onboarding/InviteTeam.tsx
 msgid "Invite your team"
 msgstr "Nooi jou span"
+
+#. js-lingui-id: 3CCVCl
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Invited members"
+msgstr ""
 
 #. js-lingui-id: CUvG5b
 #: src/modules/settings/data-model/fields/forms/select/components/SettingsDataModelFieldSelectFormOptionRow.tsx
@@ -8178,6 +8601,11 @@ msgstr "Is relatief"
 msgid "Is today{timeZoneAbbreviationSuffix}"
 msgstr "Is vandag{timeZoneAbbreviationSuffix}"
 
+#. js-lingui-id: 9GBs86
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "is typing…"
+msgstr ""
+
 #. js-lingui-id: IhCN5p
 #: src/modules/settings/security/components/SSO/SettingsSSOOIDCForm.tsx
 msgid "Issuer URI"
@@ -8187,6 +8615,11 @@ msgstr "Uitreiker URI"
 #: src/pages/settings/profile/appearance/components/LocalePicker.tsx
 msgid "Italian"
 msgstr "Italiaans"
+
+#. js-lingui-id: pzutoc
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Italic"
+msgstr ""
 
 #. js-lingui-id: hgr8eo
 #: src/modules/side-panel/pages/page-layout/utils/getDateGranularityPluralLabel.ts
@@ -8245,6 +8678,16 @@ msgstr "john.doe@example.com"
 msgid "Join {workspaceName} team"
 msgstr "Sluit aan by {workspaceName} span"
 
+#. js-lingui-id: KyzmqC
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Join call"
+msgstr ""
+
+#. js-lingui-id: cPMuAR
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Join room by ID"
+msgstr ""
+
 #. js-lingui-id: B2Zb/F
 #: src/pages/settings/ai/components/SettingsAgentResponseFormat.tsx
 msgid "JSON"
@@ -8271,6 +8714,23 @@ msgstr "Sleutel/Waarde"
 #: src/modules/keyboard-shortcut-menu/components/KeyboardShortcutMenuDialog.tsx
 msgid "Keyboard shortcuts"
 msgstr "Sleutelbordkortpaaie"
+
+#. js-lingui-id: xLRQsL
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Knowledge sources"
+msgstr ""
+
+#. js-lingui-id: XGLApW
+#: src/pages/settings/ai/SettingsAI.tsx
+#: src/pages/settings/ai/SettingsAI.tsx
+#: src/modules/settings/hooks/useSettingsNavigationItems.tsx
+msgid "Konnecct Agents"
+msgstr ""
+
+#. js-lingui-id: RkUicx
+#: src/modules/projects/components/KonnecctProjectsEmbed.tsx
+msgid "Konnecct Projects is not available in this deployment."
+msgstr ""
 
 #. js-lingui-id: h6S9Yz
 #: src/pages/settings/profile/appearance/components/LocalePicker.tsx
@@ -8478,6 +8938,11 @@ msgstr "Leer {names}"
 msgid "Learning tools..."
 msgstr "Leer gereedskap..."
 
+#. js-lingui-id: Mv8CyJ
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Leave"
+msgstr ""
+
 #. js-lingui-id: 8QyoLb
 #: src/modules/settings/accounts/components/SettingsAccountsConnectionForm.tsx
 msgid "Leave blank if you don't need calendar sync."
@@ -8492,6 +8957,16 @@ msgstr "Laat leeg as u nie e-posse hoef in te voer nie."
 #: src/modules/settings/accounts/components/SettingsAccountsConnectionForm.tsx
 msgid "Leave blank if you don't need to send emails."
 msgstr "Laat leeg as u nie e-posse hoef te stuur nie."
+
+#. js-lingui-id: Vq10dn
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Leave call"
+msgstr ""
+
+#. js-lingui-id: nNflMD
+#: src/modules/chat/sendbird-suite/EditorialDetailsPanel.tsx
+msgid "Leave channel"
+msgstr ""
 
 #. js-lingui-id: qvRaz1
 #: src/modules/settings/profile/components/DeleteAccount.tsx
@@ -8600,10 +9075,20 @@ msgstr "het 'n kalendergeleentheid met {labelIdentifierValue} gekoppel"
 msgid "linked an email with"
 msgstr "het 'n e-pos gekoppel met"
 
+#. js-lingui-id: XS4QhH
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Linking this thread to chat."
+msgstr ""
+
 #. js-lingui-id: 82kQhK
 #: src/modules/advanced-text-editor/extensions/slash-command/DefaultSlashCommands.ts
 #: src/modules/advanced-text-editor/extensions/slash-command/DefaultSlashCommands.ts
 msgid "list"
+msgstr ""
+
+#. js-lingui-id: CePQDU
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "List docs, notes, records, and conversations this agent should prioritize."
 msgstr ""
 
 #. js-lingui-id: 5Kn+XX
@@ -8625,6 +9110,11 @@ msgstr "Lys"
 #: src/modules/settings/data-model/objects/forms/components/SettingsDataModelObjectAboutForm.tsx
 msgid "Listings"
 msgstr "Lyste"
+
+#. js-lingui-id: fCIW2D
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Live call"
+msgstr ""
 
 #. js-lingui-id: C5bVie
 #: src/modules/workflow/workflow-trigger/components/WorkflowEditTriggerWebhookForm.tsx
@@ -8710,6 +9200,11 @@ msgstr "Laai vaardighede..."
 msgid "Loading thread"
 msgstr "Laai draad"
 
+#. js-lingui-id: uoafcu
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Loading workspace…"
+msgstr ""
+
 #. js-lingui-id: Z3FXyt
 #: src/pages/settings/emailing-domains/SettingsEmailingDomainDetail.tsx
 #: src/modules/settings/roles/role-assignment/components/SettingsRoleAssignmentEntityPickerDropdown.tsx
@@ -8745,11 +9240,6 @@ msgstr "Teken uit"
 #: src/pages/settings/security/SettingsSecurity.tsx
 msgid "Log retention"
 msgstr "Logbewaring"
-
-#. js-lingui-id: hykMbH
-#: src/modules/information-banner/components/impersonate/InformationBannerIsImpersonating.tsx
-msgid "Logged in as {impersonatedUser}"
-msgstr "Aangemeld as {impersonatedUser}"
 
 #. js-lingui-id: sTlKkx
 #: src/modules/metadata-error-handler/hooks/useMetadataErrorHandler.ts
@@ -8802,6 +9292,11 @@ msgstr "Soek gebruikers om hulle na te boots."
 #: src/modules/workflow/workflow-diagram/utils/generateNodesAndEdgesForIteratorNode.ts
 msgid "loop"
 msgstr "lus"
+
+#. js-lingui-id: FicGnE
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Low confidence"
+msgstr ""
 
 #. js-lingui-id: MsaCqr
 #: src/modules/settings/accounts/components/SettingsAccountsConnectionForm.tsx
@@ -8856,11 +9351,6 @@ msgstr ""
 msgid "Manage security policies"
 msgstr "Bestuur sekuriteitsbeleide"
 
-#. js-lingui-id: 49MfD1
-#: src/pages/settings/security/SettingsSecurity.tsx
-msgid "Manage support access settings"
-msgstr "Bestuur ondersteunings toeganginstellings"
-
 #. js-lingui-id: N7fMy9
 #: src/pages/settings/members/SettingsWorkspaceMembers.tsx
 msgid "Manage the members of your workspace here"
@@ -8887,6 +9377,7 @@ msgid "Manage your internet accounts."
 msgstr "Bestuur jou internetrekeninge."
 
 #. js-lingui-id: BWTzAb
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
 #: src/modules/side-panel/pages/page-layout/hooks/useGraphXSortOptionLabels.ts
 #: src/modules/side-panel/pages/page-layout/hooks/useGraphGroupBySortOptionLabels.ts
 msgid "Manual"
@@ -8986,9 +9477,21 @@ msgstr "Ek"
 msgid "Me (User ID)"
 msgstr "Ek (Gebruiker-ID)"
 
+#. js-lingui-id: xYilR2
+#: src/modules/chat/sendbird-suite/EditorialDetailsPanel.tsx
+msgid "Media"
+msgstr ""
+
 #. js-lingui-id: IAcjOi
 #: src/modules/advanced-text-editor/extensions/slash-command/DefaultSlashCommands.ts
 msgid "Medium section heading"
+msgstr ""
+
+#. js-lingui-id: OvoEq7
+#: src/modules/chat/sendbird-suite/EditorialWorkspaceRail.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Member"
 msgstr ""
 
 #. js-lingui-id: Sma10A
@@ -9008,6 +9511,8 @@ msgstr ""
 #: src/modules/settings/roles/role-assignment/components/SettingsRoleAssignmentTable.tsx
 #: src/modules/settings/hooks/useSettingsNavigationItems.tsx
 #: src/modules/settings/admin-panel/components/SettingsAdminWorkspaceContent.tsx
+#: src/modules/chat/sendbird-suite/EditorialDetailsPanel.tsx
+#: src/modules/chat/components/ChatInfoPanel.tsx
 msgid "Members"
 msgstr "Lede"
 
@@ -9015,6 +9520,21 @@ msgstr "Lede"
 #: src/utils/title-utils.ts
 msgid "Members - Settings"
 msgstr "Lede - Instellings"
+
+#. js-lingui-id: rTeqBI
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Memory policy"
+msgstr ""
+
+#. js-lingui-id: 9RRxtT
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Memory retention (days)"
+msgstr ""
+
+#. js-lingui-id: 6Q3Cs1
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Memory scope"
+msgstr ""
 
 #. js-lingui-id: UODtG8
 #: src/modules/object-record/record-merge/components/MergeRecordsFooter.tsx
@@ -9038,6 +9558,17 @@ msgstr "Voeg rekords saam"
 msgid "Merging..."
 msgstr "Saamvoeg..."
 
+#. js-lingui-id: xDAtGP
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Message"
+msgstr ""
+
+#. js-lingui-id: pqr+oY
+#. placeholder {0}: selectionTitle(selection)
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Message {0}"
+msgstr ""
+
 #. js-lingui-id: U15XwX
 #: src/modules/activities/timeline-activities/rows/message/components/EventCardMessage.tsx
 msgid "Message not found"
@@ -9060,8 +9591,14 @@ msgstr "Boodskap Sinchronisering is nie beskikbaar nie omdat die diens nie werk 
 
 #. js-lingui-id: t7TeQU
 #: src/pages/settings/ai/SettingsAgentTurnDetail.tsx
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
 msgid "Messages"
 msgstr "Boodskappe"
+
+#. js-lingui-id: a660a9
+#: src/modules/chat/components/ChatInfoPanel.tsx
+msgid "Messages are delivered in real time. Open on desktop for the full three-column layout."
+msgstr ""
 
 #. js-lingui-id: 6GBt0m
 #: src/modules/settings/playground/constants/SettingsPlaygroundFormSchemaSelectOptions.ts
@@ -9125,10 +9662,20 @@ msgstr "Minute"
 msgid "Minutes between triggers"
 msgstr "Minute tussen snellers"
 
+#. js-lingui-id: vNEA9u
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "Missed call (preview)"
+msgstr ""
+
 #. js-lingui-id: URVUmK
 #: src/modules/workflow/workflow-steps/workflow-actions/components/WorkflowEditActionEmailBase.tsx
 msgid "Missing email draft permission."
 msgstr "Toestemming om e-poskonsepte op te stel ontbreek."
+
+#. js-lingui-id: LV1eVr
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "Missing session"
+msgstr ""
 
 #. js-lingui-id: mibKsa
 #: src/modules/activities/tasks/components/TaskGroups.tsx
@@ -9319,6 +9866,12 @@ msgstr "moet 'n reeks voorwerpe wees met 'n geldige url en etiket (formaat: '[{\
 msgid "must be an array of valid emails"
 msgstr "moet 'n reeks van geldige e-posse wees"
 
+#. js-lingui-id: R7SsBE
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Mute"
+msgstr ""
+
 #. js-lingui-id: XTGSZU
 #: src/modules/views/view-picker/components/ViewPickerListContent.tsx
 msgid "My unlisted views"
@@ -9470,6 +10023,11 @@ msgstr "navigasiekieslysitem"
 msgid "Navigation tabs"
 msgstr "Navigasie-oortjies"
 
+#. js-lingui-id: 3BNWPR
+#: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
+msgid "Needs changes"
+msgstr ""
+
 #. js-lingui-id: qqeAJM
 #: src/modules/settings/developers/utils/formatExpiration.ts
 msgid "Never"
@@ -9480,6 +10038,11 @@ msgstr "Nooit"
 #: src/modules/settings/developers/utils/formatExpiration.ts
 msgid "Never expires"
 msgstr "Verval nooit"
+
+#. js-lingui-id: Oz0N9s
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "new"
+msgstr ""
 
 #. js-lingui-id: isRobC
 #: src/pages/settings/data-model/SettingsNewObject.tsx
@@ -9508,6 +10071,7 @@ msgid "New Account"
 msgstr "Nuwe Rekening"
 
 #. js-lingui-id: mJIA0/
+#: src/pages/settings/ai/SettingsAI.tsx
 #: src/pages/settings/ai/SettingsAgentForm.tsx
 #: src/pages/settings/ai/SettingsAgentForm.tsx
 msgid "New Agent"
@@ -9525,6 +10089,13 @@ msgstr "Nuwe AI-verskaffer"
 msgid "New Approved Access Domain"
 msgstr "Nuwe Goedgekeurde Toegangsdomein"
 
+#. js-lingui-id: BW0+uJ
+#: src/modules/chat/sendbird-suite/EditorialWorkspaceRail.tsx
+#: src/modules/chat/components/CreateChannelModal.tsx
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "New channel"
+msgstr ""
+
 #. js-lingui-id: hIQkLb
 #: src/modules/navigation/components/MainNavigationDrawerTabsRow.tsx
 #: src/modules/navigation/components/MainNavigationDrawerTabsRow.tsx
@@ -9537,6 +10108,12 @@ msgstr "Nuwe geselsie"
 #: src/modules/side-panel/components/SidePanelTopBarRightCornerIcon.tsx
 msgid "New conversation"
 msgstr "Nuwe gesprek"
+
+#. js-lingui-id: ctNfZE
+#: src/modules/chat/sendbird-suite/EditorialWorkspaceRail.tsx
+#: src/modules/chat/components/StreamDmModal.tsx
+msgid "New direct message"
+msgstr ""
 
 #. js-lingui-id: wqoYqp
 #: src/pages/settings/emailing-domains/SettingsNewEmailingDomain.tsx
@@ -9581,6 +10158,11 @@ msgstr "Nuwe Sleutel"
 msgid "New menu item"
 msgstr "Nuwe kieslysitem"
 
+#. js-lingui-id: mTBAsF
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "New message"
+msgstr ""
+
 #. js-lingui-id: ROxeMs
 #: src/pages/settings/admin-panel/SettingsAdminNewAiModel.tsx
 #: src/pages/settings/admin-panel/SettingsAdminNewAiModel.tsx
@@ -9623,6 +10205,12 @@ msgstr "Nuwe SSO Konfigurasie"
 #: src/pages/settings/security/SettingsSecuritySSOIdentifyProvider.tsx
 msgid "New SSO provider"
 msgstr "Nuwe SSO Verskaffer"
+
+#. js-lingui-id: sasBvc
+#: src/pages/settings/ai/SettingsAgentForm.tsx
+#: src/pages/settings/ai/SettingsAgentForm.tsx
+msgid "New Superagent"
+msgstr ""
 
 #. js-lingui-id: wl18ST
 #: src/modules/activities/tasks/components/TaskGroups.tsx
@@ -9696,6 +10284,11 @@ msgstr "Geen {label}"
 msgid "No {objectLabelSingular} found"
 msgstr "Geen {objectLabelSingular} gevind nie"
 
+#. js-lingui-id: 0ufCyB
+#: src/modules/navigation/components/MainNavigationDrawerRecentChats.tsx
+msgid "No active chats"
+msgstr ""
+
 #. js-lingui-id: aXFOuf
 #: src/modules/activities/timeline-activities/components/TimelineCard.tsx
 msgid "No activity yet"
@@ -9736,6 +10329,11 @@ msgstr "Geen API sleutels voldoen aan jou soektog nie"
 msgid "No applications available"
 msgstr "Geen toepassings beskikbaar nie"
 
+#. js-lingui-id: xzZg1J
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "No approval"
+msgstr ""
+
 #. js-lingui-id: tFxVHz
 #: src/modules/workflow/workflow-steps/filters/components/WorkflowStepFilterFieldSelect.tsx
 msgid "No available fields to select"
@@ -9750,6 +10348,16 @@ msgstr "Geen inhoud"
 #: src/modules/object-record/record-field/ui/form-types/components/FormCallingCodeSelectInput.tsx
 msgid "No calling code"
 msgstr "Geen roepkode"
+
+#. js-lingui-id: Oc7rl/
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "No category available"
+msgstr ""
+
+#. js-lingui-id: tjGLzR
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "No channels match filter"
+msgstr ""
 
 #. js-lingui-id: d14J3J
 #: src/modules/ai/components/NavigationDrawerAIChatContent.tsx
@@ -9855,6 +10463,11 @@ msgstr "Geen Gedeleteerde {objectLabelSingular} gevind"
 #: src/modules/object-record/record-table/empty-state/components/RecordTableEmptyStateSoftDelete.tsx
 msgid "No deleted records matching the filter criteria were found."
 msgstr "Geen gedeleteerde rekords wat aan die filterkriteria voldoen nie, is gevind."
+
+#. js-lingui-id: rHRlpz
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "No direct messages yet"
+msgstr ""
 
 #. js-lingui-id: mINrlz
 #: src/modules/activities/emails/components/EmailsCard.tsx
@@ -9967,6 +10580,11 @@ msgstr "Geen jongste weergawe gevind nie"
 msgid "No logs yet"
 msgstr ""
 
+#. js-lingui-id: 4TVVsS
+#: src/modules/chat/components/StreamDmModal.tsx
+msgid "No matches"
+msgstr ""
+
 #. js-lingui-id: UwvrGq
 #: src/pages/settings/members/SettingsWorkspaceMembers.tsx
 msgid "No members"
@@ -10017,6 +10635,13 @@ msgstr "Geen objekte met aansigte gevind nie"
 #: src/modules/ui/field/input/components/MultiSelectInput.tsx
 msgid "No option found"
 msgstr "Geen opsie gevind nie"
+
+#. js-lingui-id: pwWH/D
+#: src/modules/chat/components/StreamDmModal.tsx
+#: src/modules/chat/components/NewDmModal.tsx
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "No other members in this workspace"
+msgstr ""
 
 #. js-lingui-id: XRc1G9
 #: src/modules/ai/components/TerminalOutput.tsx
@@ -10259,6 +10884,12 @@ msgstr "Nota"
 #: src/modules/command-menu-item/record/constants/DefaultRecordCommandMenuItemsConfig.tsx
 msgid "Notes"
 msgstr "Notas"
+
+#. js-lingui-id: iDNBZe
+#: src/modules/chat/components/ChatInfoPanel.tsx
+#: src/modules/chat/components/ChatInfoPanel.tsx
+msgid "Notifications"
+msgstr ""
 
 #. js-lingui-id: YwzE9K
 #: src/utils/date-utils.ts
@@ -10509,6 +11140,11 @@ msgstr "Op watter voorwerp(e) behoort hierdie sneller beskikbaar te wees"
 msgid "Onboarding call"
 msgstr "Aanvangsoproep"
 
+#. js-lingui-id: BQNY4f
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "Only admins can create public channels"
+msgstr ""
+
 #. js-lingui-id: zii2Qj
 #: src/modules/settings/accounts/components/SettingsAccountsCalendarVisibilitySettingsCard.tsx
 msgid "Only date & participants will be shared with your team."
@@ -10556,9 +11192,15 @@ msgstr "Slegs die onderwerp word gedeel"
 msgid "Only the timestamp & participants will be shared with your team."
 msgstr "Slegs die tydstempel en deelnemers sal met jou span gedeel word."
 
+#. js-lingui-id: wvlFY7
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "Only workspace admins can create public channels."
+msgstr ""
+
 #. js-lingui-id: 1TNIig
 #: src/modules/settings/data-model/objects/forms/components/SettingsDataModelObjectAboutForm.tsx
 #: src/modules/command-menu-item/components/RecordShowSidePanelOpenRecordButton.tsx
+#: src/modules/chat/components/NewDmModal.tsx
 msgid "Open"
 msgstr "Maak Oop"
 
@@ -10566,6 +11208,11 @@ msgstr "Maak Oop"
 #: src/modules/settings/data-model/fields/forms/components/SettingsDataModelFieldOnClickActionForm.tsx
 msgid "Open as link"
 msgstr "Maak oop as 'n skakel"
+
+#. js-lingui-id: 6I7cJR
+#: src/modules/chat/components/StreamDmModal.tsx
+msgid "Open chat"
+msgstr ""
 
 #. js-lingui-id: pZZH4Q
 #: src/modules/auth/sign-in-up/components/EmailVerificationSent.tsx
@@ -10598,6 +11245,12 @@ msgstr "Maak sypaneel oop"
 #: src/modules/navigation-menu-item/display/sections/components/NavigationDrawerOpenedSection.tsx
 msgid "Opened"
 msgstr "Oopgemaak"
+
+#. js-lingui-id: 598XO1
+#: src/modules/chat/components/StreamDmModal.tsx
+#: src/modules/chat/components/NewDmModal.tsx
+msgid "Opening…"
+msgstr ""
 
 #. js-lingui-id: 8m1COB
 #: src/modules/settings/admin-panel/health-status/components/SettingsAdminHealthStatusRightContainer.tsx
@@ -10649,6 +11302,11 @@ msgstr "Of"
 #: src/modules/settings/data-model/fields/forms/select/components/SettingsDataModelFieldSelectFormOptionRow.tsx
 msgid "Orange"
 msgstr "Oranje"
+
+#. js-lingui-id: 6xf3TE
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Orchestration profile"
+msgstr ""
 
 #. js-lingui-id: VWupWc
 #: src/modules/advanced-text-editor/extensions/slash-command/DefaultSlashCommands.ts
@@ -10809,8 +11467,8 @@ msgstr "Bladsynaam"
 
 #. js-lingui-id: NRvxzv
 #: src/pages/not-found/NotFound.tsx
-msgid "Page Not Found | Konnecct"
-msgstr "Bladsy nie gevind nie | Konnecct"
+msgid "Page Not Found | Twenty"
+msgstr ""
 
 #. js-lingui-id: sF+Xp9
 #: src/pages/settings/security/event-logs/components/EventLogTableSelector.tsx
@@ -10827,6 +11485,11 @@ msgstr ""
 #: src/modules/advanced-text-editor/components/TurnIntoBlockDropdown.tsx
 msgid "Paragraph"
 msgstr "Paragraaf"
+
+#. js-lingui-id: v8fxDX
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Participant"
+msgstr ""
 
 #. js-lingui-id: 8ZsakT
 #: src/modules/settings/security/components/SettingsSecurityAuthProvidersOptionsList.tsx
@@ -10892,6 +11555,11 @@ msgstr "PDF"
 #: src/modules/settings/domains/components/SettingsPublicDomainsListCard.tsx
 msgid "Pending"
 msgstr "Hangend"
+
+#. js-lingui-id: 2WtL62
+#: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
+msgid "Pending review"
+msgstr ""
 
 #. js-lingui-id: 1wdjme
 #: src/modules/command-menu-item/record/constants/DefaultRecordCommandMenuItemsConfig.tsx
@@ -10992,6 +11660,11 @@ msgstr "Vernietig werkstroom permanent"
 msgid "Permanently destroy workflows"
 msgstr "Vernietig werkstroomme permanent"
 
+#. js-lingui-id: sJK6pq
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Permission denied"
+msgstr ""
+
 #. js-lingui-id: yWmZKk
 #: src/modules/metadata-error-handler/hooks/useMetadataErrorHandler.ts
 msgid "permission flag"
@@ -11059,6 +11732,11 @@ msgstr "Prent"
 msgid "Pie Chart"
 msgstr ""
 
+#. js-lingui-id: qVkGWK
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Pin"
+msgstr ""
+
 #. js-lingui-id: 2FIjLb
 #: src/modules/settings/data-model/fields/forms/select/components/SettingsDataModelFieldSelectFormOptionRow.tsx
 msgid "Pink"
@@ -11067,7 +11745,18 @@ msgstr "Pienk"
 #. js-lingui-id: kNiQp6
 #: src/modules/command-menu-item/server-items/edit/components/SidePanelCommandMenuItemEditPage.tsx
 #: src/modules/command-menu-item/server-items/display/components/SidePanelCommandMenuItemDisplayPage.tsx
+#: src/modules/chat/sendbird-suite/EditorialDetailsPanel.tsx
 msgid "Pinned"
+msgstr ""
+
+#. js-lingui-id: huO+3t
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "Pinned chat"
+msgstr ""
+
+#. js-lingui-id: JQjXNg
+#: src/modules/chat/sendbird-suite/EditorialDetailsPanel.tsx
+msgid "Pinned messages"
 msgstr ""
 
 #. js-lingui-id: hx1ePY
@@ -11117,11 +11806,6 @@ msgstr "Koppel asseblief jou posbus {mailboxHandle} weer om jou e-posaliasse by 
 #: src/modules/error-handler/components/internal/AppErrorDisplay.tsx
 msgid "Please refresh the page."
 msgstr ""
-
-#. js-lingui-id: X5x85V
-#: src/modules/settings/admin-panel/components/SettingsAdminWorkspaceContent.tsx
-msgid "Please search for a user first"
-msgstr "Soek asseblief eers vir 'n gebruiker"
 
 #. js-lingui-id: wCgL30
 #: src/pages/settings/data-model/new-field/SettingsObjectNewFieldConfigure.tsx
@@ -11216,10 +11900,20 @@ msgstr "Vooruitvul van jou werksruimte data..."
 msgid "Prefix"
 msgstr "Voorvoegsel"
 
+#. js-lingui-id: FA0aDS
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Preparing…"
+msgstr ""
+
 #. js-lingui-id: ut1ZY+
 #: src/modules/settings/data-model/fields/forms/components/SettingsDataModelFieldIsUniqueForm.tsx
 msgid "Prevent from assigning the same value to different records"
 msgstr "Voorkom dat dieselfde waarde aan verskillende rekords toegeken word"
+
+#. js-lingui-id: f1jADb
+#: src/modules/chat/components/ChatInfoPanel.tsx
+msgid "preview"
+msgstr ""
 
 #. js-lingui-id: rdUucN
 #: src/modules/settings/data-model/objects/forms/components/SettingsDataModelObjectSettingsFormCard.tsx
@@ -11291,6 +11985,16 @@ msgstr "Prioriteitsondersteuning"
 msgid "Privacy Policy"
 msgstr "Privaatheidsbeleid"
 
+#. js-lingui-id: zwBp5t
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "Private"
+msgstr ""
+
+#. js-lingui-id: ucYLoo
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "Private channel"
+msgstr ""
+
 #. js-lingui-id: 3fPjUY
 #: src/modules/settings/billing/hooks/useBillingWording.ts
 #: src/modules/settings/billing/components/internal/PlansTags.tsx
@@ -11324,6 +12028,11 @@ msgstr "Profiel - Instellings"
 #. js-lingui-id: Szskbr
 #: src/modules/settings/security/components/SettingsSecurityEditableProfileFields.tsx
 msgid "Profile Picture"
+msgstr ""
+
+#. js-lingui-id: +0B+ue
+#: src/modules/projects/components/KonnecctProjectsEmbed.tsx
+msgid "Projects"
 msgstr ""
 
 #. js-lingui-id: W9uQXX
@@ -11388,6 +12097,11 @@ msgstr "Verskaf 'n volledige en veilige gasheergedeelte op hierdie domeine."
 #: src/pages/settings/profile/appearance/components/LocalePicker.tsx
 msgid "Pseudo-English"
 msgstr "Pseudo-Engels"
+
+#. js-lingui-id: 7d1a0d
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "Public"
+msgstr ""
 
 #. js-lingui-id: knP82t
 #: src/modules/settings/domains/components/SettingPublicDomain.tsx
@@ -11497,8 +12211,8 @@ msgstr "Lees jou profiel"
 
 #. js-lingui-id: tCXcL7
 #: src/pages/settings/ai/SettingsAIPrompts.tsx
-msgid "Read-only — managed by Konnecct"
-msgstr "Leesalleen — bestuur deur Konnecct"
+msgid "Read-only — managed by Twenty"
+msgstr ""
 
 #. js-lingui-id: W+ApAD
 #: src/modules/workflow/workflow-steps/workflow-actions/components/WorkflowEditActionEmailBase.tsx
@@ -11538,6 +12252,7 @@ msgid "record"
 msgstr "rekord"
 
 #. js-lingui-id: w80YWM
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
 #: src/modules/workflow/workflow-steps/workflow-actions/utils/getActionHeaderTypeOrThrow.ts
 #: src/modules/workflow/workflow-steps/workflow-actions/components/WorkflowEditActionUpdateRecord.tsx
 #: src/modules/workflow/workflow-steps/workflow-actions/components/WorkflowEditActionDeleteRecord.tsx
@@ -11651,6 +12366,11 @@ msgstr "Herleidings URI"
 #: src/pages/settings/security/event-logs/SettingsEventLogs.tsx
 msgid "Refresh"
 msgstr "Verfris"
+
+#. js-lingui-id: Thhbhw
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Refund Policy"
+msgstr ""
 
 #. js-lingui-id: vpZcGd
 #: src/pages/settings/developers/api-keys/SettingsDevelopersApiKeyDetail.tsx
@@ -11822,6 +12542,11 @@ msgstr "Verwyder verskaffer"
 msgid "Remove provider \"{0}\""
 msgstr "Verwyder verskaffer \"{0}\""
 
+#. js-lingui-id: 4eUoRM
+#: src/modules/ai/components/internal/AgentRoutingIndicator.tsx
+msgid "Remove routing"
+msgstr ""
+
 #. js-lingui-id: SjxzXf
 #: src/modules/settings/roles/role-permissions/object-level-permissions/components/SettingsRolePermissionsObjectLevelTableRowOptionsDropdown.tsx
 #: src/modules/object-record/advanced-filter/components/AdvancedFilterRecordFilterOptionsDropdown.tsx
@@ -11875,16 +12600,41 @@ msgstr "Hersorteer veld"
 msgid "Reorder options"
 msgstr "Herskik opsies"
 
+#. js-lingui-id: cRcjaV
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "replies"
+msgstr ""
+
+#. js-lingui-id: 7mbOLE
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "reply"
+msgstr ""
+
 #. js-lingui-id: ImOQa9
 #: src/modules/side-panel/pages/message-thread/components/SidePanelMessageThreadPage.tsx
 #: src/modules/activities/emails/components/EmailThreadBottomBar.tsx
 msgid "Reply"
 msgstr "Reageer"
 
+#. js-lingui-id: jhOiFA
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Reply in thread"
+msgstr ""
+
+#. js-lingui-id: EgrqR3
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Reply in thread…"
+msgstr ""
+
 #. js-lingui-id: QMiOjK
 #: src/modules/activities/emails/components/EmailThreadBottomBar.tsx
 msgid "Reply to all"
 msgstr "Beantwoord almal"
+
+#. js-lingui-id: gZu9+9
+#: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
+msgid "Request changes"
+msgstr ""
 
 #. js-lingui-id: /laZGZ
 #: src/modules/workflow/workflow-steps/workflow-actions/http-request-action/components/HttpRequestExecutionResult.tsx
@@ -12069,6 +12819,11 @@ msgstr "Terugvoerwaarde"
 msgid "reverse alphabetical"
 msgstr "omgekeerd alfabeties"
 
+#. js-lingui-id: FEPXtw
+#: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
+msgid "Reviewed"
+msgstr ""
+
 #. js-lingui-id: GG37FL
 #: src/modules/settings/roles/role-permissions/object-level-permissions/object-form/components/SettingsRolePermissionsObjectLevelObjectFormObjectLevelTableRow.tsx
 msgid "Revoked for this object"
@@ -12145,6 +12900,11 @@ msgstr "Oorrolkrediete"
 msgid "Romanian"
 msgstr "Roemeens"
 
+#. js-lingui-id: QoZkYe
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Room ID"
+msgstr ""
+
 #. js-lingui-id: vQrTaX
 #: src/pages/settings/applications/tabs/SettingsApplicationRegistrationOAuthTab.tsx
 #: src/pages/settings/applications/tabs/SettingsApplicationRegistrationOAuthTab.tsx
@@ -12160,6 +12920,11 @@ msgstr "Roteer geheim"
 #: src/modules/ai/components/RoutingDebugDisplay.tsx
 msgid "Routing decision"
 msgstr "Roeteringsbesluit"
+
+#. js-lingui-id: 1miTnA
+#: src/modules/ai/components/internal/AgentRoutingIndicator.tsx
+msgid "Routing to {displayName}"
+msgstr ""
 
 #. js-lingui-id: Sz0Ftu
 #: src/modules/ai/components/RoutingDebugDisplay.tsx
@@ -12250,15 +13015,26 @@ msgstr "Stoor as nuwe aansig"
 msgid "Save Dashboard"
 msgstr "Stoor Paneelbord"
 
+#. js-lingui-id: nQO7BF
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Save note"
+msgstr ""
+
 #. js-lingui-id: veLq3R
 #: src/pages/settings/applications/tabs/SettingsApplicationsDeveloperTab.tsx
 msgid "Scaffold a new app, then use the CLI to develop, publish, and distribute"
 msgstr "Skep die raamwerk vir 'n nuwe toepassing en gebruik dan die CLI om te ontwikkel, te publiseer en te versprei"
 
 #. js-lingui-id: gmB6oO
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
 #: src/modules/workflow/workflow-trigger/components/CronExpressionHelper.tsx
 msgid "Schedule"
 msgstr "Skedule"
+
+#. js-lingui-id: hN95UD
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Schedule (cron)"
+msgstr ""
 
 #. js-lingui-id: QJ8HBJ
 #: src/modules/settings/playground/components/PlaygroundSetupForm.tsx
@@ -12282,6 +13058,16 @@ msgstr "Omvangs"
 msgid "Score"
 msgstr ""
 
+#. js-lingui-id: M4RwVY
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Screen share"
+msgstr ""
+
+#. js-lingui-id: 9YQt25
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Screen share is not available"
+msgstr ""
+
 #. js-lingui-id: hJjXGo
 #: src/pages/settings/admin-panel/SettingsAdminAiProviderDetail.tsx
 msgid "SDK"
@@ -12302,6 +13088,7 @@ msgstr "SDK"
 #: src/modules/command-menu-item/record-agnostic/constants/RecordAgnosticCommandMenuItemsConfig.tsx
 #: src/modules/command-menu-item/engine-command/constants/EngineComponentKeyHeadlessComponentMap.tsx
 #: src/modules/command-menu-item/engine-command/constants/EngineComponentKeyHeadlessComponentMap.tsx
+#: src/modules/chat/sendbird-suite/EditorialWorkspaceRail.tsx
 msgid "Search"
 msgstr "Soek"
 
@@ -12436,6 +13223,16 @@ msgstr "Soek enige veld"
 msgid "Search API keys"
 msgstr "Soek API sleutels"
 
+#. js-lingui-id: 1hagK1
+#: src/modules/chat/components/StreamDmModal.tsx
+msgid "Search by name or email…"
+msgstr ""
+
+#. js-lingui-id: 9k4ezQ
+#: src/modules/chat/sendbird-suite/EditorialWorkspaceRail.tsx
+msgid "Search channels…"
+msgstr ""
+
 #. js-lingui-id: yI4D/V
 #: src/modules/side-panel/pages/page-layout/components/dropdown-content/ChartColorSelectionDropdownContent.tsx
 msgid "Search colors"
@@ -12450,6 +13247,11 @@ msgstr "Soek kleure..."
 #: src/modules/settings/admin-panel/config-variables/components/ConfigVariableSearchInput.tsx
 msgid "Search config variables"
 msgstr "Soek konfig veranderlikes"
+
+#. js-lingui-id: OWm+8o
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "Search conversations"
+msgstr ""
 
 #. js-lingui-id: WLfEv1
 #: src/modules/object-record/object-filter-dropdown/components/ObjectFilterDropdownCountrySelect.tsx
@@ -12493,6 +13295,16 @@ msgstr "Soek vir 'n objek..."
 #: src/modules/ui/input/components/IconPicker.tsx
 msgid "Search icon"
 msgstr "Soek-ikoon"
+
+#. js-lingui-id: RVZWU7
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Search in conversation…"
+msgstr ""
+
+#. js-lingui-id: r03lTW
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "Search name…"
+msgstr ""
 
 #. js-lingui-id: two5rl
 #: src/modules/side-panel/pages/page-layout/components/record-table-settings/RecordTableDataSourceDropdownContent.tsx
@@ -12732,6 +13544,17 @@ msgstr "Kies 1 {fieldTypeLabelLowercase}-veld"
 msgid "Select 1 field"
 msgstr "Kies 1 veld"
 
+#. js-lingui-id: +7MwyC
+#: src/modules/chat/sendbird-suite/EditorialDetailsPanel.tsx
+msgid "Select a channel or direct message to see context."
+msgstr ""
+
+#. js-lingui-id: ZGNQwg
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Select a conversation"
+msgstr ""
+
 #. js-lingui-id: OMoA3j
 #: src/modules/workflow/workflow-steps/workflow-actions/delay-actions/components/WorkflowEditActionDelay.tsx
 msgid "Select a date"
@@ -12761,6 +13584,11 @@ msgstr "Kies 'n bekende verskaffer of skep 'n pasgemaakte een"
 #: src/modules/navigation-menu-item/edit/side-panel/components/SidePanelNavigationMenuItemEditPage.tsx
 msgid "Select a navigation item to edit"
 msgstr "Kies 'n navigasie-item om te wysig"
+
+#. js-lingui-id: qZQMEm
+#: src/modules/chat/components/NewDmModal.tsx
+msgid "Select a teammate"
+msgstr ""
 
 #. js-lingui-id: jL3gox
 #: src/modules/object-record/record-field/ui/form-types/components/FormBooleanFieldInput.tsx
@@ -12858,6 +13686,11 @@ msgstr "Kies operand"
 msgid "Select options"
 msgstr "Kies opsies"
 
+#. js-lingui-id: e3d/wg
+#: src/modules/chat/components/StreamDmModal.tsx
+msgid "Select someone to message"
+msgstr ""
+
 #. js-lingui-id: UKCiEd
 #: src/modules/settings/admin-panel/config-variables/components/ConfigVariableOptionsDropdownContent.tsx
 msgid "Select Source"
@@ -12913,6 +13746,22 @@ msgstr "Kies watter modelle as aanbevole modelle in die werkruimte se modelkiese
 msgid "Select your preferred language"
 msgstr "Kies jou voorkeurtaal"
 
+#. js-lingui-id: 5IX8eU
+#: src/modules/ai/components/internal/AgentRoutingIndicator.tsx
+msgid "selected agent"
+msgstr ""
+
+#. js-lingui-id: JlFcis
+#: src/pages/ai/SuperagentsPage.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Send"
+msgstr ""
+
+#. js-lingui-id: dg8/vM
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Send a message…"
+msgstr ""
+
 #. js-lingui-id: mjK8F3
 #: src/pages/settings/members/SettingsWorkspaceMembers.tsx
 msgid "Send an invite email to your team"
@@ -12928,6 +13777,11 @@ msgstr "Stuur e-pos"
 msgid "Send emails via connected accounts"
 msgstr "Stuur e-posse via gekoppelde rekeninge"
 
+#. js-lingui-id: PX4y6z
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Send your first message to start the conversation preview."
+msgstr ""
+
 #. js-lingui-id: asU5VT
 #: src/modules/workflow/workflow-steps/workflow-actions/http-request-action/components/HttpRequestExecutionResult.tsx
 msgid "Sending request..."
@@ -12938,6 +13792,11 @@ msgstr "Versoek word gestuur..."
 #: src/modules/auth/sign-in-up/components/EmailVerificationSent.tsx
 msgid "Sending..."
 msgstr "Besig om te stuur..."
+
+#. js-lingui-id: htv3P8
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Sensitive Content"
+msgstr ""
 
 #. js-lingui-id: h69WC6
 #: src/modules/settings/accounts/components/SettingsAccountsMessageAutoCreationCard.tsx
@@ -13051,6 +13910,7 @@ msgstr "Instelling van jou databasis..."
 #: src/pages/settings/applications/SettingsAvailableApplicationDetails.tsx
 #: src/pages/settings/applications/SettingsApplicationDetails.tsx
 #: src/pages/settings/ai/SettingsAgentForm.tsx
+#: src/pages/settings/ai/SettingsAgentForm.tsx
 #: src/modules/ui/navigation/navigation-drawer/components/MultiWorkspaceDropdown/internal/MultiWorkspaceDropdownDefaultComponents.tsx
 #: src/modules/sign-in-background-mock/components/SignInAppNavigationDrawerMock.tsx
 #: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutTabSettingsContent.tsx
@@ -13114,10 +13974,20 @@ msgstr "Sewende"
 msgid "Share"
 msgstr "Deel"
 
+#. js-lingui-id: uu7MJl
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Share the repetitive work you'd love to delegate..."
+msgstr ""
+
 #. js-lingui-id: Vy9kmk
 #: src/pages/settings/members/SettingsWorkspaceMembers.tsx
 msgid "Share this link to invite users to join your workspace"
 msgstr "Deel hierdie skakel om gebruikers uit te nooi om by jou werkruimte aan te sluit"
+
+#. js-lingui-id: CNh+bf
+#: src/modules/chat/components/ChatInfoPanel.tsx
+msgid "Shared media"
+msgstr ""
 
 #. js-lingui-id: RRXpo1
 #: src/modules/settings/data-model/fields/forms/number/constants/NumberDataModelSelectOptions.ts
@@ -13189,6 +14059,11 @@ msgstr "Meld aan of Skep 'n rekening"
 #: src/modules/auth/sign-in-up/components/internal/SignInUpWithCredentials.tsx
 msgid "Sign up"
 msgstr "Registreer"
+
+#. js-lingui-id: 2J+JfY
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Signing you in to workspace chat"
+msgstr ""
 
 #. js-lingui-id: BZdVGR
 #: src/modules/settings/data-model/fields/forms/select/components/SettingsDataModelFieldSelectForm.tsx
@@ -13374,8 +14249,8 @@ msgstr "Jammer, iets het verkeerd geloop"
 #: src/modules/object-record/record-table/record-table-header/components/RecordTableColumnHeadDropdownMenu.tsx
 #: src/modules/object-record/object-sort-dropdown/components/ObjectSortDropdownButton.tsx
 #: src/modules/object-record/object-sort-dropdown/components/ObjectSortDropdownButton.tsx
-#: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownRecordGroupsContent.tsx
 #: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownRecordGroupSortContent.tsx
+#: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownRecordGroupsContent.tsx
 msgid "Sort"
 msgstr "Sorteer"
 
@@ -13476,6 +14351,11 @@ msgstr "Standaard hulpmiddels beskikbaar vir KI-agente"
 msgid "Start"
 msgstr "Begin"
 
+#. js-lingui-id: pgoAdc
+#: src/modules/chat/components/NewDmModal.tsx
+msgid "Start a direct message with…"
+msgstr ""
+
 #. js-lingui-id: ASqWQi
 #: src/pages/settings/enterprise/SettingsEnterprise.tsx
 msgid "Start a new enterprise subscription to re-enable enterprise features."
@@ -13490,6 +14370,11 @@ msgstr "Begin 'n nuwe ondernemingsintekening."
 #: src/pages/settings/security/event-logs/components/EventLogFilters.tsx
 msgid "Start Date"
 msgstr "Begindatum"
+
+#. js-lingui-id: p6oHQh
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Start from scratch"
+msgstr ""
 
 #. js-lingui-id: s+K73L
 #: src/modules/settings/billing/components/SettingsBillingSubscriptionInfo.tsx
@@ -13538,11 +14423,6 @@ msgstr "Opsies vir stapfilter"
 #: src/modules/command-menu-item/record/constants/WorkflowRunsCommandMenuItemsConfig.tsx
 msgid "Stop"
 msgstr "Stop"
-
-#. js-lingui-id: I8EmDx
-#: src/modules/information-banner/components/impersonate/InformationBannerIsImpersonating.tsx
-msgid "Stop impersonating"
-msgstr "Stop met naboots"
 
 #. js-lingui-id: qn1Xxf
 #: src/modules/settings/admin-panel/config-variables/utils/useSourceContent.ts
@@ -13713,18 +14593,42 @@ msgstr "Voorgestel"
 msgid "Sum"
 msgstr "Som"
 
+#. js-lingui-id: F1nkJm
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Summarize"
+msgstr ""
+
 #. js-lingui-id: DBC3t5
 #: src/pages/settings/profile/appearance/components/DateTimeSettingsCalendarStartDaySelect.tsx
 #: src/pages/settings/profile/appearance/components/DateTimeSettingsCalendarStartDaySelect.tsx
 msgid "Sunday"
 msgstr "Sondag"
 
+#. js-lingui-id: nHbsDj
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Super Agents"
+msgstr ""
+
+#. js-lingui-id: fG/KB/
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Superagent created"
+msgstr ""
+
+#. js-lingui-id: 1GIqdi
+#: src/modules/navigation/components/MainNavigationDrawerScrollableItems.tsx
+msgid "Superagents"
+msgstr ""
+
 #. js-lingui-id: XYLcNv
-#: src/pages/settings/security/SettingsSecurity.tsx
 #: src/modules/ui/navigation/navigation-drawer/components/MultiWorkspaceDropdown/internal/MultiWorkspaceDropdownDefaultComponents.tsx
 #: src/modules/settings/hooks/useSettingsNavigationItems.tsx
 msgid "Support"
 msgstr "Ondersteuning"
+
+#. js-lingui-id: X5cqQ8
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Support Triage"
+msgstr ""
 
 #. js-lingui-id: omBFwv
 #: src/pages/settings/admin-panel/SettingsAdminNewAiModel.tsx
@@ -13735,6 +14639,11 @@ msgstr "Ondersteunde invoertipes"
 #: src/pages/settings/admin-panel/SettingsAdminNewAiModel.tsx
 msgid "Supports reasoning"
 msgstr "Ondersteun redenasie"
+
+#. js-lingui-id: vH2C/2
+#: src/modules/ai/components/internal/AgentRoutingIndicator.tsx
+msgid "Swap"
+msgstr ""
 
 #. js-lingui-id: UaISq3
 #: src/pages/settings/profile/appearance/components/LocalePicker.tsx
@@ -13793,8 +14702,8 @@ msgstr "Sinchroniseer met Outlook"
 
 #. js-lingui-id: +9x4tK
 #: src/pages/onboarding/SyncEmails.tsx
-msgid "Sync your Emails and Calendar with Konnecct. Choose your privacy settings."
-msgstr "Sinkroniseer jou e-posse en kalender met Konnecct. Kies jou privaatheid-instellings."
+msgid "Sync your Emails and Calendar with Twenty. Choose your privacy settings."
+msgstr ""
 
 #. js-lingui-id: N2FcBE
 #: src/modules/settings/accounts/components/SettingsAccountsConnectedAccountsRowRightContainer.tsx
@@ -13819,6 +14728,7 @@ msgstr "Sinkroniseer Objekte se Etikette en API Name"
 #. js-lingui-id: D+NlUC
 #: src/pages/settings/ai/SettingsAgentTurnDetail.tsx
 #: src/modules/ui/navigation/navigation-drawer/components/MultiWorkspaceDropdown/internal/MultiWorkspaceDropdownThemesComponents.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
 msgid "System"
 msgstr "Stelsel"
 
@@ -14385,6 +15295,12 @@ msgstr "Dit sal die databasiswaarde na omgewing/verstekwaarde herstel. Die datab
 msgid "Thought"
 msgstr "Gedagte"
 
+#. js-lingui-id: e66y2Z
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Thread"
+msgstr ""
+
 #. js-lingui-id: 5g/sE8
 #: src/modules/command-menu-item/record/constants/WorkflowCommandMenuItemsConfig.tsx
 msgid "Tidy up"
@@ -14560,6 +15476,11 @@ msgstr "Totale werke"
 msgid "Total time"
 msgstr "Totale tyd"
 
+#. js-lingui-id: kXL+hZ
+#: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
+msgid "Total turns"
+msgstr ""
+
 #. js-lingui-id: YT/cKI
 #: src/modules/settings/billing/components/SettingsBillingCreditsSection.tsx
 msgid "Track your {intervalLabel} workflow credit consumption."
@@ -14618,6 +15539,11 @@ msgstr "Skakelaar op minuut (UTC)"
 msgid "Trigger interval"
 msgstr "Tussenpose aktiveer"
 
+#. js-lingui-id: a10vUY
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Trigger mode"
+msgstr ""
+
 #. js-lingui-id: PiUt3N
 #: src/modules/side-panel/pages/workflow/hooks/useSidePanelWorkflowNavigation.ts
 #: src/modules/command-menu/hooks/__tests__/useWorkflowCommandMenu.test.tsx
@@ -14650,6 +15576,11 @@ msgstr "Sneller die funksie met Http-versoek"
 #: src/modules/object-record/object-filter-dropdown/components/ObjectFilterDropdownBooleanSelect.tsx
 msgid "True"
 msgstr "Waar"
+
+#. js-lingui-id: KDw4GX
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Try again"
+msgstr ""
 
 #. js-lingui-id: haaL9N
 #: src/pages/settings/workspace/SettingsApiWebhooks.tsx
@@ -14684,6 +15615,11 @@ msgstr "Turks"
 msgid "Turn"
 msgstr ""
 
+#. js-lingui-id: s4ecKs
+#: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
+msgid "Turn approved for autonomous use"
+msgstr ""
+
 #. js-lingui-id: qsUXL3
 #: src/pages/settings/ai/SettingsAgentTurnDetail.tsx
 #: src/pages/settings/ai/SettingsAgentTurnDetail.tsx
@@ -14712,8 +15648,8 @@ msgstr "Turkoois"
 
 #. js-lingui-id: JnaRPe
 #: src/modules/spreadsheet-import/steps/components/MatchColumnsStep/components/ColumnGrid.tsx
-msgid "Konnecct fields"
-msgstr "Konnecct-velde"
+msgid "Twenty fields"
+msgstr ""
 
 #. js-lingui-id: YIjS4q
 #: src/pages/settings/ai/components/SettingsAgentModelCapabilities.tsx
@@ -14761,6 +15697,11 @@ msgstr "Tipe"
 #: src/modules/object-record/record-field/ui/meta-types/input/components/RichTextFieldEditor.tsx
 msgid "Type '/' for commands, '@' for mentions"
 msgstr "Tik '/' vir opdragte, '@' vir vermeldings"
+
+#. js-lingui-id: wefdc8
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Type a message and send it to the AI first, or describe your superagent in the box above."
+msgstr ""
 
 #. js-lingui-id: qzD6hf
 #: src/modules/workflow/workflow-steps/workflow-actions/ai-agent-action/components/WorkflowAiAgentPermissionsTab.tsx
@@ -14960,6 +15901,7 @@ msgstr ""
 #: src/modules/object-record/record-title-cell/components/RecordTitleCellTextFieldDisplay.tsx
 #: src/modules/object-record/components/RecordChip.tsx
 #: src/modules/object-record/components/RecordChip.tsx
+#: src/modules/mention/components/MentionRecordChip.tsx
 #: src/modules/mention/components/MentionRecordChip.tsx
 #: src/modules/ai/components/RecordLink.tsx
 #: src/modules/ai/components/AIChatThreadGroup.tsx
@@ -15218,6 +16160,11 @@ msgstr ""
 msgid "Use letter, number and dash only. Start and finish with a letter or a number"
 msgstr "Gebruik letter, nommer en koppelteken alleenlik. Begin en eindig met 'n letter of 'n nommer"
 
+#. js-lingui-id: ne8oeI
+#: src/pages/settings/ai/SettingsAI.tsx
+msgid "Use natural-language instructions, then refine with advanced settings for tools, role scope, response format, and evaluations."
+msgstr ""
+
 #. js-lingui-id: c6uZUV
 #: src/modules/object-record/record-table/empty-state/utils/getEmptyStateSubTitle.ts
 msgid "Use our API or add your first {objectLabel} manually"
@@ -15245,8 +16192,8 @@ msgstr "Nuttig vir pivot-/koppelingstabelle"
 #: src/pages/settings/security/event-logs/components/EventLogResultsTable.tsx
 #: src/pages/settings/security/event-logs/components/EventLogResultsTable.tsx
 #: src/pages/settings/profile/appearance/components/SettingsExperience.tsx
-#: src/pages/settings/ai/SettingsAgentTurnDetail.tsx
 #: src/pages/settings/ai/SettingsAIPrompts.tsx
+#: src/pages/settings/ai/SettingsAgentTurnDetail.tsx
 #: src/pages/settings/accounts/SettingsNewAccount.tsx
 #: src/pages/settings/accounts/SettingsAccountsEmails.tsx
 #: src/pages/settings/accounts/SettingsAccountsConfigurationStepEmail.tsx
@@ -15413,6 +16360,7 @@ msgstr ""
 
 #. js-lingui-id: vSJd18
 #: src/pages/settings/admin-panel/SettingsAdminNewAiModel.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
 msgid "Video"
 msgstr "Video"
 
@@ -15582,6 +16530,7 @@ msgstr "Violet"
 #: src/modules/settings/accounts/components/SettingsAccountsMessageChannelDetails.tsx
 #: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownVisibilityContent.tsx
 #: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownCustomView.tsx
+#: src/modules/chat/components/CreateChannelModal.tsx
 msgid "Visibility"
 msgstr "Sigbaarheid"
 
@@ -15759,8 +16708,8 @@ msgstr ""
 
 #. js-lingui-id: nTuObL
 #: src/pages/auth/SignInUp.tsx
-msgid "Welcome to Konnecct"
-msgstr "Welkom by Konnecct"
+msgid "Welcome to Twenty"
+msgstr ""
 
 #. js-lingui-id: t8ZvkC
 #: src/pages/auth/SignInUp.tsx
@@ -15776,6 +16725,11 @@ msgstr "Welkom, {workspaceName}."
 #: src/modules/ai/components/suggested-prompts/AIChatSuggestedPrompts.tsx
 msgid "What can I help you with?"
 msgstr "Waarmee kan ek jou help?"
+
+#. js-lingui-id: DOIequ
+#: src/pages/settings/ai/components/SettingsAgentSettingsTab.tsx
+msgid "What should this superagent do?"
+msgstr ""
 
 #. js-lingui-id: cE4SvC
 #: src/pages/settings/developers/api-keys/SettingsDevelopersApiKeysNew.tsx
@@ -15915,12 +16869,13 @@ msgstr "Werksvloeie"
 #: src/pages/settings/applications/SettingsApplicationRegistrationDetails.tsx
 #: src/pages/settings/applications/SettingsApplicationDetails.tsx
 #: src/pages/settings/ai/SettingsSkillForm.tsx
+#: src/pages/settings/ai/SettingsAIPrompts.tsx
+#: src/pages/settings/ai/SettingsAI.tsx
 #: src/pages/settings/ai/SettingsAgentTurnDetail.tsx
 #: src/pages/settings/ai/SettingsAgentTurnDetail.tsx
 #: src/pages/settings/ai/SettingsAgentTurnDetail.tsx
 #: src/pages/settings/ai/SettingsAgentForm.tsx
-#: src/pages/settings/ai/SettingsAIPrompts.tsx
-#: src/pages/settings/ai/SettingsAI.tsx
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
 #: src/modules/views/view-picker/components/ViewPickerListContent.tsx
 #: src/modules/sign-in-background-mock/components/SignInAppNavigationDrawerMock.tsx
 #: src/modules/settings/roles/role-permissions/permission-flags/hooks/useSettingsRolePermissionFlagConfig.ts
@@ -15936,8 +16891,14 @@ msgstr "Werksvloeie"
 #: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownVisibilityContent.tsx
 #: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownCustomView.tsx
 #: src/modules/navigation-menu-item/display/sections/workspace/components/WorkspaceSection.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
 msgid "Workspace"
 msgstr "Werkruimte"
+
+#. js-lingui-id: ExRT7A
+#: src/modules/chat/components/ChatInfoPanel.tsx
+msgid "Workspace channel. Shared files and links will appear here when chat history indexing is connected."
+msgstr ""
 
 #. js-lingui-id: fQ8teq
 #: src/modules/auth/sign-in-up/hooks/useSignUpInNewWorkspace.ts
@@ -16021,6 +16982,11 @@ msgstr "Skryf 'n beskrywing"
 msgid "Write a description for this agent"
 msgstr "Skryf 'n beskrywing vir hierdie agent"
 
+#. js-lingui-id: RzWUUK
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Write a message…"
+msgstr ""
+
 #. js-lingui-id: zeCIJi
 #: src/modules/settings/logic-functions/components/tabs/SettingsLogicFunctionCodeEditorTab.tsx
 msgid "Write your function (in typescript) below"
@@ -16096,6 +17062,16 @@ msgstr "Ja"
 msgid "Yesterday"
 msgstr "Gister"
 
+#. js-lingui-id: kWJmRL
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "You"
+msgstr ""
+
+#. js-lingui-id: F4BWma
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "You / remote"
+msgstr ""
+
 #. js-lingui-id: lWUeEt
 #: src/modules/auth/sign-in-up/hooks/useWorkspaceFromInviteHash.ts
 msgid "You already belong to the workspace {workspaceDisplayName}"
@@ -16120,6 +17096,11 @@ msgstr "Jy kan die funksielogika in jou toepassing se instellings sien."
 #: src/modules/settings/accounts/components/SettingsAccountsConnectionForm.tsx
 msgid "You can set up any combination of IMAP (receiving emails), SMTP (sending emails), and CalDAV (calendar sync)."
 msgstr "U kan enige kombinasie van IMAP (ontvang e-posse), SMTP (stuur e-posse), en CalDAV (kalender-sinkronisering) opstel."
+
+#. js-lingui-id: PbVqEd
+#: src/modules/chat/components/StreamDmModal.tsx
+msgid "You cannot DM yourself"
+msgstr ""
 
 #. js-lingui-id: eqUj2Z
 #: src/modules/page-layout/widgets/components/PageLayoutWidgetForbiddenDisplay.tsx

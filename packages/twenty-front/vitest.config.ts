@@ -21,6 +21,14 @@ export default defineConfig({
     projects: [
       {
         extends: './vite.config.ts',
+        test: {
+          name: 'unit',
+          environment: 'node',
+          include: ['src/**/__tests__/**/*.test.ts'],
+        },
+      },
+      {
+        extends: './vite.config.ts',
         plugins: [
           storybookTest({
             configDir: path.join(dirname, '.storybook'),

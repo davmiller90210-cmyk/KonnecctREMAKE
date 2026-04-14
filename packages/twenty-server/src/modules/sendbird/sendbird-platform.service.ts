@@ -93,21 +93,22 @@ export class SendbirdPlatformService {
     }
   }
 
-  private isMissingUserGetError(error: unknown): boolean {
+  /**
+   * User already exists — Sendbird returns different bodies by region/app version.
+   */
+  private isDuplicateUserCreateError(error: unknown): boolean {
     const msg = error instanceof Error ? error.message : String(error);
     return (
-      /\b404\b/.test(msg) ||
-      /user not found/i.test(msg) ||
-      /\b4001\b/.test(msg) ||
-      /\b400111\b/.test(msg)
+      /400202|400201|unique|already exists|duplicate|violates unique|user_id.*exist/i.test(
+        msg,
+      )
     );
   }
 
-  private isDuplicateUserCreateError(error: unknown): boolean {
-    const msg = error instanceof Error ? error.message : String(error);
-    return /400202|unique constraint|already exists|duplicate/i.test(msg);
-  }
-
+  /**
+   * Create-or-update without relying on GET /v3/users/{id} (some apps return errors
+   * that are easy to mis-classify, which blocked POST and broke login entirely).
+   */
   async ensureUser(params: {
     userId: string;
     nickname: string;
@@ -121,31 +122,14 @@ export class SendbirdPlatformService {
     const profileUrl = this.sanitizeProfileUrl(params.profileUrl);
     const userPath = `/v3/users/${encodeURIComponent(params.userId)}`;
 
-    let userExists = false;
-
     try {
-      await this.request<unknown>('GET', userPath);
-      userExists = true;
+      await this.request<unknown>('POST', '/v3/users', {
+        user_id: params.userId,
+        nickname,
+      });
     } catch (error) {
-      if (this.isMissingUserGetError(error)) {
-        userExists = false;
-      } else {
+      if (!this.isDuplicateUserCreateError(error)) {
         throw error;
-      }
-    }
-
-    if (!userExists) {
-      try {
-        await this.request<unknown>('POST', '/v3/users', {
-          user_id: params.userId,
-          nickname,
-        });
-      } catch (error) {
-        if (this.isDuplicateUserCreateError(error)) {
-          userExists = true;
-        } else {
-          throw error;
-        }
       }
     }
 

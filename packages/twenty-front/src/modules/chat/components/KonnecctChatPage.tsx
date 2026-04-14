@@ -2,6 +2,8 @@ import { styled } from '@linaria/react';
 import { lazy, Suspense } from 'react';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 
+import { editorialChatTheme } from '@/chat/theme/editorialChatTheme';
+
 import { MattermostChatEmbed } from '@/chat/components/MattermostChatEmbed';
 import {
   REACT_APP_CHAT_PROVIDER,
@@ -32,9 +34,10 @@ const SendbirdCommunicationHub = lazy(async () => {
   return { default: m.SendbirdCommunicationHub };
 });
 
-/** Fills DefaultLayout main column (flex chain + min-height) for full-viewport chat. */
-const StyledChatPageRoot = styled.div`
-  background: ${themeCssVariables.background.noisy};
+/** Fills layout main column (flex chain + min-height) for full-viewport chat. */
+const StyledChatPageRoot = styled.div<{ $sendbird?: boolean }>`
+  background: ${({ $sendbird }) =>
+    $sendbird ? editorialChatTheme.surface : themeCssVariables.background.noisy};
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
@@ -50,7 +53,7 @@ const ChatLoadingFallback = () => (
 
 export const KonnecctChatPage = () => {
   return (
-    <StyledChatPageRoot>
+    <StyledChatPageRoot $sendbird={REACT_APP_CHAT_PROVIDER === 'sendbird'}>
       <Suspense fallback={<ChatLoadingFallback />}>
         {REACT_APP_CHAT_PROVIDER === 'mattermost' ? (
           REACT_APP_MATTERMOST_USE_NATIVE_HUB ? (

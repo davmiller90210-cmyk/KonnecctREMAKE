@@ -4,19 +4,21 @@ import { useLocation } from 'react-router-dom';
 
 import { REACT_APP_CHAT_PROVIDER } from '~/config';
 
-const isMattermostChatPath = (pathname: string) =>
+const isNativeChatPath = (pathname: string) =>
   pathname === '/chat' ||
   pathname.startsWith('/chat/c/') ||
   pathname.startsWith('/chat/dm/');
 
 /**
- * Uses a full-width layout (no CRM drawer) for Mattermost chat routes when chat provider is mattermost.
+ * Full-width layout (no CRM drawer) for embedded Mattermost or native Sendbird chat routes.
  */
 export const MainLayoutSwitcher = () => {
   const { pathname } = useLocation();
 
-  const useChatEmbed =
-    REACT_APP_CHAT_PROVIDER === 'mattermost' && isMattermostChatPath(pathname);
+  const useFullBleedChat =
+    isNativeChatPath(pathname) &&
+    (REACT_APP_CHAT_PROVIDER === 'mattermost' ||
+      REACT_APP_CHAT_PROVIDER === 'sendbird');
 
-  return useChatEmbed ? <ChatEmbedLayout /> : <DefaultLayout />;
+  return useFullBleedChat ? <ChatEmbedLayout /> : <DefaultLayout />;
 };

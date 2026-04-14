@@ -45,3 +45,8 @@ export type ChatWorkspaceMemberOption = {
   /** Same id the Stream client uses for this user in this workspace. */
   streamUserId: string;
 };
+
+/** Active conversation in the Sendbird editorial hub (channel or DM). */
+export type ChatHubSelection =
+  | { kind: 'channel'; channel: ChatWorkspaceLayoutChannel }
+  | { kind: 'dm'; dm: ChatWorkspaceLayoutDm };

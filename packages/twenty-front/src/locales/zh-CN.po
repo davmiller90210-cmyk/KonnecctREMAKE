@@ -320,6 +320,11 @@ msgstr ""
 msgid "{jobCount, plural, one {This will retry the selected job. It will be re-executed from the beginning.} other {This will retry the selected jobs. They will be re-executed from the beginning.}}"
 msgstr ""
 
+#. js-lingui-id: guhZ4u
+#: src/modules/chat/components/ChatInfoPanel.tsx
+msgid "{memberCount} members (preview)"
+msgstr ""
+
 #. js-lingui-id: Koe99p
 #: src/modules/settings/data-model/object-details/components/SettingsObjectRelationItemTableRow.tsx
 #: src/modules/settings/data-model/object-details/components/SettingsObjectFieldItemTableRow.tsx
@@ -664,6 +669,11 @@ msgstr "关于此用户"
 msgid "About this workspace"
 msgstr "关于此工作区"
 
+#. js-lingui-id: g3UF2V
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Accept"
+msgstr ""
+
 #. js-lingui-id: pNW+Rt
 #: src/pages/settings/admin-panel/SettingsAdminNewAiProvider.tsx
 msgid "Access Key ID"
@@ -708,6 +718,11 @@ msgstr "账户添加成功。同步已开始。"
 #: src/modules/settings/profile/components/DeleteAccount.tsx
 msgid "Account Deletion"
 msgstr "删除账户"
+
+#. js-lingui-id: z5nX9v
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Account Troubleshooter"
+msgstr ""
 
 #. js-lingui-id: bPwFdf
 #: src/pages/settings/accounts/SettingsNewAccount.tsx
@@ -818,6 +833,7 @@ msgstr "活动同步"
 #. js-lingui-id: m16xKo
 #: src/pages/settings/applications/tabs/SettingsApplicationRegistrationOAuthTab.tsx
 #: src/pages/settings/ai/components/SettingsAgentEvalsTab.tsx
+#: src/pages/ai/SuperagentsPage.tsx
 msgid "Add"
 msgstr "添加"
 
@@ -848,6 +864,11 @@ msgstr "添加一个我们正在联系的新公司 (例如：名称、网站、�
 #: src/modules/command-menu-item/record/constants/WorkflowCommandMenuItemsConfig.tsx
 msgid "Add a node"
 msgstr "添加节点"
+
+#. js-lingui-id: 2JNhdf
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Add a quick note…"
+msgstr ""
 
 #. js-lingui-id: nGv1DN
 #: src/modules/side-panel/utils/getSidePanelSubPageTitle.ts
@@ -1199,6 +1220,7 @@ msgstr "地址 2"
 
 #. js-lingui-id: U3pytU
 #: src/modules/settings/members/components/MemberInfosTab.tsx
+#: src/modules/chat/sendbird-suite/EditorialWorkspaceRail.tsx
 msgid "Admin"
 msgstr ""
 
@@ -1283,6 +1305,11 @@ msgstr "代理"
 msgid "Agent execution"
 msgstr "代理执行"
 
+#. js-lingui-id: qCvN5k
+#: src/pages/settings/ai/SettingsAI.tsx
+msgid "Agent hub"
+msgstr ""
+
 #. js-lingui-id: WrQ+BN
 #: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
 msgid "Agent interactions will appear here once the agent is used in conversations"
@@ -1303,8 +1330,15 @@ msgstr ""
 msgid "Agent tokens"
 msgstr "代理标记"
 
+#. js-lingui-id: eENNyq
+#: src/modules/ai/components/internal/AgentRoutingIndicator.tsx
+msgid "Agent unavailable or malformed token. Default routing will be used."
+msgstr ""
+
 #. js-lingui-id: 8Uv5e6
 #: src/pages/settings/applications/tabs/SettingsApplicationDetailContentTab.tsx
+#: src/pages/settings/ai/SettingsAI.tsx
+#: src/pages/ai/SuperagentsPage.tsx
 #: src/modules/settings/roles/role-assignment/components/SettingsRoleAssignmentTable.tsx
 msgid "Agents"
 msgstr "代理"
@@ -1324,19 +1358,16 @@ msgstr ""
 #: src/pages/settings/roles/SettingsRoleAddObjectLevel.tsx
 #: src/pages/settings/logic-functions/SettingsLogicFunctionDetail.tsx
 #: src/pages/settings/ai/SettingsSkillForm.tsx
+#: src/pages/settings/ai/SettingsAIPrompts.tsx
 #: src/pages/settings/ai/SettingsAgentTurnDetail.tsx
 #: src/pages/settings/ai/SettingsAgentTurnDetail.tsx
 #: src/pages/settings/ai/SettingsAgentTurnDetail.tsx
 #: src/pages/settings/ai/SettingsAgentForm.tsx
-#: src/pages/settings/ai/SettingsAIPrompts.tsx
-#: src/pages/settings/ai/SettingsAI.tsx
-#: src/pages/settings/ai/SettingsAI.tsx
 #: src/pages/settings/admin-panel/SettingsAdminAiProviderDetail.tsx
 #: src/modules/workflow/workflow-steps/workflow-actions/utils/getActionHeaderTypeOrThrow.ts
 #: src/modules/side-panel/pages/workflow/action/components/SidePanelWorkflowSelectAction.tsx
 #: src/modules/settings/roles/role-permissions/permission-flags/hooks/useSettingsRolePermissionFlagConfig.ts
 #: src/modules/settings/roles/role-permissions/object-level-permissions/object-form/components/SettingsRolePermissionsObjectLevelObjectForm.tsx
-#: src/modules/settings/hooks/useSettingsNavigationItems.tsx
 #: src/modules/settings/admin-panel/components/SettingsAdminContent.tsx
 msgid "AI"
 msgstr "AI"
@@ -1451,6 +1482,16 @@ msgstr "所有行"
 msgid "All Members"
 msgstr "所有成员"
 
+#. js-lingui-id: dtwyLS
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "All messages"
+msgstr ""
+
+#. js-lingui-id: rimT/D
+#: src/modules/navigation/components/MainNavigationDrawerRecentChats.tsx
+msgid "All Messages"
+msgstr ""
+
 #. js-lingui-id: ypSiuQ
 #: src/modules/settings/developers/components/WebhookEntitySelect.tsx
 msgid "All Metadata"
@@ -1554,11 +1595,6 @@ msgstr "允许通过微软的单点登录功能登录。"
 msgid "Allow Microsoft-based login for users with SSO bypass permissions."
 msgstr "允许具有SSO绕过权限的用户使用Microsoft登录。"
 
-#. js-lingui-id: U6bnfj
-#: src/modules/settings/workspace/components/ToggleImpersonate.tsx
-msgid "Allow Support Team Access"
-msgstr "允许支持团队访问"
-
 #. js-lingui-id: wMg43c
 #: src/modules/settings/security/components/SettingsSecurityAuthProvidersOptionsList.tsx
 msgid "Allow the invitation of new users by sharing an invite link."
@@ -1579,6 +1615,11 @@ msgstr "允许用户使用电子邮件和密码登录。"
 msgid "Allowed redirect URIs for OAuth flows"
 msgstr "OAuth 流程允许的重定向 URI"
 
+#. js-lingui-id: bruUug
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Almost there"
+msgstr ""
+
 #. js-lingui-id: Yn0ZH1
 #: src/modules/side-panel/pages/page-layout/utils/getSortLabelSuffixForFieldType.ts
 #: src/modules/side-panel/pages/page-layout/utils/getSortLabelSuffixForFieldType.ts
@@ -1589,6 +1630,16 @@ msgstr "按字母顺序"
 #: src/modules/navigation-menu-item/edit/side-panel/components/SidePanelObjectMenuItem.tsx
 msgid "Already in navbar"
 msgstr "已在导航栏中"
+
+#. js-lingui-id: SXGR8p
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Always ask"
+msgstr ""
+
+#. js-lingui-id: iBcSp9
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Always require approval"
+msgstr ""
 
 #. js-lingui-id: uprOiC
 #: src/modules/settings/data-model/fields/forms/select/components/SettingsDataModelFieldSelectFormOptionRow.tsx
@@ -1844,6 +1895,11 @@ msgstr "此应用已安装在此工作区"
 msgid "Appearance"
 msgstr "外观"
 
+#. js-lingui-id: q1epTc
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Append"
+msgstr ""
+
 #. js-lingui-id: QsDjlD
 #: src/pages/onboarding/CreateWorkspace.tsx
 #: src/modules/settings/workspace/components/NameField.tsx
@@ -1904,15 +1960,40 @@ msgstr "应用程序升级成功。"
 msgid "Applications"
 msgstr "应用程序"
 
+#. js-lingui-id: 7hnxch
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Applies refund guidelines"
+msgstr ""
+
 #. js-lingui-id: DB8zMK
 #: src/modules/object-record/record-update-multiple/components/UpdateMultipleRecordsFooter.tsx
 msgid "Apply"
 msgstr "应用"
 
+#. js-lingui-id: VIzKdt
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Apply our refund policy consistently and draft customer replies"
+msgstr ""
+
 #. js-lingui-id: 9re43z
 #: src/modules/object-record/record-update-multiple/components/UpdateMultipleRecordsFooter.tsx
 msgid "Apply{progressText}"
 msgstr "应用{progressText}"
+
+#. js-lingui-id: vdnsnn
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Approval mode"
+msgstr ""
+
+#. js-lingui-id: Z7ZXbT
+#: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
+msgid "Approve"
+msgstr ""
+
+#. js-lingui-id: 7kb4LU
+#: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
+msgid "Approved"
+msgstr ""
 
 #. js-lingui-id: UDlRcx
 #: src/modules/settings/security/components/approvedAccessDomains/SettingsSecurityApprovedAccessDomainValidationEffect.tsx
@@ -1939,6 +2020,11 @@ msgstr "阿拉伯语"
 #: src/modules/activities/files/components/DocumentViewer.tsx
 msgid "Archive files cannot be previewed. Please download the file to access its contents."
 msgstr "归档文件无法预览。请下载该文件以访问其内容。"
+
+#. js-lingui-id: GeXcpY
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "are typing…"
+msgstr ""
 
 #. js-lingui-id: 4CHeVx
 #: src/pages/settings/ai/components/SettingsAgentEvalsTab.tsx
@@ -2010,6 +2096,16 @@ msgstr "升序"
 msgid "Ascending"
 msgstr "升序"
 
+#. js-lingui-id: F+vBv0
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Ask"
+msgstr ""
+
+#. js-lingui-id: vw3pKo
+#: src/modules/command-menu-item/record/constants/DefaultRecordCommandMenuItemsConfig.tsx
+msgid "Ask Agent"
+msgstr ""
+
 #. js-lingui-id: xWEvuo
 #: src/modules/side-panel/hooks/useOpenAskAIPageInSidePanel.ts
 #: src/modules/side-panel/components/SidePanelAskAIInfo.tsx
@@ -2021,10 +2117,20 @@ msgstr "升序"
 msgid "Ask AI"
 msgstr "询问 AI"
 
+#. js-lingui-id: OGqmb4
+#: src/modules/command-menu-item/record/constants/DefaultRecordCommandMenuItemsConfig.tsx
+msgid "Ask Konnecct Agent"
+msgstr ""
+
 #. js-lingui-id: mc9nK2
 #: src/modules/ai/hooks/useAIChatEditor.ts
 msgid "Ask, search or make anything..."
 msgstr "提问、搜索或创建任何内容..."
+
+#. js-lingui-id: +GfNPU
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Ask, search, or create anything..."
+msgstr ""
 
 #. js-lingui-id: OBqG7p
 #: src/modules/settings/roles/role-assignment/components/SettingsRoleAssignmentConfirmationModal.tsx
@@ -2146,10 +2252,20 @@ msgstr "在 {remainingValues} 和 {lastValue}"
 msgid "at the top of the hour"
 msgstr "在每小时的开始"
 
+#. js-lingui-id: x9ecE4
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Attach file"
+msgstr ""
+
 #. js-lingui-id: N7m8E+
 #: src/modules/ai/components/internal/AgentChatFileUploadButton.tsx
 msgid "Attach files"
 msgstr "附加文件"
+
+#. js-lingui-id: eNw730
+#: src/modules/chat/sendbird-suite/EditorialDetailsPanel.tsx
+msgid "Attachment preview"
+msgstr ""
 
 #. js-lingui-id: w/Sphq
 #: src/modules/workflow/workflow-steps/workflow-actions/components/WorkflowEditActionEmailBase.tsx
@@ -2304,6 +2420,11 @@ msgstr "未找到 Person 对象的头像文件字段"
 msgid "Average"
 msgstr "平均"
 
+#. js-lingui-id: V76PAO
+#: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
+msgid "Avg score"
+msgstr ""
+
 #. js-lingui-id: li9In6
 #: src/modules/side-panel/pages/page-layout/constants/settings/ChartConfigurationSettingLabels.ts
 msgid "Axis name"
@@ -2435,6 +2556,11 @@ msgstr "正文"
 msgid "Body Input"
 msgstr "正文输入"
 
+#. js-lingui-id: KmydK6
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Bold"
+msgstr ""
+
 #. js-lingui-id: 2yl5lQ
 #: src/pages/onboarding/internal/ChooseYourPlanContent.tsx
 msgid "Book a Call"
@@ -2474,6 +2600,11 @@ msgstr "青铜色"
 #: src/modules/settings/data-model/fields/forms/select/components/SettingsDataModelFieldSelectFormOptionRow.tsx
 msgid "Brown"
 msgstr "棕色"
+
+#. js-lingui-id: mTTRi+
+#: src/pages/settings/ai/SettingsAI.tsx
+msgid "Browse all workspace agents, open profiles, and update teammate behaviors."
+msgstr ""
 
 #. js-lingui-id: vwZV+4
 #: src/modules/ai/components/suggested-prompts/default-suggested-prompts.ts
@@ -2522,8 +2653,8 @@ msgstr "由 {author} 提供"
 
 #. js-lingui-id: 8Pfllj
 #: src/modules/auth/sign-in-up/components/FooterNote.tsx
-msgid "By using Konnecct, you agree to the"
-msgstr "使用 Konnecct 即表示您同意"
+msgid "By using Twenty, you agree to the"
+msgstr ""
 
 #. js-lingui-id: Yx41df
 #: src/modules/auth/sign-in-up/components/FooterNote.tsx
@@ -2631,10 +2762,25 @@ msgstr "日历视图"
 msgid "Calendars"
 msgstr "日历"
 
+#. js-lingui-id: 8hvxGX
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Call"
+msgstr ""
+
+#. js-lingui-id: Dy4Q9Z
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "Call (preview)"
+msgstr ""
+
 #. js-lingui-id: qIlodj
 #: src/modules/object-record/record-field/ui/form-types/components/FormPhoneFieldInput.tsx
 msgid "Calling Code"
 msgstr "国家区号"
+
+#. js-lingui-id: rT2cV+
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Camera"
+msgstr ""
 
 #. js-lingui-id: msssZq
 #: src/modules/settings/data-model/objects/forms/components/SettingsDataModelObjectAboutForm.tsx
@@ -2661,6 +2807,9 @@ msgstr "无法扫描？复制"
 #: src/modules/settings/components/SaveAndCancelButtons/CancelButton.tsx
 #: src/modules/object-record/record-update-multiple/components/UpdateMultipleRecordsFooter.tsx
 #: src/modules/command-menu-item/record/constants/DashboardCommandMenuItemsConfig.tsx
+#: src/modules/chat/components/StreamDmModal.tsx
+#: src/modules/chat/components/NewDmModal.tsx
+#: src/modules/chat/components/CreateChannelModal.tsx
 msgid "Cancel"
 msgstr "取消"
 
@@ -2737,12 +2886,6 @@ msgstr "无法删除唯一的视图"
 msgid "Cannot display message"
 msgstr ""
 
-#. js-lingui-id: W3MumH
-#: src/pages/settings/members/SettingsWorkspaceMember.tsx
-#: src/pages/settings/members/SettingsWorkspaceMember.tsx
-msgid "Cannot impersonate selected user"
-msgstr "无法模拟所选用户"
-
 #. js-lingui-id: H1Ddy9
 #: src/modules/object-record/record-field/ui/meta-types/input/hooks/useOpenFilesFieldInput.tsx
 #: src/modules/object-record/record-field/ui/meta-types/input/components/FilesFieldInput.tsx
@@ -2762,8 +2905,19 @@ msgstr "验证码（反机器人检查）仍在加载，请重试"
 msgid "Catalan"
 msgstr "加泰罗尼亚语"
 
+#. js-lingui-id: kDAtt8
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Categorize and triage support tickets by urgency and topic"
+msgstr ""
+
+#. js-lingui-id: 2W8ykM
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Categorizes support tickets"
+msgstr ""
+
 #. js-lingui-id: K7tIrx
 #: src/pages/settings/applications/SettingsAvailableApplicationDetails.tsx
+#: src/modules/chat/components/CreateChannelModal.tsx
 msgid "Category"
 msgstr "类别"
 
@@ -2819,6 +2973,26 @@ msgstr "切换为专业计划？"
 msgid "Change to Yearly?"
 msgstr "更改为年度计划吗？"
 
+#. js-lingui-id: jPfDbj
+#: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
+msgid "Changes requested before autonomous execution"
+msgstr ""
+
+#. js-lingui-id: HdE1If
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "Channel"
+msgstr ""
+
+#. js-lingui-id: CXcvq4
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "Channel name"
+msgstr ""
+
+#. js-lingui-id: G+8qH5
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "Channel name is required"
+msgstr ""
+
 #. js-lingui-id: nuBbBr
 #: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutWidgetTypeSelect.tsx
 #: src/modules/side-panel/components/hooks/usePageLayoutHeaderInfo.ts
@@ -2827,6 +3001,8 @@ msgstr "图表"
 
 #. js-lingui-id: AHZflp
 #: src/modules/navigation/components/MainNavigationDrawerTabsRow.tsx
+#: src/modules/navigation/components/MainNavigationDrawerScrollableItems.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
 msgid "Chat"
 msgstr "聊天"
 
@@ -2834,6 +3010,11 @@ msgstr "聊天"
 #: src/modules/settings/roles/role-permissions/permission-flags/hooks/useActionRolePermissionFlagConfig.ts
 msgid "Chat with AI agents and use AI features"
 msgstr "与 AI 代理聊天并使用 AI 功能"
+
+#. js-lingui-id: ZtBRi9
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Chat with the AI below, then tap Create when you are ready"
+msgstr ""
 
 #. js-lingui-id: xK2nU3
 #: src/pages/settings/updates/SettingsUpdates.tsx
@@ -2857,8 +3038,8 @@ msgstr "请检查收件箱以验证您的新电子邮件地址。"
 
 #. js-lingui-id: SxwQE8
 #: src/modules/settings/billing/hooks/useHandleCheckoutSession.ts
-msgid "Checkout session error. Please retry or contact Konnecct team"
-msgstr "结账会话错误。请重试或联系 Konnecct 团队"
+msgid "Checkout session error. Please retry or contact Twenty team"
+msgstr ""
 
 #. js-lingui-id: SviKkE
 #: src/pages/settings/profile/appearance/components/LocalePicker.tsx
@@ -2869,6 +3050,11 @@ msgstr "简体中文"
 #: src/pages/settings/profile/appearance/components/LocalePicker.tsx
 msgid "Chinese — Traditional"
 msgstr "繁体中文"
+
+#. js-lingui-id: b2BhRt
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Choose a channel or DM in the list."
+msgstr ""
 
 #. js-lingui-id: NFfUic
 #: src/pages/auth/SignInUp.tsx
@@ -2932,6 +3118,11 @@ msgstr "选择试用"
 #: src/modules/object-record/record-field/ui/form-types/components/FormAddressFieldInput.tsx
 msgid "City"
 msgstr "城市"
+
+#. js-lingui-id: JVDBvk
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Clarification behavior"
+msgstr ""
 
 #. js-lingui-id: xCJdfg
 #: src/modules/ui/input/components/internal/date/components/DateTimePicker.tsx
@@ -3018,6 +3209,7 @@ msgstr "剪贴板功能需要安全连接 (HTTPS)。请通过 HTTPS 访问此应
 
 #. js-lingui-id: yz7wBu
 #: src/modules/ui/feedback/snack-bar-manager/components/SnackBar.tsx
+#: src/modules/chat/components/ChatInfoPanel.tsx
 msgid "Close"
 msgstr "关闭"
 
@@ -3032,8 +3224,14 @@ msgstr "关闭横幅"
 msgid "Close side panel"
 msgstr "关闭侧边栏"
 
+#. js-lingui-id: /k5ck8
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Close thread"
+msgstr ""
+
 #. js-lingui-id: EWPtMO
 #: src/modules/workflow/workflow-steps/workflow-actions/code-action/components/WorkflowEditActionCode.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
 #: src/modules/ai/components/CodeExecutionDisplay.tsx
 msgid "Code"
 msgstr "代码"
@@ -3052,6 +3250,11 @@ msgstr "代码执行"
 #: src/modules/settings/logic-functions/components/tabs/SettingsLogicFunctionCodeEditorTab.tsx
 msgid "Code your function"
 msgstr "编写您的功能"
+
+#. js-lingui-id: 8z2hU9
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Collaborative notes"
+msgstr ""
 
 #. js-lingui-id: H86f9p
 #: src/pages/settings/security/event-logs/components/EventLogJsonCell.tsx
@@ -3168,6 +3371,12 @@ msgstr "已完成"
 msgid "Completed jobs kept for {completedDuration}, failed jobs kept for {failedDuration} (max {maxCount} each)"
 msgstr "已完成的任务保留{completedDuration}，失败的任务保留{failedDuration}（每个最多{maxCount}）"
 
+#. js-lingui-id: QOhkyl
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "Compose"
+msgstr ""
+
 #. js-lingui-id: 0CuAor
 #: src/modules/workflow/workflow-steps/workflow-actions/if-else-action/components/WorkflowEditActionIfElseBody.tsx
 #: src/modules/workflow/workflow-steps/workflow-actions/filter-action/components/WorkflowEditActionFilterBody.tsx
@@ -3237,6 +3446,11 @@ msgstr "为具有SSO绕过权限的用户配置备用登录方法"
 #. js-lingui-id: OLqG0t
 #: src/modules/settings/data-model/object-details/components/tabs/ObjectSettings.tsx
 msgid "Configure how this object appears in search results"
+msgstr ""
+
+#. js-lingui-id: ej4gD/
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Configure how this teammate remembers context, handles autonomous runs, and requests approval for risky actions."
 msgstr ""
 
 #. js-lingui-id: ghdb7+
@@ -3351,6 +3565,11 @@ msgstr "连接 Microsoft"
 #: src/pages/settings/accounts/SettingsAccounts.tsx
 msgid "Connected accounts"
 msgstr "已连接账户"
+
+#. js-lingui-id: JrFTcr
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Connecting…"
+msgstr ""
 
 #. js-lingui-id: W4Kgwq
 #: src/modules/settings/accounts/components/SettingsAccountsRowDropdownMenu.tsx
@@ -3620,10 +3839,20 @@ msgstr "每百万 token 的成本（美元）"
 msgid "Cost per million tokens for cached input (USD)"
 msgstr "缓存输入的每百万 token 成本（美元）"
 
+#. js-lingui-id: tpTVX2
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Could not connect to chat"
+msgstr ""
+
 #. js-lingui-id: VVRHmR
 #: src/modules/settings/security/components/approvedAccessDomains/SettingsSecurityApprovedAccessDomainRowDropdownMenu.tsx
 msgid "Could not delete approved access domain"
 msgstr "无法删除批准的访问域"
+
+#. js-lingui-id: QzcnlG
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Could not load chat layout"
+msgstr ""
 
 #. js-lingui-id: KqYYBp
 #: src/pages/settings/enterprise/SettingsEnterprise.tsx
@@ -3639,6 +3868,11 @@ msgstr "无法打开 Stripe。请联系支持。"
 #: src/pages/settings/enterprise/SettingsEnterprise.tsx
 msgid "Could not refresh validity token. Please contact support."
 msgstr "无法刷新有效性令牌。请联系支持。"
+
+#. js-lingui-id: r0+Hun
+#: src/pages/onboarding/InviteTeam.tsx
+msgid "Could not send invitations"
+msgstr ""
 
 #. js-lingui-id: s8lFtq
 #: src/hooks/useCopyToClipboard.tsx
@@ -3703,6 +3937,7 @@ msgstr "创建"
 #. js-lingui-id: hYgDIe
 #: src/modules/views/view-picker/components/ViewPickerEditButton.tsx
 #: src/modules/views/view-picker/components/ViewPickerCreateButton.tsx
+#: src/modules/chat/components/CreateChannelModal.tsx
 msgid "Create"
 msgstr "创建"
 
@@ -3762,6 +3997,11 @@ msgstr "创建工作区"
 msgid "Create and configure AI agents"
 msgstr "创建和配置 AI 代理"
 
+#. js-lingui-id: eUmxrE
+#: src/pages/settings/ai/SettingsAI.tsx
+msgid "Create and manage AI teammates that can reason, use tools, and execute workspace actions with role-aware permissions."
+msgstr ""
+
 #. js-lingui-id: uXGLuq
 #: src/pages/settings/workspace/SettingsApiWebhooks.tsx
 #: src/pages/settings/developers/api-keys/SettingsApiKeys.tsx
@@ -3777,6 +4017,11 @@ msgstr "创建自定义视图"
 #: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownCalendarFieldsContent.tsx
 msgid "Create date field"
 msgstr "创建日期字段"
+
+#. js-lingui-id: 8s4FtJ
+#: src/pages/settings/ai/SettingsAI.tsx
+msgid "Create Konnecct Agent"
+msgstr ""
 
 #. js-lingui-id: kCNBJG
 #: src/modules/command-menu-item/record/constants/DashboardCommandMenuItemsConfig.tsx
@@ -3828,6 +4073,11 @@ msgstr "创建选择字段"
 #: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownLayoutContent.tsx
 msgid "Create Select..."
 msgstr "创建选择……"
+
+#. js-lingui-id: MAi21V
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Create superagent from conversation"
+msgstr ""
 
 #. js-lingui-id: zt6Erc
 #: src/modules/views/view-picker/components/ViewPickerContentCreateMode.tsx
@@ -3892,6 +4142,16 @@ msgstr "创建您的数据模型..."
 #: src/pages/onboarding/CreateWorkspace.tsx
 msgid "Creating your workspace"
 msgstr "创建您的工作区"
+
+#. js-lingui-id: HM56Bx
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Creating..."
+msgstr ""
+
+#. js-lingui-id: /DwR+n
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "Creating…"
+msgstr ""
 
 #. js-lingui-id: HAzhV7
 #: src/pages/settings/admin-panel/SettingsAdminAiProviderDetail.tsx
@@ -4387,6 +4647,11 @@ msgstr "调试信息"
 msgid "Decide which Sub-address fields you want to display"
 msgstr "请选择您要显示的子地址字段"
 
+#. js-lingui-id: jbq7j2
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Decline"
+msgstr ""
+
 #. js-lingui-id: Bn9+El
 #: src/modules/ai/components/AIChatEditorSection.tsx
 msgid "default"
@@ -4455,6 +4720,11 @@ msgstr "默认值"
 #: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownDefaultView.tsx
 msgid "Default View"
 msgstr "默认视图"
+
+#. js-lingui-id: 7X9u6R
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Define restrictions, escalation paths, and rollback requirements for risky operations."
+msgstr ""
 
 #. js-lingui-id: Y2ImVJ
 #: src/pages/settings/data-model/SettingsNewObject.tsx
@@ -4557,6 +4827,11 @@ msgstr "删除 {objectLabelPlural}"
 #: src/modules/object-record/record-field-list/record-detail-section/relation/components/RecordDetailRelationRecordsListItem.tsx
 msgid "Delete {relationObjectTypeName}"
 msgstr "删除 {relationObjectTypeName}"
+
+#. js-lingui-id: XmXCwH
+#: src/modules/chat/components/ChatInfoPanel.tsx
+msgid "Delete & Leave"
+msgstr ""
 
 #. js-lingui-id: ZDGm40
 #: src/modules/settings/profile/components/DeleteAccount.tsx
@@ -4762,6 +5037,11 @@ msgstr "降序"
 msgid "Descending"
 msgstr "降序"
 
+#. js-lingui-id: OhOmJv
+#: src/pages/settings/ai/components/SettingsAgentSettingsTab.tsx
+msgid "Describe the superagent in plain language. Example: \"Qualify inbound leads, ask for budget/timeline, and create follow-up tasks.\""
+msgstr ""
+
 #. js-lingui-id: g+5exC
 #: src/modules/workflow/workflow-steps/workflow-actions/ai-agent-action/components/WorkflowAiAgentPromptTab.tsx
 msgid "Describe what you want the AI to do..."
@@ -4815,6 +5095,16 @@ msgstr "销毁记录"
 msgid "Destroy Records on All Objects"
 msgstr "销毁所有对象上的记录"
 
+#. js-lingui-id: ZT1QrJ
+#: src/modules/chat/components/ChatInfoPanel.tsx
+msgid "Destructive actions are disabled in this preview."
+msgstr ""
+
+#. js-lingui-id: FwbVtz
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Destructive only"
+msgstr ""
+
 #. js-lingui-id: FOcBn3
 #: src/modules/object-record/record-field-list/record-detail-section/relation/components/RecordDetailRelationRecordsListItem.tsx
 msgid "Detach"
@@ -4822,6 +5112,8 @@ msgstr "取消关联"
 
 #. js-lingui-id: URmyfc
 #: src/pages/settings/security/event-logs/components/EventLogResultsTable.tsx
+#: src/modules/chat/sendbird-suite/EditorialDetailsPanel.tsx
+#: src/modules/chat/components/ChatInfoPanel.tsx
 #: src/modules/ai/components/RoutingDebugDisplay.tsx
 msgid "Details"
 msgstr "详情"
@@ -4835,6 +5127,50 @@ msgstr "开发者"
 #: src/pages/settings/applications/SettingsAvailableApplicationDetails.tsx
 msgid "Developers links"
 msgstr "开发者链接"
+
+#. js-lingui-id: gdl7k/
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Diagnose account and login access issues step by step"
+msgstr ""
+
+#. js-lingui-id: ykpsPH
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Diagnoses access issues"
+msgstr ""
+
+#. js-lingui-id: fYUNRJ
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "Direct"
+msgstr ""
+
+#. js-lingui-id: EzajJc
+#: src/modules/chat/components/ChatInfoPanel.tsx
+msgid "Direct conversation"
+msgstr ""
+
+#. js-lingui-id: DcvMPg
+#: src/modules/chat/sendbird-suite/EditorialDetailsPanel.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "Direct message"
+msgstr ""
+
+#. js-lingui-id: 23aX1b
+#: src/modules/chat/sendbird-suite/EditorialWorkspaceRail.tsx
+msgid "Direct messages"
+msgstr ""
+
+#. js-lingui-id: TMYrdQ
+#: src/modules/navigation/components/MainNavigationDrawerRecentChats.tsx
+msgid "Direct Messages"
+msgstr ""
+
+#. js-lingui-id: GhgbAN
+#: src/pages/settings/ai/SettingsAI.tsx
+msgid "Directory"
+msgstr ""
 
 #. js-lingui-id: zAg2B9
 #: src/modules/command-menu-item/record/constants/WorkflowCommandMenuItemsConfig.tsx
@@ -5060,6 +5396,11 @@ msgstr "重复项"
 msgid "Dutch"
 msgstr "荷兰语"
 
+#. js-lingui-id: uXY5v7
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "e.g. 0 9 * * 1-5"
+msgstr ""
+
 #. js-lingui-id: 8zfXiN
 #: src/pages/settings/admin-panel/SettingsAdminNewAiModel.tsx
 msgid "e.g. 1.25"
@@ -5089,6 +5430,16 @@ msgstr "例如：2.50"
 #: src/pages/settings/admin-panel/SettingsAdminNewAiModel.tsx
 msgid "e.g. 3.75"
 msgstr "例如：3.75"
+
+#. js-lingui-id: +NXtLs
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "e.g. 30"
+msgstr ""
+
+#. js-lingui-id: JTOXt8
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "e.g. announcements"
+msgstr ""
 
 #. js-lingui-id: QVVmxi
 #: src/pages/settings/developers/api-keys/SettingsDevelopersApiKeysNew.tsx
@@ -5745,6 +6096,11 @@ msgstr "输入定义此代理行为和能力的系统提示"
 msgid "Enter the workspace subdomain to transfer this app to. You will lose access to manage it."
 msgstr "输入要将此应用转移到的工作区子域名。您将失去对其的管理权限。"
 
+#. js-lingui-id: cr8uEw
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Enter to send · Shift+Enter for new line"
+msgstr ""
+
 #. js-lingui-id: rYIISB
 #: src/modules/settings/admin-panel/components/SettingsAdminGeneral.tsx
 msgid "Enter user ID or email address"
@@ -5832,6 +6188,11 @@ msgstr "环境变量"
 #: src/modules/settings/logic-functions/components/SettingsLogicFunctionTabEnvironmentVariablesSection.tsx
 msgid "Environment variables are defined at application level for all functions. Please check <0/>."
 msgstr "环境变量在应用级别为所有函数定义。请查看 <0/>。"
+
+#. js-lingui-id: 4IBQ3B
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Ephemeral"
+msgstr ""
 
 #. js-lingui-id: BlLvRP
 #: src/pages/settings/security/SettingsSecurity.tsx
@@ -5985,8 +6346,8 @@ msgstr "取消计划切换时出错。"
 
 #. js-lingui-id: QmR+2U
 #: src/modules/settings/billing/hooks/useEndSubscriptionTrialPeriod.ts
-msgid "Error while ending trial period. Please contact Konnecct team."
-msgstr "结束试用期时发生错误。请联系Konnecct团队。"
+msgid "Error while ending trial period. Please contact Twenty team."
+msgstr ""
 
 #. js-lingui-id: 5g78zo
 #: src/pages/settings/members/SettingsWorkspaceMember.tsx
@@ -6032,6 +6393,7 @@ msgstr ""
 #. js-lingui-id: 0pC/y6
 #: src/pages/settings/security/event-logs/components/EventLogResultsTable.tsx
 #: src/pages/settings/security/event-logs/components/EventLogResultsTable.tsx
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
 #: src/modules/activities/calendar/components/CalendarEventDetails.tsx
 msgid "Event"
 msgstr "事件"
@@ -6126,6 +6488,11 @@ msgstr "每分钟"
 #: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownVisibilityContent.tsx
 msgid "Everyone"
 msgstr "每个人"
+
+#. js-lingui-id: X/l25Q
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Everyone in this workspace"
+msgstr ""
 
 #. js-lingui-id: wqF3jl
 #: src/modules/settings/accounts/components/SettingsAccountsMessageVisibilityCard.tsx
@@ -6447,11 +6814,6 @@ msgstr ""
 msgid "Failed to get response"
 msgstr "未能获得响应"
 
-#. js-lingui-id: CUzkVp
-#: src/modules/settings/admin-panel/components/SettingsAdminWorkspaceContent.tsx
-msgid "Failed to impersonate user. {errorMessage}"
-msgstr "模拟用户失败。{errorMessage}"
-
 #. js-lingui-id: qZwtAi
 #: src/modules/marketplace/hooks/useInstallApp.ts
 msgid "Failed to install the application."
@@ -6501,6 +6863,12 @@ msgstr "移除提供商失败"
 #: src/modules/settings/admin-panel/health-status/hooks/useRetryJobs.ts
 msgid "Failed to retry jobs. Please try again later."
 msgstr "重试任务失败。请稍后再试。"
+
+#. js-lingui-id: XyEkn/
+#: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
+#: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
+msgid "Failed to save approval decision"
+msgstr ""
 
 #. js-lingui-id: farFvy
 #: src/modules/layout-customization/hooks/useSaveLayoutCustomization.ts
@@ -6762,6 +7130,11 @@ msgstr "第五"
 msgid "Fifth"
 msgstr "第五"
 
+#. js-lingui-id: J2eKUI
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "File"
+msgstr ""
+
 #. js-lingui-id: sWmIx3
 #: src/modules/advanced-text-editor/hooks/useUploadWorkflowFile.ts
 msgid "File \"{fileName}\" exceeds {maxUploadSize}"
@@ -6902,6 +7275,16 @@ msgstr "名不能为空"
 #: src/pages/settings/enterprise/SettingsEnterprise.tsx
 msgid "Fix the payment issue to keep your enterprise features active."
 msgstr "请解决付款问题以保持您的企业功能处于启用状态。"
+
+#. js-lingui-id: WedjF8
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Flag sensitive or inappropriate messages and escalate when needed"
+msgstr ""
+
+#. js-lingui-id: +T/wbL
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Flags inappropriate messages"
+msgstr ""
 
 #. js-lingui-id: ylQd2j
 #: src/modules/workflow/workflow-steps/workflow-actions/utils/getActionHeaderTypeOrThrow.ts
@@ -7185,11 +7568,6 @@ msgstr "谷歌"
 msgid "Google OIDC"
 msgstr "Google OIDC"
 
-#. js-lingui-id: 6eo66Q
-#: src/modules/settings/workspace/components/ToggleImpersonate.tsx
-msgid "Grant access to your workspace so we can troubleshoot problems."
-msgstr "授予访问工作区的权限，以便我们排查问题。"
-
 #. js-lingui-id: WUgtid
 #: src/modules/settings/roles/role-permissions/object-level-permissions/object-form/components/SettingsRolePermissionsObjectLevelObjectFormObjectLevelTableRow.tsx
 msgid "Granted for this object"
@@ -7250,6 +7628,16 @@ msgstr "分组"
 msgid "Group by"
 msgstr "分组依据"
 
+#. js-lingui-id: alTOiF
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Group chat"
+msgstr ""
+
+#. js-lingui-id: GoNgIy
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "Group chats"
+msgstr ""
+
 #. js-lingui-id: tyyaxS
 #: src/modules/page-layout/widgets/components/RecordPageAddWidgetSection.tsx
 msgid "Group multiple fields from this record"
@@ -7264,6 +7652,11 @@ msgstr "分组名称"
 #: src/modules/object-record/record-group/components/RecordGroupReorderConfirmationModal.tsx
 msgid "Group sorting"
 msgstr "分组排序"
+
+#. js-lingui-id: G8NEo0
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Guardrails"
+msgstr ""
 
 #. js-lingui-id: eKiSkN
 #: src/modules/advanced-text-editor/extensions/slash-command/DefaultSlashCommands.ts
@@ -7513,6 +7906,11 @@ msgstr "人工输入"
 msgid "Hungarian"
 msgstr "匈牙利语"
 
+#. js-lingui-id: Z2hVSb
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Hybrid"
+msgstr ""
+
 #. js-lingui-id: YUJ1ey
 #: src/modules/ai/components/suggested-prompts/default-suggested-prompts.ts
 msgid "I need a dashboard for lead conversion: number of new leads by source this month, how many moved to opportunity, and conversion rate by source. Include a simple table and a bar chart."
@@ -7552,6 +7950,7 @@ msgstr "图标和名称"
 #. js-lingui-id: S0kLOH
 #: src/modules/settings/admin-panel/components/SettingsAdminWorkspaceContent.tsx
 #: src/modules/settings/admin-panel/components/SettingsAdminGeneral.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
 msgid "ID"
 msgstr "编号"
 
@@ -7653,7 +8052,6 @@ msgstr "imap.example.com"
 #. js-lingui-id: tSVr6t
 #: src/modules/settings/roles/role-permissions/permission-flags/hooks/useSettingsRolePermissionFlagConfig.ts
 #: src/modules/settings/members/components/MemberInfosTab.tsx
-#: src/modules/settings/admin-panel/components/SettingsAdminWorkspaceContent.tsx
 msgid "Impersonate"
 msgstr "假装"
 
@@ -7661,11 +8059,6 @@ msgstr "假装"
 #: src/modules/settings/roles/role-permissions/permission-flags/hooks/useSettingsRolePermissionFlagConfig.ts
 msgid "Impersonate workspace users"
 msgstr "模拟工作区用户"
-
-#. js-lingui-id: yImXof
-#: src/modules/settings/admin-panel/components/SettingsAdminWorkspaceContent.tsx
-msgid "Impersonation is disabled for this workspace"
-msgstr "工作区不支持代理功能"
 
 #. js-lingui-id: l3s5ri
 #: src/modules/settings/accounts/components/SettingsAccountsMessageChannelDetails.tsx
@@ -7753,6 +8146,11 @@ msgstr "收件箱"
 #. js-lingui-id: Wyip/m
 #: src/modules/settings/data-model/object-details/components/tabs/SettingsObjectSearchSection.tsx
 msgid "Include in default search"
+msgstr ""
+
+#. js-lingui-id: RLj2uV
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Incoming call"
 msgstr ""
 
 #. js-lingui-id: mtGDyy
@@ -8038,6 +8436,11 @@ msgstr "邀请函"
 msgid "Invite"
 msgstr "邀请"
 
+#. js-lingui-id: 1vRTUZ
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "Invite {label}"
+msgstr ""
+
 #. js-lingui-id: 0M8+El
 #: src/pages/settings/members/SettingsWorkspaceMembers.tsx
 msgid "Invite by email"
@@ -8053,10 +8456,25 @@ msgstr "通过链接邀请"
 msgid "Invite by Link"
 msgstr "通过链接邀请"
 
+#. js-lingui-id: /EpVMP
+#: src/modules/chat/components/ChatInfoPanel.tsx
+msgid "Invite flow will use workspace invitations."
+msgstr ""
+
 #. js-lingui-id: 5IfmKA
 #: src/pages/onboarding/InviteTeam.tsx
 msgid "Invite link sent to email addresses"
 msgstr "邀请链接已发送到电子邮件地址"
+
+#. js-lingui-id: 7atO7I
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "Invite members"
+msgstr ""
+
+#. js-lingui-id: NJorPJ
+#: src/modules/chat/components/ChatInfoPanel.tsx
+msgid "Invite others"
+msgstr ""
 
 #. js-lingui-id: x1m5RZ
 #: src/modules/ui/navigation/navigation-drawer/components/MultiWorkspaceDropdown/internal/MultiWorkspaceDropdownDefaultComponents.tsx
@@ -8067,6 +8485,11 @@ msgstr "邀请用户"
 #: src/pages/onboarding/InviteTeam.tsx
 msgid "Invite your team"
 msgstr "邀请您的团队"
+
+#. js-lingui-id: 3CCVCl
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Invited members"
+msgstr ""
 
 #. js-lingui-id: CUvG5b
 #: src/modules/settings/data-model/fields/forms/select/components/SettingsDataModelFieldSelectFormOptionRow.tsx
@@ -8178,6 +8601,11 @@ msgstr "是相对的"
 msgid "Is today{timeZoneAbbreviationSuffix}"
 msgstr "为今天{timeZoneAbbreviationSuffix}"
 
+#. js-lingui-id: 9GBs86
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "is typing…"
+msgstr ""
+
 #. js-lingui-id: IhCN5p
 #: src/modules/settings/security/components/SSO/SettingsSSOOIDCForm.tsx
 msgid "Issuer URI"
@@ -8187,6 +8615,11 @@ msgstr "发行者 URI"
 #: src/pages/settings/profile/appearance/components/LocalePicker.tsx
 msgid "Italian"
 msgstr "意大利语"
+
+#. js-lingui-id: pzutoc
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Italic"
+msgstr ""
 
 #. js-lingui-id: hgr8eo
 #: src/modules/side-panel/pages/page-layout/utils/getDateGranularityPluralLabel.ts
@@ -8245,6 +8678,16 @@ msgstr "john.doe@example.com"
 msgid "Join {workspaceName} team"
 msgstr "加入{workspaceName}团队"
 
+#. js-lingui-id: KyzmqC
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Join call"
+msgstr ""
+
+#. js-lingui-id: cPMuAR
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Join room by ID"
+msgstr ""
+
 #. js-lingui-id: B2Zb/F
 #: src/pages/settings/ai/components/SettingsAgentResponseFormat.tsx
 msgid "JSON"
@@ -8271,6 +8714,23 @@ msgstr "键/值"
 #: src/modules/keyboard-shortcut-menu/components/KeyboardShortcutMenuDialog.tsx
 msgid "Keyboard shortcuts"
 msgstr "键盘快捷键"
+
+#. js-lingui-id: xLRQsL
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Knowledge sources"
+msgstr ""
+
+#. js-lingui-id: XGLApW
+#: src/pages/settings/ai/SettingsAI.tsx
+#: src/pages/settings/ai/SettingsAI.tsx
+#: src/modules/settings/hooks/useSettingsNavigationItems.tsx
+msgid "Konnecct Agents"
+msgstr ""
+
+#. js-lingui-id: RkUicx
+#: src/modules/projects/components/KonnecctProjectsEmbed.tsx
+msgid "Konnecct Projects is not available in this deployment."
+msgstr ""
 
 #. js-lingui-id: h6S9Yz
 #: src/pages/settings/profile/appearance/components/LocalePicker.tsx
@@ -8478,6 +8938,11 @@ msgstr "正在学习 {names}"
 msgid "Learning tools..."
 msgstr "正在学习工具..."
 
+#. js-lingui-id: Mv8CyJ
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Leave"
+msgstr ""
+
 #. js-lingui-id: 8QyoLb
 #: src/modules/settings/accounts/components/SettingsAccountsConnectionForm.tsx
 msgid "Leave blank if you don't need calendar sync."
@@ -8492,6 +8957,16 @@ msgstr "如果不需要导入电子邮件，请留空。"
 #: src/modules/settings/accounts/components/SettingsAccountsConnectionForm.tsx
 msgid "Leave blank if you don't need to send emails."
 msgstr "如果不需要发送电子邮件，请留空。"
+
+#. js-lingui-id: Vq10dn
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Leave call"
+msgstr ""
+
+#. js-lingui-id: nNflMD
+#: src/modules/chat/sendbird-suite/EditorialDetailsPanel.tsx
+msgid "Leave channel"
+msgstr ""
 
 #. js-lingui-id: qvRaz1
 #: src/modules/settings/profile/components/DeleteAccount.tsx
@@ -8600,10 +9075,20 @@ msgstr "将日历事件与 {labelIdentifierValue} 关联"
 msgid "linked an email with"
 msgstr "将一封电子邮件与"
 
+#. js-lingui-id: XS4QhH
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Linking this thread to chat."
+msgstr ""
+
 #. js-lingui-id: 82kQhK
 #: src/modules/advanced-text-editor/extensions/slash-command/DefaultSlashCommands.ts
 #: src/modules/advanced-text-editor/extensions/slash-command/DefaultSlashCommands.ts
 msgid "list"
+msgstr ""
+
+#. js-lingui-id: CePQDU
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "List docs, notes, records, and conversations this agent should prioritize."
 msgstr ""
 
 #. js-lingui-id: 5Kn+XX
@@ -8625,6 +9110,11 @@ msgstr "列表"
 #: src/modules/settings/data-model/objects/forms/components/SettingsDataModelObjectAboutForm.tsx
 msgid "Listings"
 msgstr "列表"
+
+#. js-lingui-id: fCIW2D
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Live call"
+msgstr ""
 
 #. js-lingui-id: C5bVie
 #: src/modules/workflow/workflow-trigger/components/WorkflowEditTriggerWebhookForm.tsx
@@ -8710,6 +9200,11 @@ msgstr "正在加载技能..."
 msgid "Loading thread"
 msgstr "正在加载会话"
 
+#. js-lingui-id: uoafcu
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Loading workspace…"
+msgstr ""
+
 #. js-lingui-id: Z3FXyt
 #: src/pages/settings/emailing-domains/SettingsEmailingDomainDetail.tsx
 #: src/modules/settings/roles/role-assignment/components/SettingsRoleAssignmentEntityPickerDropdown.tsx
@@ -8745,11 +9240,6 @@ msgstr "退出登录"
 #: src/pages/settings/security/SettingsSecurity.tsx
 msgid "Log retention"
 msgstr "日志保留期"
-
-#. js-lingui-id: hykMbH
-#: src/modules/information-banner/components/impersonate/InformationBannerIsImpersonating.tsx
-msgid "Logged in as {impersonatedUser}"
-msgstr "以 {impersonatedUser} 身份登录"
 
 #. js-lingui-id: sTlKkx
 #: src/modules/metadata-error-handler/hooks/useMetadataErrorHandler.ts
@@ -8802,6 +9292,11 @@ msgstr "查询用户以假装他们。"
 #: src/modules/workflow/workflow-diagram/utils/generateNodesAndEdgesForIteratorNode.ts
 msgid "loop"
 msgstr "循环"
+
+#. js-lingui-id: FicGnE
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Low confidence"
+msgstr ""
 
 #. js-lingui-id: MsaCqr
 #: src/modules/settings/accounts/components/SettingsAccountsConnectionForm.tsx
@@ -8856,11 +9351,6 @@ msgstr ""
 msgid "Manage security policies"
 msgstr "管理安全策略"
 
-#. js-lingui-id: 49MfD1
-#: src/pages/settings/security/SettingsSecurity.tsx
-msgid "Manage support access settings"
-msgstr "管理支持访问设置"
-
 #. js-lingui-id: N7fMy9
 #: src/pages/settings/members/SettingsWorkspaceMembers.tsx
 msgid "Manage the members of your workspace here"
@@ -8887,6 +9377,7 @@ msgid "Manage your internet accounts."
 msgstr "管理您的互联网账户。"
 
 #. js-lingui-id: BWTzAb
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
 #: src/modules/side-panel/pages/page-layout/hooks/useGraphXSortOptionLabels.ts
 #: src/modules/side-panel/pages/page-layout/hooks/useGraphGroupBySortOptionLabels.ts
 msgid "Manual"
@@ -8986,9 +9477,21 @@ msgstr "我"
 msgid "Me (User ID)"
 msgstr "我 (用户 ID)"
 
+#. js-lingui-id: xYilR2
+#: src/modules/chat/sendbird-suite/EditorialDetailsPanel.tsx
+msgid "Media"
+msgstr ""
+
 #. js-lingui-id: IAcjOi
 #: src/modules/advanced-text-editor/extensions/slash-command/DefaultSlashCommands.ts
 msgid "Medium section heading"
+msgstr ""
+
+#. js-lingui-id: OvoEq7
+#: src/modules/chat/sendbird-suite/EditorialWorkspaceRail.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Member"
 msgstr ""
 
 #. js-lingui-id: Sma10A
@@ -9008,6 +9511,8 @@ msgstr ""
 #: src/modules/settings/roles/role-assignment/components/SettingsRoleAssignmentTable.tsx
 #: src/modules/settings/hooks/useSettingsNavigationItems.tsx
 #: src/modules/settings/admin-panel/components/SettingsAdminWorkspaceContent.tsx
+#: src/modules/chat/sendbird-suite/EditorialDetailsPanel.tsx
+#: src/modules/chat/components/ChatInfoPanel.tsx
 msgid "Members"
 msgstr "成员"
 
@@ -9015,6 +9520,21 @@ msgstr "成员"
 #: src/utils/title-utils.ts
 msgid "Members - Settings"
 msgstr "成员 - 设置"
+
+#. js-lingui-id: rTeqBI
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Memory policy"
+msgstr ""
+
+#. js-lingui-id: 9RRxtT
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Memory retention (days)"
+msgstr ""
+
+#. js-lingui-id: 6Q3Cs1
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Memory scope"
+msgstr ""
 
 #. js-lingui-id: UODtG8
 #: src/modules/object-record/record-merge/components/MergeRecordsFooter.tsx
@@ -9038,6 +9558,17 @@ msgstr "合并记录"
 msgid "Merging..."
 msgstr "正在合并…"
 
+#. js-lingui-id: xDAtGP
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Message"
+msgstr ""
+
+#. js-lingui-id: pqr+oY
+#. placeholder {0}: selectionTitle(selection)
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Message {0}"
+msgstr ""
+
 #. js-lingui-id: U15XwX
 #: src/modules/activities/timeline-activities/rows/message/components/EventCardMessage.tsx
 msgid "Message not found"
@@ -9060,8 +9591,14 @@ msgstr "消息同步不可用，因为服务已关闭"
 
 #. js-lingui-id: t7TeQU
 #: src/pages/settings/ai/SettingsAgentTurnDetail.tsx
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
 msgid "Messages"
 msgstr "消息"
+
+#. js-lingui-id: a660a9
+#: src/modules/chat/components/ChatInfoPanel.tsx
+msgid "Messages are delivered in real time. Open on desktop for the full three-column layout."
+msgstr ""
 
 #. js-lingui-id: 6GBt0m
 #: src/modules/settings/playground/constants/SettingsPlaygroundFormSchemaSelectOptions.ts
@@ -9125,10 +9662,20 @@ msgstr "分钟"
 msgid "Minutes between triggers"
 msgstr "触发之间的分钟数"
 
+#. js-lingui-id: vNEA9u
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "Missed call (preview)"
+msgstr ""
+
 #. js-lingui-id: URVUmK
 #: src/modules/workflow/workflow-steps/workflow-actions/components/WorkflowEditActionEmailBase.tsx
 msgid "Missing email draft permission."
 msgstr "缺少电子邮件草稿权限。"
+
+#. js-lingui-id: LV1eVr
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "Missing session"
+msgstr ""
 
 #. js-lingui-id: mibKsa
 #: src/modules/activities/tasks/components/TaskGroups.tsx
@@ -9319,6 +9866,12 @@ msgstr "必须是一个包含有效 URL 和标签的对象数组（格式：'[{\
 msgid "must be an array of valid emails"
 msgstr "必须是有效电子邮件的数组"
 
+#. js-lingui-id: R7SsBE
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Mute"
+msgstr ""
+
 #. js-lingui-id: XTGSZU
 #: src/modules/views/view-picker/components/ViewPickerListContent.tsx
 msgid "My unlisted views"
@@ -9470,6 +10023,11 @@ msgstr "导航菜单项"
 msgid "Navigation tabs"
 msgstr "导航选项卡"
 
+#. js-lingui-id: 3BNWPR
+#: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
+msgid "Needs changes"
+msgstr ""
+
 #. js-lingui-id: qqeAJM
 #: src/modules/settings/developers/utils/formatExpiration.ts
 msgid "Never"
@@ -9480,6 +10038,11 @@ msgstr "从不"
 #: src/modules/settings/developers/utils/formatExpiration.ts
 msgid "Never expires"
 msgstr "永不过期"
+
+#. js-lingui-id: Oz0N9s
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "new"
+msgstr ""
 
 #. js-lingui-id: isRobC
 #: src/pages/settings/data-model/SettingsNewObject.tsx
@@ -9508,6 +10071,7 @@ msgid "New Account"
 msgstr "新账户"
 
 #. js-lingui-id: mJIA0/
+#: src/pages/settings/ai/SettingsAI.tsx
 #: src/pages/settings/ai/SettingsAgentForm.tsx
 #: src/pages/settings/ai/SettingsAgentForm.tsx
 msgid "New Agent"
@@ -9525,6 +10089,13 @@ msgstr "新建 AI 提供商"
 msgid "New Approved Access Domain"
 msgstr "新批准访问域"
 
+#. js-lingui-id: BW0+uJ
+#: src/modules/chat/sendbird-suite/EditorialWorkspaceRail.tsx
+#: src/modules/chat/components/CreateChannelModal.tsx
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "New channel"
+msgstr ""
+
 #. js-lingui-id: hIQkLb
 #: src/modules/navigation/components/MainNavigationDrawerTabsRow.tsx
 #: src/modules/navigation/components/MainNavigationDrawerTabsRow.tsx
@@ -9537,6 +10108,12 @@ msgstr "新聊天"
 #: src/modules/side-panel/components/SidePanelTopBarRightCornerIcon.tsx
 msgid "New conversation"
 msgstr "新会话"
+
+#. js-lingui-id: ctNfZE
+#: src/modules/chat/sendbird-suite/EditorialWorkspaceRail.tsx
+#: src/modules/chat/components/StreamDmModal.tsx
+msgid "New direct message"
+msgstr ""
 
 #. js-lingui-id: wqoYqp
 #: src/pages/settings/emailing-domains/SettingsNewEmailingDomain.tsx
@@ -9581,6 +10158,11 @@ msgstr "新密钥"
 msgid "New menu item"
 msgstr "新建菜单项"
 
+#. js-lingui-id: mTBAsF
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "New message"
+msgstr ""
+
 #. js-lingui-id: ROxeMs
 #: src/pages/settings/admin-panel/SettingsAdminNewAiModel.tsx
 #: src/pages/settings/admin-panel/SettingsAdminNewAiModel.tsx
@@ -9623,6 +10205,12 @@ msgstr "新 SSO 配置"
 #: src/pages/settings/security/SettingsSecuritySSOIdentifyProvider.tsx
 msgid "New SSO provider"
 msgstr "新 SSO 提供商"
+
+#. js-lingui-id: sasBvc
+#: src/pages/settings/ai/SettingsAgentForm.tsx
+#: src/pages/settings/ai/SettingsAgentForm.tsx
+msgid "New Superagent"
+msgstr ""
 
 #. js-lingui-id: wl18ST
 #: src/modules/activities/tasks/components/TaskGroups.tsx
@@ -9696,6 +10284,11 @@ msgstr "无 {label}"
 msgid "No {objectLabelSingular} found"
 msgstr "未找到 {objectLabelSingular}"
 
+#. js-lingui-id: 0ufCyB
+#: src/modules/navigation/components/MainNavigationDrawerRecentChats.tsx
+msgid "No active chats"
+msgstr ""
+
 #. js-lingui-id: aXFOuf
 #: src/modules/activities/timeline-activities/components/TimelineCard.tsx
 msgid "No activity yet"
@@ -9736,6 +10329,11 @@ msgstr "没有与您的搜索匹配的 API 密钥"
 msgid "No applications available"
 msgstr "没有可用的应用程序"
 
+#. js-lingui-id: xzZg1J
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "No approval"
+msgstr ""
+
 #. js-lingui-id: tFxVHz
 #: src/modules/workflow/workflow-steps/filters/components/WorkflowStepFilterFieldSelect.tsx
 msgid "No available fields to select"
@@ -9750,6 +10348,16 @@ msgstr "无正文"
 #: src/modules/object-record/record-field/ui/form-types/components/FormCallingCodeSelectInput.tsx
 msgid "No calling code"
 msgstr "无国家区号"
+
+#. js-lingui-id: Oc7rl/
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "No category available"
+msgstr ""
+
+#. js-lingui-id: tjGLzR
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "No channels match filter"
+msgstr ""
 
 #. js-lingui-id: d14J3J
 #: src/modules/ai/components/NavigationDrawerAIChatContent.tsx
@@ -9855,6 +10463,11 @@ msgstr "未找到已删除的 {objectLabelSingular}"
 #: src/modules/object-record/record-table/empty-state/components/RecordTableEmptyStateSoftDelete.tsx
 msgid "No deleted records matching the filter criteria were found."
 msgstr "找不到符合筛选条件的已删除记录。"
+
+#. js-lingui-id: rHRlpz
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "No direct messages yet"
+msgstr ""
 
 #. js-lingui-id: mINrlz
 #: src/modules/activities/emails/components/EmailsCard.tsx
@@ -9967,6 +10580,11 @@ msgstr "找不到最新版本"
 msgid "No logs yet"
 msgstr ""
 
+#. js-lingui-id: 4TVVsS
+#: src/modules/chat/components/StreamDmModal.tsx
+msgid "No matches"
+msgstr ""
+
 #. js-lingui-id: UwvrGq
 #: src/pages/settings/members/SettingsWorkspaceMembers.tsx
 msgid "No members"
@@ -10017,6 +10635,13 @@ msgstr "未找到具有视图的对象"
 #: src/modules/ui/field/input/components/MultiSelectInput.tsx
 msgid "No option found"
 msgstr "未找到选项"
+
+#. js-lingui-id: pwWH/D
+#: src/modules/chat/components/StreamDmModal.tsx
+#: src/modules/chat/components/NewDmModal.tsx
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "No other members in this workspace"
+msgstr ""
 
 #. js-lingui-id: XRc1G9
 #: src/modules/ai/components/TerminalOutput.tsx
@@ -10259,6 +10884,12 @@ msgstr "备注"
 #: src/modules/command-menu-item/record/constants/DefaultRecordCommandMenuItemsConfig.tsx
 msgid "Notes"
 msgstr "备注"
+
+#. js-lingui-id: iDNBZe
+#: src/modules/chat/components/ChatInfoPanel.tsx
+#: src/modules/chat/components/ChatInfoPanel.tsx
+msgid "Notifications"
+msgstr ""
 
 #. js-lingui-id: YwzE9K
 #: src/utils/date-utils.ts
@@ -10509,6 +11140,11 @@ msgstr "此触发器应在哪些对象上可用"
 msgid "Onboarding call"
 msgstr "入门电话"
 
+#. js-lingui-id: BQNY4f
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "Only admins can create public channels"
+msgstr ""
+
 #. js-lingui-id: zii2Qj
 #: src/modules/settings/accounts/components/SettingsAccountsCalendarVisibilitySettingsCard.tsx
 msgid "Only date & participants will be shared with your team."
@@ -10556,9 +11192,15 @@ msgstr "仅共享主题"
 msgid "Only the timestamp & participants will be shared with your team."
 msgstr "仅时间戳和参与者将与您的团队分享。"
 
+#. js-lingui-id: wvlFY7
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "Only workspace admins can create public channels."
+msgstr ""
+
 #. js-lingui-id: 1TNIig
 #: src/modules/settings/data-model/objects/forms/components/SettingsDataModelObjectAboutForm.tsx
 #: src/modules/command-menu-item/components/RecordShowSidePanelOpenRecordButton.tsx
+#: src/modules/chat/components/NewDmModal.tsx
 msgid "Open"
 msgstr "打开"
 
@@ -10566,6 +11208,11 @@ msgstr "打开"
 #: src/modules/settings/data-model/fields/forms/components/SettingsDataModelFieldOnClickActionForm.tsx
 msgid "Open as link"
 msgstr "作为链接打开"
+
+#. js-lingui-id: 6I7cJR
+#: src/modules/chat/components/StreamDmModal.tsx
+msgid "Open chat"
+msgstr ""
 
 #. js-lingui-id: pZZH4Q
 #: src/modules/auth/sign-in-up/components/EmailVerificationSent.tsx
@@ -10598,6 +11245,12 @@ msgstr "打开侧边栏"
 #: src/modules/navigation-menu-item/display/sections/components/NavigationDrawerOpenedSection.tsx
 msgid "Opened"
 msgstr "已打开"
+
+#. js-lingui-id: 598XO1
+#: src/modules/chat/components/StreamDmModal.tsx
+#: src/modules/chat/components/NewDmModal.tsx
+msgid "Opening…"
+msgstr ""
 
 #. js-lingui-id: 8m1COB
 #: src/modules/settings/admin-panel/health-status/components/SettingsAdminHealthStatusRightContainer.tsx
@@ -10649,6 +11302,11 @@ msgstr "或"
 #: src/modules/settings/data-model/fields/forms/select/components/SettingsDataModelFieldSelectFormOptionRow.tsx
 msgid "Orange"
 msgstr "橙色"
+
+#. js-lingui-id: 6xf3TE
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Orchestration profile"
+msgstr ""
 
 #. js-lingui-id: VWupWc
 #: src/modules/advanced-text-editor/extensions/slash-command/DefaultSlashCommands.ts
@@ -10809,8 +11467,8 @@ msgstr "页面名称"
 
 #. js-lingui-id: NRvxzv
 #: src/pages/not-found/NotFound.tsx
-msgid "Page Not Found | Konnecct"
-msgstr "页面未找到 | Konnecct"
+msgid "Page Not Found | Twenty"
+msgstr ""
 
 #. js-lingui-id: sF+Xp9
 #: src/pages/settings/security/event-logs/components/EventLogTableSelector.tsx
@@ -10827,6 +11485,11 @@ msgstr ""
 #: src/modules/advanced-text-editor/components/TurnIntoBlockDropdown.tsx
 msgid "Paragraph"
 msgstr "段落"
+
+#. js-lingui-id: v8fxDX
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Participant"
+msgstr ""
 
 #. js-lingui-id: 8ZsakT
 #: src/modules/settings/security/components/SettingsSecurityAuthProvidersOptionsList.tsx
@@ -10892,6 +11555,11 @@ msgstr "PDF"
 #: src/modules/settings/domains/components/SettingsPublicDomainsListCard.tsx
 msgid "Pending"
 msgstr "待处理"
+
+#. js-lingui-id: 2WtL62
+#: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
+msgid "Pending review"
+msgstr ""
 
 #. js-lingui-id: 1wdjme
 #: src/modules/command-menu-item/record/constants/DefaultRecordCommandMenuItemsConfig.tsx
@@ -10992,6 +11660,11 @@ msgstr "永久销毁工作流"
 msgid "Permanently destroy workflows"
 msgstr "永久销毁工作流程序"
 
+#. js-lingui-id: sJK6pq
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Permission denied"
+msgstr ""
+
 #. js-lingui-id: yWmZKk
 #: src/modules/metadata-error-handler/hooks/useMetadataErrorHandler.ts
 msgid "permission flag"
@@ -11059,6 +11732,11 @@ msgstr "图片"
 msgid "Pie Chart"
 msgstr "饼图"
 
+#. js-lingui-id: qVkGWK
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Pin"
+msgstr ""
+
 #. js-lingui-id: 2FIjLb
 #: src/modules/settings/data-model/fields/forms/select/components/SettingsDataModelFieldSelectFormOptionRow.tsx
 msgid "Pink"
@@ -11067,7 +11745,18 @@ msgstr "粉色"
 #. js-lingui-id: kNiQp6
 #: src/modules/command-menu-item/server-items/edit/components/SidePanelCommandMenuItemEditPage.tsx
 #: src/modules/command-menu-item/server-items/display/components/SidePanelCommandMenuItemDisplayPage.tsx
+#: src/modules/chat/sendbird-suite/EditorialDetailsPanel.tsx
 msgid "Pinned"
+msgstr ""
+
+#. js-lingui-id: huO+3t
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "Pinned chat"
+msgstr ""
+
+#. js-lingui-id: JQjXNg
+#: src/modules/chat/sendbird-suite/EditorialDetailsPanel.tsx
+msgid "Pinned messages"
 msgstr ""
 
 #. js-lingui-id: hx1ePY
@@ -11117,11 +11806,6 @@ msgstr "请重新连接您的邮箱 {mailboxHandle} 以更新电子邮件别名�
 #: src/modules/error-handler/components/internal/AppErrorDisplay.tsx
 msgid "Please refresh the page."
 msgstr "请刷新页面。"
-
-#. js-lingui-id: X5x85V
-#: src/modules/settings/admin-panel/components/SettingsAdminWorkspaceContent.tsx
-msgid "Please search for a user first"
-msgstr "请先搜索用户"
 
 #. js-lingui-id: wCgL30
 #: src/pages/settings/data-model/new-field/SettingsObjectNewFieldConfigure.tsx
@@ -11216,10 +11900,20 @@ msgstr "正在预填您的工作区数据..."
 msgid "Prefix"
 msgstr "前缀"
 
+#. js-lingui-id: FA0aDS
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Preparing…"
+msgstr ""
+
 #. js-lingui-id: ut1ZY+
 #: src/modules/settings/data-model/fields/forms/components/SettingsDataModelFieldIsUniqueForm.tsx
 msgid "Prevent from assigning the same value to different records"
 msgstr "防止用户为不同记录分配相同的值"
+
+#. js-lingui-id: f1jADb
+#: src/modules/chat/components/ChatInfoPanel.tsx
+msgid "preview"
+msgstr ""
 
 #. js-lingui-id: rdUucN
 #: src/modules/settings/data-model/objects/forms/components/SettingsDataModelObjectSettingsFormCard.tsx
@@ -11291,6 +11985,16 @@ msgstr "优先支持"
 msgid "Privacy Policy"
 msgstr "隐私政策"
 
+#. js-lingui-id: zwBp5t
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "Private"
+msgstr ""
+
+#. js-lingui-id: ucYLoo
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "Private channel"
+msgstr ""
+
 #. js-lingui-id: 3fPjUY
 #: src/modules/settings/billing/hooks/useBillingWording.ts
 #: src/modules/settings/billing/components/internal/PlansTags.tsx
@@ -11324,6 +12028,11 @@ msgstr "个人资料 - 设置"
 #. js-lingui-id: Szskbr
 #: src/modules/settings/security/components/SettingsSecurityEditableProfileFields.tsx
 msgid "Profile Picture"
+msgstr ""
+
+#. js-lingui-id: +0B+ue
+#: src/modules/projects/components/KonnecctProjectsEmbed.tsx
+msgid "Projects"
 msgstr ""
 
 #. js-lingui-id: W9uQXX
@@ -11388,6 +12097,11 @@ msgstr "在这些域名上提供一个完整且安全的托管环境。"
 #: src/pages/settings/profile/appearance/components/LocalePicker.tsx
 msgid "Pseudo-English"
 msgstr "伪英语"
+
+#. js-lingui-id: 7d1a0d
+#: src/modules/chat/components/CreateChannelModal.tsx
+msgid "Public"
+msgstr ""
 
 #. js-lingui-id: knP82t
 #: src/modules/settings/domains/components/SettingPublicDomain.tsx
@@ -11497,8 +12211,8 @@ msgstr "读取您的个人资料"
 
 #. js-lingui-id: tCXcL7
 #: src/pages/settings/ai/SettingsAIPrompts.tsx
-msgid "Read-only — managed by Konnecct"
-msgstr "只读 — 由 Konnecct 管理"
+msgid "Read-only — managed by Twenty"
+msgstr ""
 
 #. js-lingui-id: W+ApAD
 #: src/modules/workflow/workflow-steps/workflow-actions/components/WorkflowEditActionEmailBase.tsx
@@ -11538,6 +12252,7 @@ msgid "record"
 msgstr "记录"
 
 #. js-lingui-id: w80YWM
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
 #: src/modules/workflow/workflow-steps/workflow-actions/utils/getActionHeaderTypeOrThrow.ts
 #: src/modules/workflow/workflow-steps/workflow-actions/components/WorkflowEditActionUpdateRecord.tsx
 #: src/modules/workflow/workflow-steps/workflow-actions/components/WorkflowEditActionDeleteRecord.tsx
@@ -11651,6 +12366,11 @@ msgstr "重定向 URI"
 #: src/pages/settings/security/event-logs/SettingsEventLogs.tsx
 msgid "Refresh"
 msgstr "刷新"
+
+#. js-lingui-id: Thhbhw
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Refund Policy"
+msgstr ""
 
 #. js-lingui-id: vpZcGd
 #: src/pages/settings/developers/api-keys/SettingsDevelopersApiKeyDetail.tsx
@@ -11822,6 +12542,11 @@ msgstr "移除提供商"
 msgid "Remove provider \"{0}\""
 msgstr "移除提供商 \"{0}\""
 
+#. js-lingui-id: 4eUoRM
+#: src/modules/ai/components/internal/AgentRoutingIndicator.tsx
+msgid "Remove routing"
+msgstr ""
+
 #. js-lingui-id: SjxzXf
 #: src/modules/settings/roles/role-permissions/object-level-permissions/components/SettingsRolePermissionsObjectLevelTableRowOptionsDropdown.tsx
 #: src/modules/object-record/advanced-filter/components/AdvancedFilterRecordFilterOptionsDropdown.tsx
@@ -11875,16 +12600,41 @@ msgstr "重新排序字段"
 msgid "Reorder options"
 msgstr "调整选项顺序"
 
+#. js-lingui-id: cRcjaV
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "replies"
+msgstr ""
+
+#. js-lingui-id: 7mbOLE
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "reply"
+msgstr ""
+
 #. js-lingui-id: ImOQa9
 #: src/modules/side-panel/pages/message-thread/components/SidePanelMessageThreadPage.tsx
 #: src/modules/activities/emails/components/EmailThreadBottomBar.tsx
 msgid "Reply"
 msgstr "回复"
 
+#. js-lingui-id: jhOiFA
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Reply in thread"
+msgstr ""
+
+#. js-lingui-id: EgrqR3
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Reply in thread…"
+msgstr ""
+
 #. js-lingui-id: QMiOjK
 #: src/modules/activities/emails/components/EmailThreadBottomBar.tsx
 msgid "Reply to all"
 msgstr "回复全部"
+
+#. js-lingui-id: gZu9+9
+#: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
+msgid "Request changes"
+msgstr ""
 
 #. js-lingui-id: /laZGZ
 #: src/modules/workflow/workflow-steps/workflow-actions/http-request-action/components/HttpRequestExecutionResult.tsx
@@ -12069,6 +12819,11 @@ msgstr "返回值"
 msgid "reverse alphabetical"
 msgstr "逆字母顺序"
 
+#. js-lingui-id: FEPXtw
+#: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
+msgid "Reviewed"
+msgstr ""
+
 #. js-lingui-id: GG37FL
 #: src/modules/settings/roles/role-permissions/object-level-permissions/object-form/components/SettingsRolePermissionsObjectLevelObjectFormObjectLevelTableRow.tsx
 msgid "Revoked for this object"
@@ -12145,6 +12900,11 @@ msgstr "结转积分"
 msgid "Romanian"
 msgstr "罗马尼亚语"
 
+#. js-lingui-id: QoZkYe
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Room ID"
+msgstr ""
+
 #. js-lingui-id: vQrTaX
 #: src/pages/settings/applications/tabs/SettingsApplicationRegistrationOAuthTab.tsx
 #: src/pages/settings/applications/tabs/SettingsApplicationRegistrationOAuthTab.tsx
@@ -12160,6 +12920,11 @@ msgstr "轮换密钥"
 #: src/modules/ai/components/RoutingDebugDisplay.tsx
 msgid "Routing decision"
 msgstr "路由决策"
+
+#. js-lingui-id: 1miTnA
+#: src/modules/ai/components/internal/AgentRoutingIndicator.tsx
+msgid "Routing to {displayName}"
+msgstr ""
 
 #. js-lingui-id: Sz0Ftu
 #: src/modules/ai/components/RoutingDebugDisplay.tsx
@@ -12250,15 +13015,26 @@ msgstr "另存为新视图"
 msgid "Save Dashboard"
 msgstr "保存仪表板"
 
+#. js-lingui-id: nQO7BF
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Save note"
+msgstr ""
+
 #. js-lingui-id: veLq3R
 #: src/pages/settings/applications/tabs/SettingsApplicationsDeveloperTab.tsx
 msgid "Scaffold a new app, then use the CLI to develop, publish, and distribute"
 msgstr "为新应用搭建脚手架，然后使用 CLI 进行开发、发布和分发"
 
 #. js-lingui-id: gmB6oO
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
 #: src/modules/workflow/workflow-trigger/components/CronExpressionHelper.tsx
 msgid "Schedule"
 msgstr "计划"
+
+#. js-lingui-id: hN95UD
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Schedule (cron)"
+msgstr ""
 
 #. js-lingui-id: QJ8HBJ
 #: src/modules/settings/playground/components/PlaygroundSetupForm.tsx
@@ -12282,6 +13058,16 @@ msgstr "范围"
 msgid "Score"
 msgstr ""
 
+#. js-lingui-id: M4RwVY
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Screen share"
+msgstr ""
+
+#. js-lingui-id: 9YQt25
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Screen share is not available"
+msgstr ""
+
 #. js-lingui-id: hJjXGo
 #: src/pages/settings/admin-panel/SettingsAdminAiProviderDetail.tsx
 msgid "SDK"
@@ -12302,6 +13088,7 @@ msgstr "SDK"
 #: src/modules/command-menu-item/record-agnostic/constants/RecordAgnosticCommandMenuItemsConfig.tsx
 #: src/modules/command-menu-item/engine-command/constants/EngineComponentKeyHeadlessComponentMap.tsx
 #: src/modules/command-menu-item/engine-command/constants/EngineComponentKeyHeadlessComponentMap.tsx
+#: src/modules/chat/sendbird-suite/EditorialWorkspaceRail.tsx
 msgid "Search"
 msgstr "搜索"
 
@@ -12436,6 +13223,16 @@ msgstr "搜索任意字段"
 msgid "Search API keys"
 msgstr "搜索 API 密钥"
 
+#. js-lingui-id: 1hagK1
+#: src/modules/chat/components/StreamDmModal.tsx
+msgid "Search by name or email…"
+msgstr ""
+
+#. js-lingui-id: 9k4ezQ
+#: src/modules/chat/sendbird-suite/EditorialWorkspaceRail.tsx
+msgid "Search channels…"
+msgstr ""
+
 #. js-lingui-id: yI4D/V
 #: src/modules/side-panel/pages/page-layout/components/dropdown-content/ChartColorSelectionDropdownContent.tsx
 msgid "Search colors"
@@ -12450,6 +13247,11 @@ msgstr "搜索颜色..."
 #: src/modules/settings/admin-panel/config-variables/components/ConfigVariableSearchInput.tsx
 msgid "Search config variables"
 msgstr "搜索配置变量"
+
+#. js-lingui-id: OWm+8o
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "Search conversations"
+msgstr ""
 
 #. js-lingui-id: WLfEv1
 #: src/modules/object-record/object-filter-dropdown/components/ObjectFilterDropdownCountrySelect.tsx
@@ -12493,6 +13295,16 @@ msgstr "搜索对象..."
 #: src/modules/ui/input/components/IconPicker.tsx
 msgid "Search icon"
 msgstr "搜索图标"
+
+#. js-lingui-id: RVZWU7
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Search in conversation…"
+msgstr ""
+
+#. js-lingui-id: r03lTW
+#: src/modules/chat/components/ChatWorkspaceSidebar.tsx
+msgid "Search name…"
+msgstr ""
 
 #. js-lingui-id: two5rl
 #: src/modules/side-panel/pages/page-layout/components/record-table-settings/RecordTableDataSourceDropdownContent.tsx
@@ -12732,6 +13544,17 @@ msgstr "选择 1 个 {fieldTypeLabelLowercase} 字段"
 msgid "Select 1 field"
 msgstr "选择 1 个字段"
 
+#. js-lingui-id: +7MwyC
+#: src/modules/chat/sendbird-suite/EditorialDetailsPanel.tsx
+msgid "Select a channel or direct message to see context."
+msgstr ""
+
+#. js-lingui-id: ZGNQwg
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Select a conversation"
+msgstr ""
+
 #. js-lingui-id: OMoA3j
 #: src/modules/workflow/workflow-steps/workflow-actions/delay-actions/components/WorkflowEditActionDelay.tsx
 msgid "Select a date"
@@ -12761,6 +13584,11 @@ msgstr "选择一个已知提供商或创建自定义提供商"
 #: src/modules/navigation-menu-item/edit/side-panel/components/SidePanelNavigationMenuItemEditPage.tsx
 msgid "Select a navigation item to edit"
 msgstr "选择要编辑的导航项"
+
+#. js-lingui-id: qZQMEm
+#: src/modules/chat/components/NewDmModal.tsx
+msgid "Select a teammate"
+msgstr ""
 
 #. js-lingui-id: jL3gox
 #: src/modules/object-record/record-field/ui/form-types/components/FormBooleanFieldInput.tsx
@@ -12858,6 +13686,11 @@ msgstr "选择操作数"
 msgid "Select options"
 msgstr "选择选项"
 
+#. js-lingui-id: e3d/wg
+#: src/modules/chat/components/StreamDmModal.tsx
+msgid "Select someone to message"
+msgstr ""
+
 #. js-lingui-id: UKCiEd
 #: src/modules/settings/admin-panel/config-variables/components/ConfigVariableOptionsDropdownContent.tsx
 msgid "Select Source"
@@ -12913,6 +13746,22 @@ msgstr "选择哪些模型在工作区模型选择器中显示为推荐"
 msgid "Select your preferred language"
 msgstr "选择您偏好的语言"
 
+#. js-lingui-id: 5IX8eU
+#: src/modules/ai/components/internal/AgentRoutingIndicator.tsx
+msgid "selected agent"
+msgstr ""
+
+#. js-lingui-id: JlFcis
+#: src/pages/ai/SuperagentsPage.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Send"
+msgstr ""
+
+#. js-lingui-id: dg8/vM
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Send a message…"
+msgstr ""
+
 #. js-lingui-id: mjK8F3
 #: src/pages/settings/members/SettingsWorkspaceMembers.tsx
 msgid "Send an invite email to your team"
@@ -12928,6 +13777,11 @@ msgstr "发送邮件"
 msgid "Send emails via connected accounts"
 msgstr "通过连接的账户发送电子邮件"
 
+#. js-lingui-id: PX4y6z
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Send your first message to start the conversation preview."
+msgstr ""
+
 #. js-lingui-id: asU5VT
 #: src/modules/workflow/workflow-steps/workflow-actions/http-request-action/components/HttpRequestExecutionResult.tsx
 msgid "Sending request..."
@@ -12938,6 +13792,11 @@ msgstr "正在发送请求…"
 #: src/modules/auth/sign-in-up/components/EmailVerificationSent.tsx
 msgid "Sending..."
 msgstr "发送中..."
+
+#. js-lingui-id: htv3P8
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Sensitive Content"
+msgstr ""
 
 #. js-lingui-id: h69WC6
 #: src/modules/settings/accounts/components/SettingsAccountsMessageAutoCreationCard.tsx
@@ -13051,6 +13910,7 @@ msgstr "正在设置您的数据库..."
 #: src/pages/settings/applications/SettingsAvailableApplicationDetails.tsx
 #: src/pages/settings/applications/SettingsApplicationDetails.tsx
 #: src/pages/settings/ai/SettingsAgentForm.tsx
+#: src/pages/settings/ai/SettingsAgentForm.tsx
 #: src/modules/ui/navigation/navigation-drawer/components/MultiWorkspaceDropdown/internal/MultiWorkspaceDropdownDefaultComponents.tsx
 #: src/modules/sign-in-background-mock/components/SignInAppNavigationDrawerMock.tsx
 #: src/modules/side-panel/pages/page-layout/components/SidePanelPageLayoutTabSettingsContent.tsx
@@ -13114,10 +13974,20 @@ msgstr "第七"
 msgid "Share"
 msgstr "分享"
 
+#. js-lingui-id: uu7MJl
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Share the repetitive work you'd love to delegate..."
+msgstr ""
+
 #. js-lingui-id: Vy9kmk
 #: src/pages/settings/members/SettingsWorkspaceMembers.tsx
 msgid "Share this link to invite users to join your workspace"
 msgstr "分享此链接以邀请用户加入您的工作区"
+
+#. js-lingui-id: CNh+bf
+#: src/modules/chat/components/ChatInfoPanel.tsx
+msgid "Shared media"
+msgstr ""
 
 #. js-lingui-id: RRXpo1
 #: src/modules/settings/data-model/fields/forms/number/constants/NumberDataModelSelectOptions.ts
@@ -13189,6 +14059,11 @@ msgstr "登录或创建账户"
 #: src/modules/auth/sign-in-up/components/internal/SignInUpWithCredentials.tsx
 msgid "Sign up"
 msgstr "注册"
+
+#. js-lingui-id: 2J+JfY
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Signing you in to workspace chat"
+msgstr ""
 
 #. js-lingui-id: BZdVGR
 #: src/modules/settings/data-model/fields/forms/select/components/SettingsDataModelFieldSelectForm.tsx
@@ -13374,8 +14249,8 @@ msgstr "抱歉，出了点问题"
 #: src/modules/object-record/record-table/record-table-header/components/RecordTableColumnHeadDropdownMenu.tsx
 #: src/modules/object-record/object-sort-dropdown/components/ObjectSortDropdownButton.tsx
 #: src/modules/object-record/object-sort-dropdown/components/ObjectSortDropdownButton.tsx
-#: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownRecordGroupsContent.tsx
 #: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownRecordGroupSortContent.tsx
+#: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownRecordGroupsContent.tsx
 msgid "Sort"
 msgstr "排序"
 
@@ -13476,6 +14351,11 @@ msgstr "可供 AI 代理使用的标准工具"
 msgid "Start"
 msgstr "开始"
 
+#. js-lingui-id: pgoAdc
+#: src/modules/chat/components/NewDmModal.tsx
+msgid "Start a direct message with…"
+msgstr ""
+
 #. js-lingui-id: ASqWQi
 #: src/pages/settings/enterprise/SettingsEnterprise.tsx
 msgid "Start a new enterprise subscription to re-enable enterprise features."
@@ -13490,6 +14370,11 @@ msgstr "开始新的企业订阅。"
 #: src/pages/settings/security/event-logs/components/EventLogFilters.tsx
 msgid "Start Date"
 msgstr "开始日期"
+
+#. js-lingui-id: p6oHQh
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Start from scratch"
+msgstr ""
 
 #. js-lingui-id: s+K73L
 #: src/modules/settings/billing/components/SettingsBillingSubscriptionInfo.tsx
@@ -13538,11 +14423,6 @@ msgstr "步骤筛选选项"
 #: src/modules/command-menu-item/record/constants/WorkflowRunsCommandMenuItemsConfig.tsx
 msgid "Stop"
 msgstr "停止"
-
-#. js-lingui-id: I8EmDx
-#: src/modules/information-banner/components/impersonate/InformationBannerIsImpersonating.tsx
-msgid "Stop impersonating"
-msgstr "停止假装"
 
 #. js-lingui-id: qn1Xxf
 #: src/modules/settings/admin-panel/config-variables/utils/useSourceContent.ts
@@ -13713,18 +14593,42 @@ msgstr "建议"
 msgid "Sum"
 msgstr "总和"
 
+#. js-lingui-id: F1nkJm
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Summarize"
+msgstr ""
+
 #. js-lingui-id: DBC3t5
 #: src/pages/settings/profile/appearance/components/DateTimeSettingsCalendarStartDaySelect.tsx
 #: src/pages/settings/profile/appearance/components/DateTimeSettingsCalendarStartDaySelect.tsx
 msgid "Sunday"
 msgstr "星期日"
 
+#. js-lingui-id: nHbsDj
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Super Agents"
+msgstr ""
+
+#. js-lingui-id: fG/KB/
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Superagent created"
+msgstr ""
+
+#. js-lingui-id: 1GIqdi
+#: src/modules/navigation/components/MainNavigationDrawerScrollableItems.tsx
+msgid "Superagents"
+msgstr ""
+
 #. js-lingui-id: XYLcNv
-#: src/pages/settings/security/SettingsSecurity.tsx
 #: src/modules/ui/navigation/navigation-drawer/components/MultiWorkspaceDropdown/internal/MultiWorkspaceDropdownDefaultComponents.tsx
 #: src/modules/settings/hooks/useSettingsNavigationItems.tsx
 msgid "Support"
 msgstr "支持"
+
+#. js-lingui-id: X5cqQ8
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Support Triage"
+msgstr ""
 
 #. js-lingui-id: omBFwv
 #: src/pages/settings/admin-panel/SettingsAdminNewAiModel.tsx
@@ -13735,6 +14639,11 @@ msgstr "支持的输入类型"
 #: src/pages/settings/admin-panel/SettingsAdminNewAiModel.tsx
 msgid "Supports reasoning"
 msgstr "支持推理"
+
+#. js-lingui-id: vH2C/2
+#: src/modules/ai/components/internal/AgentRoutingIndicator.tsx
+msgid "Swap"
+msgstr ""
 
 #. js-lingui-id: UaISq3
 #: src/pages/settings/profile/appearance/components/LocalePicker.tsx
@@ -13793,8 +14702,8 @@ msgstr "与 Outlook 同步"
 
 #. js-lingui-id: +9x4tK
 #: src/pages/onboarding/SyncEmails.tsx
-msgid "Sync your Emails and Calendar with Konnecct. Choose your privacy settings."
-msgstr "将您的电子邮件和日历与 Konnecct 同步。选择您的隐私设置。"
+msgid "Sync your Emails and Calendar with Twenty. Choose your privacy settings."
+msgstr ""
 
 #. js-lingui-id: N2FcBE
 #: src/modules/settings/accounts/components/SettingsAccountsConnectedAccountsRowRightContainer.tsx
@@ -13819,6 +14728,7 @@ msgstr "同步对象标签和 API 名称"
 #. js-lingui-id: D+NlUC
 #: src/pages/settings/ai/SettingsAgentTurnDetail.tsx
 #: src/modules/ui/navigation/navigation-drawer/components/MultiWorkspaceDropdown/internal/MultiWorkspaceDropdownThemesComponents.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
 msgid "System"
 msgstr "系统"
 
@@ -14385,6 +15295,12 @@ msgstr "这将使数据库值恢复为环境/默认值。数据库覆盖将被�
 msgid "Thought"
 msgstr "思考"
 
+#. js-lingui-id: e66y2Z
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Thread"
+msgstr ""
+
 #. js-lingui-id: 5g/sE8
 #: src/modules/command-menu-item/record/constants/WorkflowCommandMenuItemsConfig.tsx
 msgid "Tidy up"
@@ -14560,6 +15476,11 @@ msgstr "总任务"
 msgid "Total time"
 msgstr "总耗时"
 
+#. js-lingui-id: kXL+hZ
+#: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
+msgid "Total turns"
+msgstr ""
+
 #. js-lingui-id: YT/cKI
 #: src/modules/settings/billing/components/SettingsBillingCreditsSection.tsx
 msgid "Track your {intervalLabel} workflow credit consumption."
@@ -14618,6 +15539,11 @@ msgstr "触发在分钟（UTC）"
 msgid "Trigger interval"
 msgstr "触发间隔"
 
+#. js-lingui-id: a10vUY
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
+msgid "Trigger mode"
+msgstr ""
+
 #. js-lingui-id: PiUt3N
 #: src/modules/side-panel/pages/workflow/hooks/useSidePanelWorkflowNavigation.ts
 #: src/modules/command-menu/hooks/__tests__/useWorkflowCommandMenu.test.tsx
@@ -14650,6 +15576,11 @@ msgstr "通过Http请求触发功能"
 #: src/modules/object-record/object-filter-dropdown/components/ObjectFilterDropdownBooleanSelect.tsx
 msgid "True"
 msgstr "真"
+
+#. js-lingui-id: KDw4GX
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Try again"
+msgstr ""
 
 #. js-lingui-id: haaL9N
 #: src/pages/settings/workspace/SettingsApiWebhooks.tsx
@@ -14684,6 +15615,11 @@ msgstr "土耳其语"
 msgid "Turn"
 msgstr ""
 
+#. js-lingui-id: s4ecKs
+#: src/pages/settings/ai/components/SettingsAgentLogsTab.tsx
+msgid "Turn approved for autonomous use"
+msgstr ""
+
 #. js-lingui-id: qsUXL3
 #: src/pages/settings/ai/SettingsAgentTurnDetail.tsx
 #: src/pages/settings/ai/SettingsAgentTurnDetail.tsx
@@ -14712,8 +15648,8 @@ msgstr "绿松石色"
 
 #. js-lingui-id: JnaRPe
 #: src/modules/spreadsheet-import/steps/components/MatchColumnsStep/components/ColumnGrid.tsx
-msgid "Konnecct fields"
-msgstr "Konnecct 字段"
+msgid "Twenty fields"
+msgstr ""
 
 #. js-lingui-id: YIjS4q
 #: src/pages/settings/ai/components/SettingsAgentModelCapabilities.tsx
@@ -14761,6 +15697,11 @@ msgstr "类型"
 #: src/modules/object-record/record-field/ui/meta-types/input/components/RichTextFieldEditor.tsx
 msgid "Type '/' for commands, '@' for mentions"
 msgstr "输入 '/' 以使用命令，输入 '@' 以提及"
+
+#. js-lingui-id: wefdc8
+#: src/pages/ai/SuperagentsPage.tsx
+msgid "Type a message and send it to the AI first, or describe your superagent in the box above."
+msgstr ""
 
 #. js-lingui-id: qzD6hf
 #: src/modules/workflow/workflow-steps/workflow-actions/ai-agent-action/components/WorkflowAiAgentPermissionsTab.tsx
@@ -14960,6 +15901,7 @@ msgstr ""
 #: src/modules/object-record/record-title-cell/components/RecordTitleCellTextFieldDisplay.tsx
 #: src/modules/object-record/components/RecordChip.tsx
 #: src/modules/object-record/components/RecordChip.tsx
+#: src/modules/mention/components/MentionRecordChip.tsx
 #: src/modules/mention/components/MentionRecordChip.tsx
 #: src/modules/ai/components/RecordLink.tsx
 #: src/modules/ai/components/AIChatThreadGroup.tsx
@@ -15218,6 +16160,11 @@ msgstr ""
 msgid "Use letter, number and dash only. Start and finish with a letter or a number"
 msgstr "仅使用字母、数字和破折号。以字母或数字开头和结尾"
 
+#. js-lingui-id: ne8oeI
+#: src/pages/settings/ai/SettingsAI.tsx
+msgid "Use natural-language instructions, then refine with advanced settings for tools, role scope, response format, and evaluations."
+msgstr ""
+
 #. js-lingui-id: c6uZUV
 #: src/modules/object-record/record-table/empty-state/utils/getEmptyStateSubTitle.ts
 msgid "Use our API or add your first {objectLabel} manually"
@@ -15245,8 +16192,8 @@ msgstr "适用于中间/连接表"
 #: src/pages/settings/security/event-logs/components/EventLogResultsTable.tsx
 #: src/pages/settings/security/event-logs/components/EventLogResultsTable.tsx
 #: src/pages/settings/profile/appearance/components/SettingsExperience.tsx
-#: src/pages/settings/ai/SettingsAgentTurnDetail.tsx
 #: src/pages/settings/ai/SettingsAIPrompts.tsx
+#: src/pages/settings/ai/SettingsAgentTurnDetail.tsx
 #: src/pages/settings/accounts/SettingsNewAccount.tsx
 #: src/pages/settings/accounts/SettingsAccountsEmails.tsx
 #: src/pages/settings/accounts/SettingsAccountsConfigurationStepEmail.tsx
@@ -15413,6 +16360,7 @@ msgstr ""
 
 #. js-lingui-id: vSJd18
 #: src/pages/settings/admin-panel/SettingsAdminNewAiModel.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
 msgid "Video"
 msgstr "视频"
 
@@ -15582,6 +16530,7 @@ msgstr "紫罗兰色"
 #: src/modules/settings/accounts/components/SettingsAccountsMessageChannelDetails.tsx
 #: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownVisibilityContent.tsx
 #: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownCustomView.tsx
+#: src/modules/chat/components/CreateChannelModal.tsx
 msgid "Visibility"
 msgstr "可见性"
 
@@ -15759,8 +16708,8 @@ msgstr ""
 
 #. js-lingui-id: nTuObL
 #: src/pages/auth/SignInUp.tsx
-msgid "Welcome to Konnecct"
-msgstr "欢迎来到 Konnecct"
+msgid "Welcome to Twenty"
+msgstr ""
 
 #. js-lingui-id: t8ZvkC
 #: src/pages/auth/SignInUp.tsx
@@ -15776,6 +16725,11 @@ msgstr "欢迎，{workspaceName}。"
 #: src/modules/ai/components/suggested-prompts/AIChatSuggestedPrompts.tsx
 msgid "What can I help you with?"
 msgstr "我能帮您做什么？"
+
+#. js-lingui-id: DOIequ
+#: src/pages/settings/ai/components/SettingsAgentSettingsTab.tsx
+msgid "What should this superagent do?"
+msgstr ""
 
 #. js-lingui-id: cE4SvC
 #: src/pages/settings/developers/api-keys/SettingsDevelopersApiKeysNew.tsx
@@ -15915,12 +16869,13 @@ msgstr "工作流"
 #: src/pages/settings/applications/SettingsApplicationRegistrationDetails.tsx
 #: src/pages/settings/applications/SettingsApplicationDetails.tsx
 #: src/pages/settings/ai/SettingsSkillForm.tsx
+#: src/pages/settings/ai/SettingsAIPrompts.tsx
+#: src/pages/settings/ai/SettingsAI.tsx
 #: src/pages/settings/ai/SettingsAgentTurnDetail.tsx
 #: src/pages/settings/ai/SettingsAgentTurnDetail.tsx
 #: src/pages/settings/ai/SettingsAgentTurnDetail.tsx
 #: src/pages/settings/ai/SettingsAgentForm.tsx
-#: src/pages/settings/ai/SettingsAIPrompts.tsx
-#: src/pages/settings/ai/SettingsAI.tsx
+#: src/pages/settings/ai/components/SettingsAgentOrchestrationProfile.tsx
 #: src/modules/views/view-picker/components/ViewPickerListContent.tsx
 #: src/modules/sign-in-background-mock/components/SignInAppNavigationDrawerMock.tsx
 #: src/modules/settings/roles/role-permissions/permission-flags/hooks/useSettingsRolePermissionFlagConfig.ts
@@ -15936,8 +16891,14 @@ msgstr "工作流"
 #: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownVisibilityContent.tsx
 #: src/modules/object-record/object-options-dropdown/components/ObjectOptionsDropdownCustomView.tsx
 #: src/modules/navigation-menu-item/display/sections/workspace/components/WorkspaceSection.tsx
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
 msgid "Workspace"
 msgstr "工作区"
+
+#. js-lingui-id: ExRT7A
+#: src/modules/chat/components/ChatInfoPanel.tsx
+msgid "Workspace channel. Shared files and links will appear here when chat history indexing is connected."
+msgstr ""
 
 #. js-lingui-id: fQ8teq
 #: src/modules/auth/sign-in-up/hooks/useSignUpInNewWorkspace.ts
@@ -16021,6 +16982,11 @@ msgstr "撰写描述"
 msgid "Write a description for this agent"
 msgstr "为此代理撰写描述"
 
+#. js-lingui-id: RzWUUK
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "Write a message…"
+msgstr ""
+
 #. js-lingui-id: zeCIJi
 #: src/modules/settings/logic-functions/components/tabs/SettingsLogicFunctionCodeEditorTab.tsx
 msgid "Write your function (in typescript) below"
@@ -16096,6 +17062,16 @@ msgstr "是"
 msgid "Yesterday"
 msgstr "昨天"
 
+#. js-lingui-id: kWJmRL
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "You"
+msgstr ""
+
+#. js-lingui-id: F4BWma
+#: src/modules/chat/components/SendbirdCommunicationHub.tsx
+msgid "You / remote"
+msgstr ""
+
 #. js-lingui-id: lWUeEt
 #: src/modules/auth/sign-in-up/hooks/useWorkspaceFromInviteHash.ts
 msgid "You already belong to the workspace {workspaceDisplayName}"
@@ -16120,6 +17096,11 @@ msgstr "您可以在应用程序设置中查看函数逻辑。"
 #: src/modules/settings/accounts/components/SettingsAccountsConnectionForm.tsx
 msgid "You can set up any combination of IMAP (receiving emails), SMTP (sending emails), and CalDAV (calendar sync)."
 msgstr "您可以根据需要设置 IMAP（接收电子邮件）、SMTP（发送电子邮件）和 CalDAV（日历同步）的任意组合。"
+
+#. js-lingui-id: PbVqEd
+#: src/modules/chat/components/StreamDmModal.tsx
+msgid "You cannot DM yourself"
+msgstr ""
 
 #. js-lingui-id: eqUj2Z
 #: src/modules/page-layout/widgets/components/PageLayoutWidgetForbiddenDisplay.tsx

@@ -411,6 +411,7 @@ export {
   IconVersions,
   IconVersionsOff,
   IconVideo,
+  IconVideoOff,
   IconWand,
   IconWebhook,
   IconWorld,
