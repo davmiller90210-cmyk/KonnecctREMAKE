@@ -29,6 +29,35 @@ import { SendbirdPlatformService } from './sendbird-platform.service';
 export class SendbirdAuthController {
   private readonly logger = new Logger(SendbirdAuthController.name);
 
+  private isSendbirdUserMissingError(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return /400201|user.*not found|not_exist|does not exist/i.test(message);
+  }
+
+  private async issueSessionTokenWithRecovery(
+    userId: string,
+    fallbackNickname: string,
+  ) {
+    try {
+      return await this.sendbirdPlatform.issueSessionToken(userId);
+    } catch (error) {
+      if (!this.isSendbirdUserMissingError(error)) {
+        throw error;
+      }
+
+      this.logger.warn(
+        `Sendbird token recovery for missing user ${userId}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+
+      await this.sendbirdPlatform.ensureUser({
+        userId,
+        nickname: fallbackNickname.slice(0, 80),
+      });
+
+      return this.sendbirdPlatform.issueSessionToken(userId);
+    }
+  }
+
   constructor(
     private readonly agoraAuthService: AgoraAuthService,
     private readonly configService: ConfigService,
@@ -100,15 +129,25 @@ export class SendbirdAuthController {
           user?.email?.trim() ||
           scopedUid;
 
-        await this.sendbirdPlatform.ensureUser({
-          userId: scopedUid,
-          nickname: name,
-          ...(user?.defaultAvatarUrl
-            ? { profileUrl: user.defaultAvatarUrl }
-            : {}),
-        });
+        try {
+          await this.sendbirdPlatform.ensureUser({
+            userId: scopedUid,
+            nickname: name,
+            ...(user?.defaultAvatarUrl
+              ? { profileUrl: user.defaultAvatarUrl }
+              : {}),
+          });
+        } catch (error) {
+          this.logger.warn(
+            `Sendbird ensureUser failed for ${scopedUid}, retrying with minimal profile: ${error instanceof Error ? error.message : String(error)}`,
+          );
+          await this.sendbirdPlatform.ensureUser({
+            userId: scopedUid,
+            nickname: scopedUid,
+          });
+        }
 
-        const session = await this.sendbirdPlatform.issueSessionToken(scopedUid);
+        const session = await this.issueSessionTokenWithRecovery(scopedUid, name);
 
         return {
           appId: this.configService.get<string>('SENDBIRD_APPLICATION_ID')?.trim(),
