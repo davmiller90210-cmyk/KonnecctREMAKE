@@ -966,7 +966,7 @@ export const SendbirdCommunicationHub = () => {
       ) => Promise<Record<string, string | undefined>>;
     };
 
-    if (!withMeta.getMetaData) {
+    if (withMeta.getMetaData === undefined) {
       return null;
     }
 
@@ -993,7 +993,7 @@ export const SendbirdCommunicationHub = () => {
     };
 
     try {
-      if (withMeta.updateMetaData) {
+      if (withMeta.updateMetaData !== undefined) {
         await withMeta.updateMetaData({
           [ACTIVE_GROUP_CALL_ROOM_METADATA_KEY]: roomId,
         });
@@ -1003,7 +1003,7 @@ export const SendbirdCommunicationHub = () => {
       // fallback to createMetaData below
     }
 
-    if (withMeta.createMetaData) {
+    if (withMeta.createMetaData !== undefined) {
       await withMeta.createMetaData({
         [ACTIVE_GROUP_CALL_ROOM_METADATA_KEY]: roomId,
       });
