@@ -22,19 +22,19 @@ export const WorkspaceRail = styled.aside`
   flex-direction: column;
   flex-shrink: 0;
   min-height: 0;
-  width: 260px;
+  width: 248px;
 `;
 
 export const RailHeader = styled.div`
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 20px 20px 16px;
+  padding: 14px 14px 10px;
 `;
 
 export const RailBrandTitle = styled.h1`
   color: ${ed.onSurface};
-  font-size: 1.125rem;
+  font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: -0.02em;
   margin: 0;
@@ -61,8 +61,8 @@ export const RailPrimaryCta = styled.button`
   font-weight: 500;
   gap: 8px;
   justify-content: center;
-  margin: 0 16px 16px;
-  padding: 10px 16px;
+  margin: 0 14px 10px;
+  padding: 8px 12px;
   transition: opacity 0.15s ease;
 
   &:hover {
@@ -75,7 +75,7 @@ export const RailScroll = styled.div`
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
-  padding: 0 8px 8px;
+  padding: 0 6px 8px;
 `;
 
 export const RailSectionLabel = styled.div`
@@ -83,7 +83,7 @@ export const RailSectionLabel = styled.div`
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.1em;
-  padding: 12px 12px 6px;
+  padding: 10px 10px 5px;
   text-transform: uppercase;
 `;
 
@@ -100,7 +100,7 @@ export const RailNavRow = styled.button<{ $active?: boolean }>`
   font-size: 0.875rem;
   gap: 10px;
   margin-bottom: 2px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   text-align: left;
   width: 100%;
 
@@ -124,7 +124,7 @@ export const RailChannelRow = styled.button<{ $active?: boolean }>`
   font-size: 0.875rem;
   gap: 8px;
   margin-bottom: 2px;
-  padding: 8px 12px;
+  padding: 7px 10px;
   text-align: left;
   width: 100%;
 
@@ -175,8 +175,8 @@ export const TopBar = styled.header`
   flex-shrink: 0;
   gap: 16px;
   justify-content: space-between;
-  min-height: 48px;
-  padding: 0 20px;
+  min-height: 44px;
+  padding: 0 14px;
 `;
 
 export const TopBarLeft = styled.div`
@@ -189,7 +189,7 @@ export const TopBarLeft = styled.div`
 
 export const TopBarTitle = styled.span`
   color: ${ed.onSurface};
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   overflow: hidden;
@@ -200,7 +200,7 @@ export const TopBarTitle = styled.span`
 
 export const TopBarMeta = styled.span`
   color: ${ed.onSurfaceVariant};
-  font-size: 0.8125rem;
+  font-size: 0.72rem;
 `;
 
 export const TopBarActions = styled.div`
@@ -305,7 +305,7 @@ export const MessageScroll = styled.div`
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: 20px 24px;
+  padding: 12px 14px;
   scroll-behavior: smooth;
 `;
 
@@ -453,7 +453,7 @@ export const TypingLine = styled.div`
 export const ComposerWrap = styled.footer`
   border-top: 1px solid ${ed.outlineVariantGhost};
   flex-shrink: 0;
-  padding: 16px 20px 20px;
+  padding: 10px 14px 12px;
 `;
 
 export const ComposerBox = styled.div`
@@ -461,7 +461,7 @@ export const ComposerBox = styled.div`
   border: 1px solid ${ed.outlineVariantGhost};
   border-radius: ${ed.radiusLg};
   box-shadow: ${ed.shadowElevated};
-  max-width: 960px;
+  max-width: 100%;
   margin: 0 auto;
   transition: border-color 0.15s ease;
 
@@ -475,7 +475,7 @@ export const ComposerToolbar = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  padding: 8px 10px;
+  padding: 6px 8px;
 `;
 
 export const ToolbarBtn = styled.button`
@@ -486,7 +486,7 @@ export const ToolbarBtn = styled.button`
   color: ${ed.onSurfaceVariant};
   cursor: pointer;
   display: inline-flex;
-  padding: 6px;
+  padding: 4px;
 
   &:hover {
     background: ${ed.surfaceBright};
@@ -501,9 +501,10 @@ export const ComposerTextarea = styled.textarea`
   font-family: ${ed.fontStack};
   font-size: 0.875rem;
   line-height: 1.45;
-  min-height: 72px;
-  padding: 12px 16px;
-  resize: vertical;
+  max-height: 180px;
+  min-height: 48px;
+  padding: 10px 12px;
+  resize: none;
   width: 100%;
 
   &::placeholder {
@@ -520,7 +521,7 @@ export const ComposerBottom = styled.div`
   align-items: center;
   display: flex;
   justify-content: space-between;
-  padding: 8px 10px 10px;
+  padding: 6px 8px 8px;
 `;
 
 export const ComposerIconGroup = styled.div`
@@ -533,11 +534,11 @@ export const SendFab = styled.button`
   align-items: center;
   background: ${ed.primary};
   border: none;
-  border-radius: ${ed.radiusMd};
+  border-radius: ${ed.radiusSm};
   color: ${ed.onPrimary};
   cursor: pointer;
   display: inline-flex;
-  padding: 10px 12px;
+  padding: 8px 10px;
 
   &:disabled {
     cursor: not-allowed;
@@ -557,7 +558,7 @@ export const DetailsColumn = styled.aside`
   flex-shrink: 0;
   min-height: 0;
   overflow: hidden;
-  width: 300px;
+  width: 290px;
 
   @media (max-width: 1200px) {
     display: none;

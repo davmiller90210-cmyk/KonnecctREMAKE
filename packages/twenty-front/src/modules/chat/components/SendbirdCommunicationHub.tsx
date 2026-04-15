@@ -55,6 +55,7 @@ import {
   filterMainFeedMessages,
   isCollabNoteMessage,
 } from '@/chat/sendbird/collabNote';
+import { upsertMessage } from '@/chat/sendbird/messageDedup';
 import { EditorialDetailsPanel } from '@/chat/sendbird-suite/EditorialDetailsPanel';
 import { EditorialWorkspaceRail } from '@/chat/sendbird-suite/EditorialWorkspaceRail';
 import * as Ed from '@/chat/sendbird-suite/editorialLayout';
@@ -455,10 +456,7 @@ export const SendbirdCommunicationHub = () => {
               return;
             }
             setMessages((prev) => {
-              if (prev.some((m) => m.messageId === message.messageId)) {
-                return prev;
-              }
-              return filterMainFeedMessages([...prev, message]);
+              return filterMainFeedMessages(upsertMessage(prev, message));
             });
           },
           onMessageUpdated: (ch, message) => {
@@ -473,11 +471,7 @@ export const SendbirdCommunicationHub = () => {
               );
               return;
             }
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.messageId === message.messageId ? message : m,
-              ),
-            );
+            setMessages((prev) => upsertMessage(prev, message));
           },
           onMessageDeleted: (ch, messageId) => {
             if (ch.url !== activeChannelUrlRef.current) {
@@ -753,20 +747,14 @@ export const SendbirdCommunicationHub = () => {
     }
     const pending = ch.sendUserMessage({ message: text });
     pending.onPending((msg) => {
-      setMessages((prev) => filterMainFeedMessages([...prev, msg]));
+      setMessages((prev) => filterMainFeedMessages(upsertMessage(prev, msg)));
     });
     pending.onFailed(() => {
       void reload();
     });
     pending.onSucceeded((msg) => {
       setMessages((prev) => {
-        const i = prev.findIndex((m) => m.messageId === msg.messageId);
-        if (i >= 0) {
-          const next = [...prev];
-          next[i] = msg;
-          return filterMainFeedMessages(next);
-        }
-        return filterMainFeedMessages([...prev, msg]);
+        return filterMainFeedMessages(upsertMessage(prev, msg));
       });
     });
     setComposer('');
@@ -785,7 +773,7 @@ export const SendbirdCommunicationHub = () => {
       parentMessageId: root.messageId,
     });
     pending.onSucceeded((msg) => {
-      setThreadReplies((prev) => [...prev, msg]);
+      setThreadReplies((prev) => upsertMessage(prev, msg));
     });
     pending.onFailed(() => void reload());
     setThreadComposer('');
@@ -1255,7 +1243,7 @@ export const SendbirdCommunicationHub = () => {
     );
   };
 
-  const renderFeed = (opts: { inCallRail?: boolean }) => {
+  const renderFeed = () => {
     let lastDay: number | null = null;
     return (
       <Ed.MessageScroll>
@@ -1287,126 +1275,133 @@ export const SendbirdCommunicationHub = () => {
             </span>
           </Ed.TypingLine>
         ) : null}
-        {!opts.inCallRail && channelUrl && groupChannel ? (
-          <Ed.ComposerWrap>
-            <input
-              ref={fileInputRef}
-              type="file"
-              hidden
-              onChange={handleFilePick}
-            />
-            <Ed.ComposerBox>
-              <Ed.ComposerToolbar>
-                <Ed.ToolbarBtn
-                  type="button"
-                  aria-label={t`Bold`}
-                  onClick={() => {
-                    const r = insertAround(
-                      composerTextareaRef,
-                      composer,
-                      '**',
-                      '**',
-                    );
-                    if (r) {
-                      setComposer(r.next);
-                      requestAnimationFrame(() => {
-                        const ta = composerTextareaRef.current;
-                        if (ta) {
-                          ta.setSelectionRange(r.caret, r.caret);
-                        }
-                      });
-                    }
-                  }}
-                >
-                  B
-                </Ed.ToolbarBtn>
-                <Ed.ToolbarBtn
-                  type="button"
-                  aria-label={t`Italic`}
-                  onClick={() => {
-                    const r = insertAround(
-                      composerTextareaRef,
-                      composer,
-                      '_',
-                      '_',
-                    );
-                    if (r) {
-                      setComposer(r.next);
-                      requestAnimationFrame(() => {
-                        const ta = composerTextareaRef.current;
-                        if (ta) {
-                          ta.setSelectionRange(r.caret, r.caret);
-                        }
-                      });
-                    }
-                  }}
-                >
-                  I
-                </Ed.ToolbarBtn>
-                <Ed.ToolbarBtn
-                  type="button"
-                  aria-label={t`Code`}
-                  onClick={() => {
-                    const r = insertAround(
-                      composerTextareaRef,
-                      composer,
-                      '`',
-                      '`',
-                    );
-                    if (r) {
-                      setComposer(r.next);
-                      requestAnimationFrame(() => {
-                        const ta = composerTextareaRef.current;
-                        if (ta) {
-                          ta.setSelectionRange(r.caret, r.caret);
-                        }
-                      });
-                    }
-                  }}
-                >
-                  {'<>'}
-                </Ed.ToolbarBtn>
-                <Ed.ToolbarBtn
-                  type="button"
-                  aria-label={t`Attach file`}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  +
-                </Ed.ToolbarBtn>
-              </Ed.ComposerToolbar>
-              <Ed.ComposerTextarea
-                ref={composerTextareaRef}
-                placeholder={
-                  selection
-                    ? t`Message ${selectionTitle(selection)}`
-                    : t`Write a message…`
-                }
-                value={composer}
-                onChange={(e) => {
-                  setComposer(e.target.value);
-                  fireTyping();
-                }}
-                onKeyDown={onComposerKeyDown}
-                onBlur={() => {
-                  void groupChannelRef.current?.endTyping().catch(() => undefined);
-                }}
-                disabled={groupChannel == null}
-              />
-              <Ed.ComposerBottom>
-                <Ed.ComposerIconGroup />
-                <Ed.SendFab
-                  type="button"
-                  disabled={groupChannel == null || !composer.trim()}
-                  aria-label={t`Send`}
-                  onClick={sendMainMessage}
-                >
-                  <IconSend size={18} />
-                </Ed.SendFab>
-              </Ed.ComposerBottom>
-            </Ed.ComposerBox>
-          </Ed.ComposerWrap>
-        ) : null}
       </Ed.MessageScroll>
+    );
+  };
+
+  const renderMainComposer = () => {
+    if (!channelUrl || groupChannel == null) {
+      return null;
+    }
+
+    return (
+      <Ed.ComposerWrap>
+        <input
+          ref={fileInputRef}
+          type="file"
+          hidden
+          onChange={handleFilePick}
+        />
+        <Ed.ComposerBox>
+          <Ed.ComposerToolbar>
+            <Ed.ToolbarBtn
+              type="button"
+              aria-label={t`Bold`}
+              onClick={() => {
+                const r = insertAround(
+                  composerTextareaRef,
+                  composer,
+                  '**',
+                  '**',
+                );
+                if (r) {
+                  setComposer(r.next);
+                  requestAnimationFrame(() => {
+                    const ta = composerTextareaRef.current;
+                    if (ta) {
+                      ta.setSelectionRange(r.caret, r.caret);
+                    }
+                  });
+                }
+              }}
+            >
+              B
+            </Ed.ToolbarBtn>
+            <Ed.ToolbarBtn
+              type="button"
+              aria-label={t`Italic`}
+              onClick={() => {
+                const r = insertAround(
+                  composerTextareaRef,
+                  composer,
+                  '_',
+                  '_',
+                );
+                if (r) {
+                  setComposer(r.next);
+                  requestAnimationFrame(() => {
+                    const ta = composerTextareaRef.current;
+                    if (ta) {
+                      ta.setSelectionRange(r.caret, r.caret);
+                    }
+                  });
+                }
+              }}
+            >
+              I
+            </Ed.ToolbarBtn>
+            <Ed.ToolbarBtn
+              type="button"
+              aria-label={t`Code`}
+              onClick={() => {
+                const r = insertAround(
+                  composerTextareaRef,
+                  composer,
+                  '`',
+                  '`',
+                );
+                if (r) {
+                  setComposer(r.next);
+                  requestAnimationFrame(() => {
+                    const ta = composerTextareaRef.current;
+                    if (ta) {
+                      ta.setSelectionRange(r.caret, r.caret);
+                    }
+                  });
+                }
+              }}
+            >
+              {'<>'}
+            </Ed.ToolbarBtn>
+            <Ed.ToolbarBtn
+              type="button"
+              aria-label={t`Attach file`}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              +
+            </Ed.ToolbarBtn>
+          </Ed.ComposerToolbar>
+          <Ed.ComposerTextarea
+            ref={composerTextareaRef}
+            placeholder={
+              selection
+                ? t`Message ${selectionTitle(selection)}`
+                : t`Write a message…`
+            }
+            value={composer}
+            onChange={(e) => {
+              setComposer(e.target.value);
+              fireTyping();
+            }}
+            onKeyDown={onComposerKeyDown}
+            onBlur={() => {
+              void groupChannelRef.current?.endTyping().catch(() => undefined);
+            }}
+            disabled={groupChannel == null}
+          />
+          <Ed.ComposerBottom>
+            <Ed.ComposerIconGroup />
+            <Ed.SendFab
+              type="button"
+              disabled={groupChannel == null || !composer.trim()}
+              aria-label={t`Send`}
+              onClick={sendMainMessage}
+            >
+              <IconSend size={18} />
+            </Ed.SendFab>
+          </Ed.ComposerBottom>
+        </Ed.ComposerBox>
+      </Ed.ComposerWrap>
     );
   };
 
@@ -1542,7 +1537,7 @@ export const SendbirdCommunicationHub = () => {
               <Ed.NotesHeader>
                 <Ed.NotesTitle>{t`Group chat`}</Ed.NotesTitle>
               </Ed.NotesHeader>
-              {renderFeed({ inCallRail: true })}
+              {renderFeed()}
               <Ed.ComposerWrap
                 style={{
                   borderTop: `1px solid ${editorialChatTheme.outlineVariantGhost}`,
@@ -1759,8 +1754,9 @@ export const SendbirdCommunicationHub = () => {
                   </span>
                 </Ed.CenterBlock>
               ) : (
-                renderFeed({ inCallRail: false })
+                renderFeed()
               )}
+              {!connectError && sb && channelUrl ? renderMainComposer() : null}
 
               {threadRoot ? (
                 <Ed.ThreadDrawer role="dialog" aria-modal="true">
