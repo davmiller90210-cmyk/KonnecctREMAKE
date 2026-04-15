@@ -129,6 +129,9 @@ export class SendbirdAuthController {
           user?.email?.trim() ||
           scopedUid;
 
+        const session = await this.issueSessionTokenWithRecovery(scopedUid, name);
+
+        // Best-effort profile enrichment. Session issuance should not fail if profile sync fails.
         try {
           await this.sendbirdPlatform.ensureUser({
             userId: scopedUid,
@@ -139,15 +142,9 @@ export class SendbirdAuthController {
           });
         } catch (error) {
           this.logger.warn(
-            `Sendbird ensureUser failed for ${scopedUid}, retrying with minimal profile: ${error instanceof Error ? error.message : String(error)}`,
+            `Sendbird profile sync skipped for ${scopedUid}: ${error instanceof Error ? error.message : String(error)}`,
           );
-          await this.sendbirdPlatform.ensureUser({
-            userId: scopedUid,
-            nickname: scopedUid,
-          });
         }
-
-        const session = await this.issueSessionTokenWithRecovery(scopedUid, name);
 
         return {
           appId: this.configService.get<string>('SENDBIRD_APPLICATION_ID')?.trim(),
@@ -168,7 +165,7 @@ export class SendbirdAuthController {
       this.logger.warn(`Sendbird session error: ${detail}`);
 
       throw new BadRequestException(
-        'Could not connect to workspace chat. Your account will be synced automatically; if this continues, ask an admin to verify Sendbird settings (and profile image URLs allowed by Sendbird).',
+        'Workspace chat is temporarily unavailable. Please try again shortly.',
       );
     }
   }

@@ -219,7 +219,6 @@ export const SendbirdCommunicationHub = () => {
   const [createChannelOpen, setCreateChannelOpen] = useState(false);
   const [dmModalOpen, setDmModalOpen] = useState(false);
 
-  const [groupRoomIdInput, setGroupRoomIdInput] = useState('');
   const [activeGroupRoom, setActiveGroupRoom] = useState<
     SendBirdCall.Room | null
   >(null);
@@ -974,26 +973,6 @@ export const SendbirdCommunicationHub = () => {
       const room = await SendBirdCall.createRoom({
         roomType: SendBirdCall.RoomType.LARGE_ROOM_FOR_AUDIO_ONLY,
       });
-      setGroupRoomIdInput(room.roomId);
-      await room.enter({
-        audioEnabled: true,
-        videoEnabled: true,
-        kickSiblings: true,
-      });
-      setActiveGroupRoom(room);
-      await attachGroupRoomMedia(room);
-    } catch (e) {
-      setConnectError(e instanceof Error ? e.message : String(e));
-    }
-  };
-
-  const handleJoinGroupRoom = async () => {
-    const id = groupRoomIdInput.trim();
-    if (!callsReady || !id) {
-      return;
-    }
-    try {
-      const room = await SendBirdCall.fetchRoomById(id);
       await room.enter({
         audioEnabled: true,
         videoEnabled: true,
@@ -1722,20 +1701,6 @@ export const SendbirdCommunicationHub = () => {
                       >
                         <IconVideo size={16} /> {t`Join call`}
                       </Ed.IconButtonPrimary>
-                      <Ed.IconButtonGhost
-                        type="button"
-                        disabled={!callsReady}
-                        onClick={() => void handleJoinGroupRoom()}
-                        title={t`Join room by ID`}
-                      >
-                        {t`Room ID`}
-                      </Ed.IconButtonGhost>
-                      <Ed.SearchField
-                        style={{ maxWidth: 120 }}
-                        placeholder={t`ID`}
-                        value={groupRoomIdInput}
-                        onChange={(e) => setGroupRoomIdInput(e.target.value)}
-                      />
                     </>
                   ) : null}
                   {selection?.kind === 'dm' &&
