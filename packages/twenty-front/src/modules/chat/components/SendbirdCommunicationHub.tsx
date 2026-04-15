@@ -71,6 +71,7 @@ type SendbirdClient = SendbirdChatWith<[GroupChannelModule]>;
 
 const HANDLER_KEY = 'konnecct-sendbird-hub';
 const CALL_LISTENER_KEY = 'konnecct-sendbird-calls';
+const ACTIVE_GROUP_CALL_ROOM_METADATA_KEY = 'konnecct_active_group_call_room_id';
 
 const REACTION_EMOJI = ['\u{1F680}', '\u{2728}'] as const;
 
@@ -953,14 +954,86 @@ export const SendbirdCommunicationHub = () => {
     }
   };
 
+  const getSharedGroupRoomId = async (): Promise<string | null> => {
+    const ch = groupChannelRef.current;
+    if (!ch) {
+      return null;
+    }
+
+    const withMeta = ch as GroupChannel & {
+      getMetaData?: (
+        keys: string[],
+      ) => Promise<Record<string, string | undefined>>;
+    };
+
+    if (!withMeta.getMetaData) {
+      return null;
+    }
+
+    try {
+      const result = await withMeta.getMetaData([
+        ACTIVE_GROUP_CALL_ROOM_METADATA_KEY,
+      ]);
+      const id = result[ACTIVE_GROUP_CALL_ROOM_METADATA_KEY]?.trim();
+      return id || null;
+    } catch {
+      return null;
+    }
+  };
+
+  const setSharedGroupRoomId = async (roomId: string) => {
+    const ch = groupChannelRef.current;
+    if (!ch) {
+      return;
+    }
+
+    const withMeta = ch as GroupChannel & {
+      updateMetaData?: (data: Record<string, string>) => Promise<unknown>;
+      createMetaData?: (data: Record<string, string>) => Promise<unknown>;
+    };
+
+    try {
+      if (withMeta.updateMetaData) {
+        await withMeta.updateMetaData({
+          [ACTIVE_GROUP_CALL_ROOM_METADATA_KEY]: roomId,
+        });
+        return;
+      }
+    } catch {
+      // fallback to createMetaData below
+    }
+
+    if (withMeta.createMetaData) {
+      await withMeta.createMetaData({
+        [ACTIVE_GROUP_CALL_ROOM_METADATA_KEY]: roomId,
+      });
+    }
+  };
+
   const handleCreateGroupRoom = async () => {
     if (!callsReady) {
       return;
     }
     try {
-      const room = await SendBirdCall.createRoom({
-        roomType: SendBirdCall.RoomType.LARGE_ROOM_FOR_AUDIO_ONLY,
-      });
+      const sharedRoomId = await getSharedGroupRoomId();
+      let room: SendBirdCall.Room;
+
+      if (sharedRoomId) {
+        try {
+          room = await SendBirdCall.fetchRoomById(sharedRoomId);
+        } catch {
+          room = await SendBirdCall.createRoom({
+            roomType: SendBirdCall.RoomType.LARGE_ROOM_FOR_AUDIO_ONLY,
+          });
+          await setSharedGroupRoomId(room.roomId);
+        }
+      } else {
+        room = await SendBirdCall.createRoom({
+          roomType: SendBirdCall.RoomType.LARGE_ROOM_FOR_AUDIO_ONLY,
+        });
+        await setSharedGroupRoomId(room.roomId);
+      }
+
       await room.enter({
         audioEnabled: true,
         videoEnabled: true,
