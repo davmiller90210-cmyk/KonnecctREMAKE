@@ -32,18 +32,49 @@ export class SendbirdPlatformService {
     return `https://api-${this.applicationId}.sendbird.com`;
   }
 
+  private get defaultProfileUrl(): string | undefined {
+    const explicit = this.configService
+      .get<string>('SENDBIRD_DEFAULT_PROFILE_URL')
+      ?.trim();
+    const explicitSanitized = this.sanitizeProfileUrl(explicit);
+    if (explicitSanitized) {
+      return explicitSanitized;
+    }
+
+    const fromFront = this.configService.get<string>('FRONT_URL')?.trim();
+    const fromServer = this.configService.get<string>('SERVER_URL')?.trim();
+    const base = fromFront || fromServer;
+    if (!base) {
+      return undefined;
+    }
+
+    try {
+      const url = new URL(base);
+      url.pathname = '/favicon.ico';
+      url.search = '';
+      url.hash = '';
+      return this.sanitizeProfileUrl(url.toString());
+    } catch {
+      return undefined;
+    }
+  }
+
   private async request<T>(
     method: string,
     path: string,
     body?: Record<string, unknown>,
   ): Promise<T> {
     const url = `${this.chatApiBase}${path}`;
+    const headers: Record<string, string> = {
+      'Api-Token': this.apiToken,
+    };
+    if (body !== undefined) {
+      headers['Content-Type'] = 'application/json';
+    }
+
     const res = await fetch(url, {
       method,
-      headers: {
-        'Content-Type': 'application/json',
-        'Api-Token': this.apiToken,
-      },
+      headers,
       body: body ? JSON.stringify(body) : undefined,
     });
 
@@ -120,13 +151,18 @@ export class SendbirdPlatformService {
 
     const nickname = (params.nickname?.trim() || params.userId).slice(0, 80);
     const profileUrl = this.sanitizeProfileUrl(params.profileUrl);
+    const profileUrlForCreate = profileUrl || this.defaultProfileUrl;
     const userPath = `/v3/users/${encodeURIComponent(params.userId)}`;
 
     try {
-      await this.request<unknown>('POST', '/v3/users', {
+      const createPayload: Record<string, unknown> = {
         user_id: params.userId,
         nickname,
-      });
+      };
+      if (profileUrlForCreate) {
+        createPayload.profile_url = profileUrlForCreate;
+      }
+      await this.request<unknown>('POST', '/v3/users', createPayload);
     } catch (error) {
       if (!this.isDuplicateUserCreateError(error)) {
         throw error;
@@ -160,8 +196,10 @@ export class SendbirdPlatformService {
       throw new Error('Sendbird is not configured');
     }
 
-    const body =
-      expiresAtMs !== undefined ? { expires_at: expiresAtMs } : undefined;
+    const body: Record<string, unknown> = {};
+    if (expiresAtMs !== undefined) {
+      body.expires_at = expiresAtMs;
+    }
 
     return this.request<{ token: string; expires_at: number }>(
       'POST',
