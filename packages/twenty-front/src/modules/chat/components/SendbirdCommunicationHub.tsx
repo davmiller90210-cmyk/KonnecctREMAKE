@@ -2003,3 +2003,5 @@ export const SendbirdCommunicationHub = () => {
     </Ed.StyledShell>
   );
 };
+
+export default SendbirdCommunicationHub;

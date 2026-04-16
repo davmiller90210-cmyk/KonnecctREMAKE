@@ -18,21 +18,12 @@ import { PageContentSkeletonLoader } from '~/loading/components/PageContentSkele
  */
 const MattermostHub = lazy(async () => {
   const m = await import('@/chat/components/MattermostHub');
-
-  return { default: m.MattermostHub };
+  return { default: m.MattermostHub || m.default };
 });
 
-const CommunicationHub = lazy(async () => {
-  const m = await import('@/chat/components/CommunicationHub');
+const CommunicationHub = lazy(() => import('@/chat/components/CommunicationHub'));
 
-  return { default: m.CommunicationHub };
-});
-
-const SendbirdCommunicationHub = lazy(async () => {
-  const m = await import('@/chat/components/SendbirdCommunicationHub');
-
-  return { default: m.SendbirdCommunicationHub };
-});
+const SendbirdCommunicationHub = lazy(() => import('@/chat/components/SendbirdCommunicationHub'));
 
 /** Fills layout main column (flex chain + min-height) for full-viewport chat. */
 const StyledChatPageRoot = styled.div<{ $sendbird?: boolean }>`

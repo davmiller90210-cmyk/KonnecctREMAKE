@@ -222,7 +222,7 @@ export const MatchColumnsStep = ({
 
       if (!objectMetadataId) {
         throw new Error(
-          t`Object metadata ID not found. Please ensure your fields are correctly configured.`,
+          t`Object metadata ID not found. Please ensure your fields are correctly configured. [V2]`,
         );
       }
 

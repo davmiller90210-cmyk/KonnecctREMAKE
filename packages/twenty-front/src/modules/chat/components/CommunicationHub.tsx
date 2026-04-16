@@ -3245,3 +3245,5 @@ export const CommunicationHub = () => {
     </StyledShell>
   );
 };
+
+export default CommunicationHub;

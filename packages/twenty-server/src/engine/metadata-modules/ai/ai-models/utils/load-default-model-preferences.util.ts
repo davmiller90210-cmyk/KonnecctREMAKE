@@ -3,19 +3,19 @@
 import { type AiModelPreferences } from 'src/engine/metadata-modules/ai/ai-models/types/ai-model-preferences.type';
 
 const DEFAULT_FAST_MODELS = [
+  'google/gemini-1.5-flash',
+  'google/gemini-3-flash-preview',
   'openai/gpt-5-mini',
   'anthropic/claude-haiku-4-5-20251001',
-  'google/gemini-3-flash-preview',
-  'google/gemini-1.5-flash',
   'xai/grok-4-1-fast',
   'mistral/mistral-large-latest',
 ];
 
 const DEFAULT_SMART_MODELS = [
+  'google/gemini-1.5-pro',
+  'google/gemini-3.1-pro-preview',
   'openai/gpt-5.2',
   'anthropic/claude-sonnet-4-6',
-  'google/gemini-3.1-pro-preview',
-  'google/gemini-1.5-pro',
   'xai/grok-4',
   'mistral/mistral-large-latest',
 ];
