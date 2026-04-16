@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { AiModelsModule } from 'src/engine/metadata-modules/ai/ai-models/ai-models.module';
+import { PermissionsModule } from 'src/engine/metadata-modules/permissions/permissions.module';
 import { ObjectMetadataModule } from 'src/engine/metadata-modules/object-metadata/object-metadata.module';
 import { SpreadsheetAiResolver } from './spreadsheet-ai.resolver';
 import { SpreadsheetAiService } from './spreadsheet-ai.service';
 
 @Module({
-  imports: [AiModelsModule, ObjectMetadataModule],
+  imports: [AiModelsModule, ObjectMetadataModule, PermissionsModule],
   providers: [SpreadsheetAiService, SpreadsheetAiResolver],
   exports: [SpreadsheetAiService],
 })
