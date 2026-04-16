@@ -1,0 +1,99 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: default
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: pg_isready -U postgres
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: redis-cli ping
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "6379:6379"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev.frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./packages/twenty-front:/app/packages/twenty-front
+      - /app/packages/twenty-front/node_modules
+      - ./packages/twenty-ui:/app/packages/twenty-ui
+      - /app/packages/twenty-ui/node_modules
+      - ./packages/twenty-shared:/app/packages/twenty-shared
+      - /app/packages/twenty-shared/node_modules
+      - ./package.json:/app/package.json:ro
+      - ./yarn.lock:/app/yarn.lock:ro
+      - ./.yarn:/app/.yarn:ro
+      - ./.yarnrc.yml:/app/.yarnrc.yml:ro
+    environment:
+      NODE_ENV: development
+      VITE_API_URL: http://localhost:3000
+      NX_PLUGIN_NO_TIMEOUTS: "true"
+    develop:
+      watch:
+        - path: ./packages/twenty-front
+          action: rebuild
+        - path: ./packages/twenty-ui
+          action: rebuild
+        - path: ./packages/twenty-shared
+          action: rebuild
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev.backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./packages/twenty-server:/app/packages/twenty-server
+      - /app/packages/twenty-server/node_modules
+      - ./packages/twenty-shared:/app/packages/twenty-shared
+      - /app/packages/twenty-shared/node_modules
+      - ./package.json:/app/package.json:ro
+      - ./yarn.lock:/app/yarn.lock:ro
+      - ./.yarn:/app/.yarn:ro
+      - ./.yarnrc.yml:/app/.yarnrc.yml:ro
+    environment:
+      NODE_ENV: development
+      PG_DATABASE_URL: postgres://postgres:postgres@db:5432/default
+      REDIS_URL: redis://redis:6379
+      SERVER_URL: http://localhost:3000
+      APP_SECRET: dev-secret-key-12345
+      STORAGE_TYPE: local
+      ENABLE_SWAGGER_API: "true"
+      NX_PLUGIN_NO_TIMEOUTS: "true"
+      NX_SKIP_NX_CACHE: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    develop:
+      watch:
+        - path: ./packages/twenty-server
+          action: rebuild
+        - path: ./packages/twenty-shared
+          action: rebuild
+
+volumes:
+  postgres-data:
+  redis-data:

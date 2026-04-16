@@ -38,6 +38,8 @@ import { AuthProviderEnum } from 'src/engine/core-modules/workspace/types/worksp
 import { WorkspaceService } from 'src/engine/core-modules/workspace/services/workspace.service';
 import { WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
 import { PermissionsException } from 'src/engine/metadata-modules/permissions/permissions.exception';
+import { ChatWorkspaceBootstrapService } from 'src/engine/core-modules/chat/services/chat-workspace-bootstrap.service';
+import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user-workspace.entity';
 
 type ClerkTokenClaims = {
   sub?: string;
@@ -64,6 +66,9 @@ export class ClerkAuthController {
     private readonly keyValuePairRepository: Repository<KeyValuePairEntity>,
     @InjectRepository(WorkspaceEntity)
     private readonly workspaceRepository: Repository<WorkspaceEntity>,
+    @InjectRepository(UserWorkspaceEntity)
+    private readonly userWorkspaceRepository: Repository<UserWorkspaceEntity>,
+    private readonly chatWorkspaceBootstrapService: ChatWorkspaceBootstrapService,
   ) {}
 
   @Post('exchange')
@@ -322,6 +327,24 @@ export class ClerkAuthController {
       workspaceForTokens.id,
       AuthProviderEnum.Password,
     );
+
+    const userWorkspace = await this.userWorkspaceRepository.findOne({
+      where: { userId: userForVerify.id, workspaceId: workspaceForTokens.id },
+    });
+
+    if (userWorkspace) {
+      if (createdNewWorkspace) {
+        await this.chatWorkspaceBootstrapService.ensureDefaultForActivatedWorkspace(
+          workspaceForTokens.id,
+          userForVerify.id,
+        );
+      } else {
+        await this.chatWorkspaceBootstrapService.addUserWorkspaceToPublicChannels(
+          workspaceForTokens.id,
+          userWorkspace.id,
+        );
+      }
+    }
 
     return authTokens;
   }

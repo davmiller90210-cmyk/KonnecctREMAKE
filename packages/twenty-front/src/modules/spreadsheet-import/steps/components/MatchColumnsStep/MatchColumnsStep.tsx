@@ -30,20 +30,34 @@ import { type SpreadsheetColumns } from '@/spreadsheet-import/types/SpreadsheetC
 import { type SpreadsheetImportField } from '@/spreadsheet-import/types/SpreadsheetImportField';
 import { useAtomFamilySelectorState } from '@/ui/utilities/state/jotai/hooks/useAtomFamilySelectorState';
 import { ScrollWrapper } from '@/ui/utilities/scroll/components/ScrollWrapper';
+import { useMutation } from '@apollo/client/react';
 import { Trans, useLingui } from '@lingui/react/macro';
+import { IconBrandGemini } from 'twenty-ui/display';
+import { Button } from 'twenty-ui/input';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 
-const StyledColumnsContainer = styled.div`
-  align-items: center;
-  display: flex;
-  flex-direction: column;
-  margin-bottom: ${themeCssVariables.spacing[4]};
+import { SUGGEST_SPREADSHEET_MAPPING } from '@/ai/graphql/mutations/suggestSpreadsheetMapping';
+
+const StyledAiBadge = styled.span`
+  background: ${themeCssVariables.background.tertiary};
+  border-radius: ${themeCssVariables.border.radius.sm};
+  color: ${themeCssVariables.font.color.primary};
+  font-weight: ${themeCssVariables.font.weight.medium};
+  padding: 2px 6px;
 `;
 
-const StyledColumns = styled.span`
-  color: ${themeCssVariables.font.color.primary};
-  font-size: ${themeCssVariables.font.size.sm};
-  font-weight: ${themeCssVariables.font.weight.medium};
+const StyledAiButtonContainer = styled.div`
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  padding: ${themeCssVariables.spacing[2]} ${themeCssVariables.spacing[4]};
+`;
+
+const StyledAiSuggestion = styled.div`
+  color: ${themeCssVariables.font.color.tertiary};
+  display: flex;
+  font-size: ${themeCssVariables.font.size.xs};
+  gap: ${themeCssVariables.spacing[2]};
 `;
 
 const StyledColumn = styled.span`
@@ -52,15 +66,28 @@ const StyledColumn = styled.span`
   font-weight: ${themeCssVariables.font.weight.regular};
 `;
 
+const StyledColumns = styled.span`
+  color: ${themeCssVariables.font.color.primary};
+  font-size: ${themeCssVariables.font.size.sm};
+  font-weight: ${themeCssVariables.font.weight.medium};
+`;
+
+const StyledColumnsContainer = styled.div`
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: ${themeCssVariables.spacing[4]};
+`;
+
 export type MatchColumnsStepProps = {
+  currentStepState: SpreadsheetImportStep;
   data: ImportedRow[];
   headerValues: ImportedRow;
+  nextStep: () => void;
   onBack?: () => void;
+  onError: (message: string) => void;
   setCurrentStepState: (currentStepState: SpreadsheetImportStep) => void;
   setPreviousStepState: (currentStepState: SpreadsheetImportStep) => void;
-  currentStepState: SpreadsheetImportStep;
-  nextStep: () => void;
-  onError: (message: string) => void;
 };
 
 export const MatchColumnsStep = ({
@@ -75,12 +102,16 @@ export const MatchColumnsStep = ({
 }: MatchColumnsStepProps) => {
   const { enqueueDialog } = useDialogManager();
   const dataExample = data.slice(0, 2);
-  const { spreadsheetImportFields: fields } = useSpreadsheetImportInternal();
+  const { spreadsheetImportFields: fields, availableFieldMetadataItems } = useSpreadsheetImportInternal();
   const [isLoading, setIsLoading] = useState(false);
+  const [aiUidColumn, setAiUidColumn] = useState<string | undefined>();
+  const [aiNamingColumns, setAiNamingColumns] = useState<string[]>([]);
   const [columns, setColumns] = useAtomFamilySelectorState(
     initialComputedColumnsSelector,
     headerValues,
   );
+
+  const [suggestSpreadsheetMapping] = useMutation<any, any>(SUGGEST_SPREADSHEET_MAPPING);
 
   const { matchColumnsStepHook } = useSpreadsheetImportInternal();
 
@@ -181,6 +212,66 @@ export const MatchColumnsStep = ({
     },
     [columns, setColumns],
   );
+
+  const handleAiSuggest = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const objectMetadataId = availableFieldMetadataItems[0]?.objectMetadataId;
+
+      if (!objectMetadataId) {
+        throw new Error('Object metadata ID not found');
+      }
+
+      const { data: suggestionData } = await suggestSpreadsheetMapping({
+        variables: {
+          input: {
+            objectMetadataId,
+            headers: headerValues as string[],
+          },
+        },
+      });
+
+      const suggestions = suggestionData.suggestSpreadsheetMapping;
+
+      const newColumns = columns.map((column, index) => {
+        const suggestion = suggestions.mappings.find(
+          (m: any) => m.sourceHeader === headerValues[index],
+        );
+
+        if (suggestion && (suggestion.targetFieldId || suggestion.targetFieldName)) {
+          const field = fields.find(
+            (f) =>
+              f.key === suggestion.targetFieldName ||
+              f.label === suggestion.targetFieldName ||
+              f.key === suggestion.targetFieldId,
+          ) as unknown as SpreadsheetImportField;
+
+          if (field) {
+            return setColumn(column, field, data);
+          }
+        }
+        return column;
+      });
+
+      setColumns(newColumns);
+      setAiUidColumn(suggestions.uidColumn);
+      setAiNamingColumns(suggestions.namingStrategyColumns);
+    } catch (e) {
+      onError((e as Error).message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [
+    availableFieldMetadataItems,
+    columns,
+    data,
+    fields,
+    headerValues,
+    onError,
+    setColumns,
+    suggestSpreadsheetMapping,
+  ]);
+
   const unmatchedRequiredFields = useMemo(
     () => findUnmatchedRequiredFields(fields, columns),
     [fields, columns],
@@ -271,6 +362,30 @@ export const MatchColumnsStep = ({
 
   return (
     <>
+      <StyledAiButtonContainer>
+        <StyledAiSuggestion>
+          {aiUidColumn && (
+            <span>
+              <Trans>UID Suggestion:</Trans> <StyledAiBadge>{aiUidColumn}</StyledAiBadge>
+            </span>
+          )}
+          {aiNamingColumns.length > 0 && (
+            <span>
+              <Trans>Naming Suggestion:</Trans>{' '}
+              {aiNamingColumns.map((c) => (
+                <StyledAiBadge key={c}>{c}</StyledAiBadge>
+              ))}
+            </span>
+          )}
+        </StyledAiSuggestion>
+        <Button
+          title={t`Magic AI Map`}
+          Icon={IconBrandGemini}
+          onClick={handleAiSuggest}
+          variant="secondary"
+          disabled={isLoading}
+        />
+      </StyledAiButtonContainer>
       <ModalContent noPadding isVerticallyCentered>
         <ScrollWrapper componentInstanceId="scroll-wrapper-modal-content">
           <ColumnGrid
