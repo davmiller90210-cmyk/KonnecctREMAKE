@@ -6,6 +6,7 @@ const DEFAULT_FAST_MODELS = [
   'openai/gpt-5-mini',
   'anthropic/claude-haiku-4-5-20251001',
   'google/gemini-3-flash-preview',
+  'google/gemini-1.5-flash',
   'xai/grok-4-1-fast',
   'mistral/mistral-large-latest',
 ];
@@ -14,6 +15,7 @@ const DEFAULT_SMART_MODELS = [
   'openai/gpt-5.2',
   'anthropic/claude-sonnet-4-6',
   'google/gemini-3.1-pro-preview',
+  'google/gemini-1.5-pro',
   'xai/grok-4',
   'mistral/mistral-large-latest',
 ];

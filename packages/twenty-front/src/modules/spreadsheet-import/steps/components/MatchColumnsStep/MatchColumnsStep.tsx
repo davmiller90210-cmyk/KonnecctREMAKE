@@ -216,10 +216,14 @@ export const MatchColumnsStep = ({
   const handleAiSuggest = useCallback(async () => {
     try {
       setIsLoading(true);
-      const objectMetadataId = availableFieldMetadataItems[0]?.objectMetadataId;
+      const objectMetadataId = availableFieldMetadataItems.find(
+        (item) => !!item.objectMetadataId,
+      )?.objectMetadataId;
 
       if (!objectMetadataId) {
-        throw new Error('Object metadata ID not found');
+        throw new Error(
+          t`Object metadata ID not found. Please ensure your fields are correctly configured.`,
+        );
       }
 
       const { data: suggestionData } = await suggestSpreadsheetMapping({
@@ -270,6 +274,7 @@ export const MatchColumnsStep = ({
     onError,
     setColumns,
     suggestSpreadsheetMapping,
+    t,
   ]);
 
   const unmatchedRequiredFields = useMemo(

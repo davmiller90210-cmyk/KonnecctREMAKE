@@ -57,7 +57,10 @@ export const useOpenObjectRecordsSpreadsheetImportDialog = (
       );
 
     const spreadsheetImportFields = buildSpreadsheetImportFields(
-      availableFieldMetadataItemsToImport,
+      availableFieldMetadataItemsToImport.map((field) => ({
+        ...field,
+        objectMetadataId: objectMetadataItem.id,
+      })),
     );
 
     openSpreadsheetImportDialog({
@@ -91,7 +94,12 @@ export const useOpenObjectRecordsSpreadsheetImportDialog = (
         }
       },
       spreadsheetImportFields,
-      availableFieldMetadataItems: availableFieldMetadataItemsToImport,
+      availableFieldMetadataItems: availableFieldMetadataItemsToImport.map(
+        (field) => ({
+          ...field,
+          objectMetadataId: objectMetadataItem.id,
+        }),
+      ),
       onAbortSubmit: () => {
         abortController.abort();
       },
