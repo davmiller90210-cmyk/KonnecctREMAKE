@@ -55,11 +55,11 @@ export const EditorialWorkspaceRail = ({
   viewerAvatarPlaceholder,
   viewerAvatarPlaceholderSeed,
 }: EditorialWorkspaceRailProps) => (
-  <Ed.WorkspaceRail>
-    <Ed.RailHeader>
-      <Ed.RailBrandTitle>{workspaceTitle}</Ed.RailBrandTitle>
-      {planLabel ? <Ed.RailBrandMeta>{planLabel}</Ed.RailBrandMeta> : null}
-    </Ed.RailHeader>
+  <Ed.StyledWorkspaceRail>
+    <Ed.StyledRailHeader>
+      <Ed.StyledRailBrandTitle>{workspaceTitle}</Ed.StyledRailBrandTitle>
+      {planLabel ? <Ed.StyledRailBrandMeta>{planLabel}</Ed.StyledRailBrandMeta> : null}
+    </Ed.StyledRailHeader>
     <div
       style={{
         display: 'flex',
@@ -69,11 +69,11 @@ export const EditorialWorkspaceRail = ({
       }}
     >
       {isWorkspaceAdmin ? (
-        <Ed.RailPrimaryCta type="button" onClick={onOpenCreateChannel}>
+        <Ed.StyledRailPrimaryCta type="button" onClick={onOpenCreateChannel}>
           <IconPlus size={18} /> {t`New channel`}
-        </Ed.RailPrimaryCta>
+        </Ed.StyledRailPrimaryCta>
       ) : null}
-      <Ed.RailPrimaryCta
+      <Ed.StyledRailPrimaryCta
         type="button"
         onClick={onOpenNewDm}
         style={
@@ -87,10 +87,10 @@ export const EditorialWorkspaceRail = ({
         }
       >
         <IconUsers size={18} /> {t`New direct message`}
-      </Ed.RailPrimaryCta>
+      </Ed.StyledRailPrimaryCta>
     </div>
-    <Ed.RailScroll>
-      <Ed.RailNavRow
+    <Ed.StyledRailScroll>
+      <Ed.StyledRailNavRow
         type="button"
         onClick={() => {
           document
@@ -99,7 +99,7 @@ export const EditorialWorkspaceRail = ({
         }}
       >
         <IconSearch size={16} /> {t`Search`}
-      </Ed.RailNavRow>
+      </Ed.StyledRailNavRow>
       <div style={{ padding: '0 8px 12px' }}>
         <div id="editorial-chat-search">
           <SearchInput
@@ -111,9 +111,9 @@ export const EditorialWorkspaceRail = ({
       </div>
       {filteredCategories.map((cat) => (
         <div key={cat.id}>
-          <Ed.RailSectionLabel>{cat.name}</Ed.RailSectionLabel>
+          <Ed.StyledRailSectionLabel>{cat.name}</Ed.StyledRailSectionLabel>
           {cat.channels.map((ch) => (
-            <Ed.RailChannelRow
+            <Ed.StyledRailChannelRow
               key={ch.id}
               type="button"
               $active={
@@ -123,15 +123,15 @@ export const EditorialWorkspaceRail = ({
             >
               <span style={{ opacity: 0.5 }}>#</span>
               {ch.name}
-            </Ed.RailChannelRow>
+            </Ed.StyledRailChannelRow>
           ))}
         </div>
       ))}
-      <Ed.RailSectionLabel>{t`Direct messages`}</Ed.RailSectionLabel>
+      <Ed.StyledRailSectionLabel>{t`Direct messages`}</Ed.StyledRailSectionLabel>
       {filteredDms.map((dm) => {
         const row = dmRowMeta(dm);
         return (
-          <Ed.RailChannelRow
+          <Ed.StyledRailChannelRow
             key={dm.id}
             type="button"
             $active={selection?.kind === 'dm' && selection.dm.id === dm.id}
@@ -144,12 +144,12 @@ export const EditorialWorkspaceRail = ({
               size="sm"
             />
             {row.label}
-          </Ed.RailChannelRow>
+          </Ed.StyledRailChannelRow>
         );
       })}
-    </Ed.RailScroll>
-    <Ed.RailFooter>
-      <Ed.RailUserRow>
+    </Ed.StyledRailScroll>
+    <Ed.StyledRailFooter>
+      <Ed.StyledRailUserRow>
         <Avatar
           avatarUrl={viewerAvatarUrl}
           placeholder={viewerAvatarPlaceholder}
@@ -166,7 +166,7 @@ export const EditorialWorkspaceRail = ({
             {isWorkspaceAdmin ? t`Admin` : t`Member`}
           </div>
         </div>
-      </Ed.RailUserRow>
-    </Ed.RailFooter>
-  </Ed.WorkspaceRail>
+      </Ed.StyledRailUserRow>
+    </Ed.StyledRailFooter>
+  </Ed.StyledWorkspaceRail>
 );

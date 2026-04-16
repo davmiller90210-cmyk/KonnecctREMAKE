@@ -2,20 +2,118 @@ import { styled } from '@linaria/react';
 
 import { editorialChatTheme as ed } from '@/chat/theme/editorialChatTheme';
 
-export const Shell = styled.div`
+export const StyledShell = styled.div`
   background: ${ed.surface};
   color: ${ed.onSurface};
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
   font-family: ${ed.fontStack};
-  height: 100%;
+  height: 100vh;
   min-height: 0;
   min-width: 0;
   overflow: hidden;
 `;
 
-export const WorkspaceRail = styled.aside`
+export const StyledGlobalTopNav = styled.header`
+  align-items: center;
+  background: ${ed.surface};
+  border-bottom: 2px solid ${ed.surfaceContainerHighest};
+  display: flex;
+  flex-shrink: 0;
+  height: 52px;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 100;
+`;
+
+export const StyledGlobalNavLeft = styled.div`
+  align-items: center;
+  display: flex;
+  gap: 16px;
+`;
+
+export const StyledGlobalNavBrand = styled.div`
+  color: ${ed.onSurface};
+  font-family: ${ed.fontStack};
+  font-size: 1.125rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  margin-right: 8px;
+`;
+
+export const StyledGlobalNavVerticalDivider = styled.div`
+  background: ${ed.outlineVariantGhost};
+  height: 20px;
+  width: 1px;
+`;
+
+export const StyledGlobalNavLinks = styled.nav`
+  align-items: center;
+  display: flex;
+  gap: 20px;
+`;
+
+export const StyledGlobalNavLink = styled.button<{ $active?: boolean }>`
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid ${({ $active }) => ($active ? ed.primary : 'transparent')};
+  color: ${({ $active }) => ($active ? ed.onSurface : ed.onSurfaceVariant)};
+  cursor: pointer;
+  font-family: ${ed.fontStack};
+  font-size: 0.75rem;
+  font-weight: 700;
+  height: 52px;
+  letter-spacing: 0.08em;
+  padding: 0 4px;
+  text-transform: uppercase;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: ${ed.onSurface};
+  }
+`;
+
+export const StyledGlobalNavRight = styled.div`
+  align-items: center;
+  display: flex;
+  gap: 14px;
+`;
+
+export const StyledGlobalNavAction = styled.button`
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: ${ed.onSurfaceVariant};
+  cursor: pointer;
+  display: flex;
+  padding: 4px;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: ${ed.onSurface};
+  }
+`;
+
+export const StyledExitChatButton = styled.button`
+  align-items: center;
+  background: ${ed.surfaceContainerHigh};
+  border: 1px solid ${ed.outlineVariantGhost};
+  border-radius: ${ed.radiusFull};
+  color: ${ed.onSurfaceVariant};
+  cursor: pointer;
+  display: flex;
+  padding: 6px;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: ${ed.surfaceContainerHighest};
+    border-color: ${ed.primaryMutedBorder};
+    color: ${ed.error};
+  }
+`;
+
+export const StyledWorkspaceRail = styled.aside`
   background: ${ed.surfaceContainerLow};
   border-right: 1px solid ${ed.outlineVariantGhost};
   display: flex;
@@ -25,14 +123,14 @@ export const WorkspaceRail = styled.aside`
   width: 248px;
 `;
 
-export const RailHeader = styled.div`
+export const StyledRailHeader = styled.div`
   display: flex;
   flex-direction: column;
   gap: 6px;
   padding: 14px 14px 10px;
 `;
 
-export const RailBrandTitle = styled.h1`
+export const StyledRailBrandTitle = styled.h1`
   color: ${ed.onSurface};
   font-size: 0.95rem;
   font-weight: 600;
@@ -40,15 +138,15 @@ export const RailBrandTitle = styled.h1`
   margin: 0;
 `;
 
-export const RailBrandMeta = styled.p`
+export const StyledRailBrandMeta = styled.p`
   color: ${ed.onSurfaceVariant};
   font-size: 0.75rem;
+  letter-spacing: 0.05em;
   margin: 0;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
 `;
 
-export const RailPrimaryCta = styled.button`
+export const StyledRailPrimaryCta = styled.button`
   align-items: center;
   background: ${ed.primary};
   border: none;
@@ -70,7 +168,7 @@ export const RailPrimaryCta = styled.button`
   }
 `;
 
-export const RailScroll = styled.div`
+export const StyledRailScroll = styled.div`
   flex: 1 1 auto;
   min-height: 0;
   overflow-x: hidden;
@@ -78,7 +176,7 @@ export const RailScroll = styled.div`
   padding: 0 6px 8px;
 `;
 
-export const RailSectionLabel = styled.div`
+export const StyledRailSectionLabel = styled.div`
   color: ${ed.onSurfaceVariant};
   font-size: 0.7rem;
   font-weight: 700;
@@ -87,7 +185,7 @@ export const RailSectionLabel = styled.div`
   text-transform: uppercase;
 `;
 
-export const RailNavRow = styled.button<{ $active?: boolean }>`
+export const StyledRailNavRow = styled.button<{ $active?: boolean }>`
   align-items: center;
   background: ${({ $active }) =>
     $active ? ed.surfaceContainerHighest : 'transparent'};
@@ -110,10 +208,10 @@ export const RailNavRow = styled.button<{ $active?: boolean }>`
   }
 `;
 
-export const RailChannelRow = styled.button<{ $active?: boolean }>`
+export const StyledRailChannelRow = styled.button<{ $active?: boolean }>`
   align-items: center;
   background: ${({ $active }) =>
-    $active ? 'rgba(194, 193, 255, 0.08)' : 'transparent'};
+    $active ? ed.surfaceContainerHighest : 'transparent'};
   border: none;
   border-left: ${({ $active }) =>
     $active ? `2px solid ${ed.primary}` : '2px solid transparent'};
@@ -133,7 +231,7 @@ export const RailChannelRow = styled.button<{ $active?: boolean }>`
   }
 `;
 
-export const RailFooter = styled.div`
+export const StyledRailFooter = styled.div`
   border-top: 1px solid ${ed.outlineVariantGhost};
   display: flex;
   flex-direction: column;
@@ -142,14 +240,14 @@ export const RailFooter = styled.div`
   padding: 12px 8px;
 `;
 
-export const RailUserRow = styled.div`
+export const StyledRailUserRow = styled.div`
   align-items: center;
   display: flex;
   gap: 10px;
   padding: 8px 12px;
 `;
 
-export const BodyRow = styled.div`
+export const StyledBodyRow = styled.div`
   display: flex;
   flex: 1 1 auto;
   flex-direction: row;
@@ -157,7 +255,7 @@ export const BodyRow = styled.div`
   min-width: 0;
 `;
 
-export const MainColumn = styled.main`
+export const StyledMainColumn = styled.main`
   background: ${ed.surface};
   display: flex;
   flex: 1 1 auto;
@@ -167,7 +265,7 @@ export const MainColumn = styled.main`
   position: relative;
 `;
 
-export const TopBar = styled.header`
+export const StyledTopBar = styled.header`
   align-items: center;
   background: ${ed.surface};
   border-bottom: 1px solid ${ed.outlineVariantGhost};
@@ -179,7 +277,7 @@ export const TopBar = styled.header`
   padding: 0 14px;
 `;
 
-export const TopBarLeft = styled.div`
+export const StyledTopBarLeft = styled.div`
   align-items: center;
   display: flex;
   flex: 1 1 auto;
@@ -187,7 +285,7 @@ export const TopBarLeft = styled.div`
   min-width: 0;
 `;
 
-export const TopBarTitle = styled.span`
+export const StyledTopBarTitle = styled.span`
   color: ${ed.onSurface};
   font-size: 0.8rem;
   font-weight: 700;
@@ -198,19 +296,19 @@ export const TopBarTitle = styled.span`
   white-space: nowrap;
 `;
 
-export const TopBarMeta = styled.span`
+export const StyledTopBarMeta = styled.span`
   color: ${ed.onSurfaceVariant};
   font-size: 0.72rem;
 `;
 
-export const TopBarActions = styled.div`
+export const StyledTopBarActions = styled.div`
   align-items: center;
   display: flex;
   flex-shrink: 0;
   gap: 8px;
 `;
 
-export const IconButtonGhost = styled.button`
+export const StyledIconButtonGhost = styled.button`
   align-items: center;
   background: ${ed.surfaceContainerHigh};
   border: 1px solid ${ed.outlineVariantGhost};
@@ -234,7 +332,7 @@ export const IconButtonGhost = styled.button`
   }
 `;
 
-export const IconButtonPrimary = styled.button`
+export const StyledIconButtonPrimary = styled.button`
   align-items: center;
   background: ${ed.primary};
   border: none;
@@ -258,7 +356,7 @@ export const IconButtonPrimary = styled.button`
   }
 `;
 
-export const SearchField = styled.input`
+export const StyledSearchField = styled.input`
   background: ${ed.surfaceContainerLow};
   border: 1px solid ${ed.outlineVariantGhost};
   border-radius: ${ed.radiusMd};
@@ -275,12 +373,12 @@ export const SearchField = styled.input`
   }
 
   &:focus {
-    border-color: rgba(194, 193, 255, 0.45);
+    border-color: ${ed.primaryMutedBorder};
     outline: none;
   }
 `;
 
-export const CenterBlock = styled.div`
+export const StyledCenterBlock = styled.div`
   align-items: center;
   display: flex;
   flex: 1 1 auto;
@@ -291,17 +389,17 @@ export const CenterBlock = styled.div`
   text-align: center;
 `;
 
-export const CenterTitle = styled.span`
+export const StyledCenterTitle = styled.span`
   color: ${ed.onSurface};
   font-size: 0.9375rem;
   font-weight: 600;
 `;
 
-export const CenterError = styled(CenterBlock)`
+export const StyledCenterError = styled(StyledCenterBlock)`
   color: ${ed.error};
 `;
 
-export const MessageScroll = styled.div`
+export const StyledMessageScroll = styled.div`
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
@@ -309,13 +407,13 @@ export const MessageScroll = styled.div`
   scroll-behavior: smooth;
 `;
 
-export const DatePill = styled.div`
+export const StyledDatePill = styled.div`
   display: flex;
   justify-content: center;
   margin: 16px 0 24px;
 `;
 
-export const DatePillInner = styled.span`
+export const StyledDatePillInner = styled.span`
   background: ${ed.surfaceContainerHigh};
   border-radius: ${ed.radiusFull};
   color: ${ed.onSurfaceVariant};
@@ -326,7 +424,7 @@ export const DatePillInner = styled.span`
   text-transform: uppercase;
 `;
 
-export const MsgRow = styled.div<{ $own?: boolean }>`
+export const StyledMsgRow = styled.div<{ $own?: boolean }>`
   display: flex;
   flex-direction: ${({ $own }) => ($own ? 'row-reverse' : 'row')};
   gap: 12px;
@@ -335,7 +433,7 @@ export const MsgRow = styled.div<{ $own?: boolean }>`
   ${({ $own }) => ($own ? 'margin-left: auto;' : '')}
 `;
 
-export const MsgStack = styled.div`
+export const StyledMsgStack = styled.div`
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
@@ -343,31 +441,31 @@ export const MsgStack = styled.div`
   min-width: 0;
 `;
 
-export const MsgMeta = styled.div<{ $own?: boolean }>`
+export const StyledMsgMeta = styled.div<{ $own?: boolean }>`
   align-items: baseline;
   display: flex;
   flex-direction: ${({ $own }) => ($own ? 'row-reverse' : 'row')};
   gap: 8px;
 `;
 
-export const MsgAuthor = styled.span`
+export const StyledMsgAuthor = styled.span`
   color: ${ed.onSurface};
   font-size: 0.875rem;
   font-weight: 600;
 `;
 
-export const MsgTime = styled.span`
+export const StyledMsgTime = styled.span`
   color: ${ed.onSurfaceVariant};
   font-size: 0.65rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 `;
 
-export const MsgText = styled.div<{ $own?: boolean }>`
+export const StyledMsgText = styled.div<{ $own?: boolean }>`
   background: ${({ $own }) =>
-    $own ? 'rgba(51, 45, 188, 0.22)' : ed.surfaceContainerHighest};
+    $own ? ed.surfaceContainerHigh : ed.surfaceContainerHighest};
   border: 1px solid
-    ${({ $own }) => ($own ? 'rgba(194, 193, 255, 0.22)' : ed.outlineVariantGhost)};
+    ${({ $own }) => ($own ? ed.primaryMutedBorder : ed.outlineVariantGhost)};
   border-radius: ${ed.radiusLg};
   color: ${({ $own }) => ($own ? ed.onPrimaryContainer : ed.onSurface)};
   font-size: 0.875rem;
@@ -376,7 +474,7 @@ export const MsgText = styled.div<{ $own?: boolean }>`
   ${({ $own }) => ($own ? 'border-top-right-radius: 4px;' : 'border-top-left-radius: 4px;')}
 `;
 
-export const FileCard = styled.a`
+export const StyledFileCard = styled.a`
   align-items: center;
   background: ${ed.surfaceContainerHighest};
   border: 1px solid ${ed.outlineVariantGhost};
@@ -395,14 +493,14 @@ export const FileCard = styled.a`
   }
 `;
 
-export const ReactionRow = styled.div`
+export const StyledReactionRow = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 8px;
 `;
 
-export const ReactionChip = styled.button`
+export const StyledReactionChip = styled.button`
   align-items: center;
   background: ${ed.surfaceContainerHighest};
   border: 1px solid ${ed.outlineVariantGhost};
@@ -416,11 +514,11 @@ export const ReactionChip = styled.button`
   padding: 4px 8px;
 
   &:hover {
-    border-color: rgba(194, 193, 255, 0.35);
+    border-color: ${ed.primaryMutedBorder};
   }
 `;
 
-export const ThreadHint = styled.button`
+export const StyledThreadHint = styled.button`
   background: transparent;
   border: none;
   color: ${ed.primary};
@@ -438,7 +536,7 @@ export const ThreadHint = styled.button`
   }
 `;
 
-export const TypingLine = styled.div`
+export const StyledTypingLine = styled.div`
   align-items: center;
   color: ${ed.onSurfaceVariant};
   display: flex;
@@ -450,27 +548,27 @@ export const TypingLine = styled.div`
   text-transform: uppercase;
 `;
 
-export const ComposerWrap = styled.footer`
+export const StyledComposerWrap = styled.footer`
   border-top: 1px solid ${ed.outlineVariantGhost};
   flex-shrink: 0;
   padding: 10px 14px 12px;
 `;
 
-export const ComposerBox = styled.div`
+export const StyledComposerBox = styled.div`
   background: ${ed.surfaceContainerHighest};
   border: 1px solid ${ed.outlineVariantGhost};
   border-radius: ${ed.radiusLg};
   box-shadow: ${ed.shadowElevated};
-  max-width: 100%;
   margin: 0 auto;
+  max-width: 100%;
   transition: border-color 0.15s ease;
 
   &:focus-within {
-    border-color: rgba(194, 193, 255, 0.45);
+    border-color: ${ed.primaryMutedBorder};
   }
 `;
 
-export const ComposerToolbar = styled.div`
+export const StyledComposerToolbar = styled.div`
   border-bottom: 1px solid ${ed.outlineVariantGhost};
   display: flex;
   flex-wrap: wrap;
@@ -478,7 +576,7 @@ export const ComposerToolbar = styled.div`
   padding: 6px 8px;
 `;
 
-export const ToolbarBtn = styled.button`
+export const StyledToolbarBtn = styled.button`
   align-items: center;
   background: transparent;
   border: none;
@@ -494,7 +592,7 @@ export const ToolbarBtn = styled.button`
   }
 `;
 
-export const ComposerTextarea = styled.textarea`
+export const StyledComposerTextarea = styled.textarea`
   background: transparent;
   border: none;
   color: ${ed.onSurface};
@@ -517,20 +615,20 @@ export const ComposerTextarea = styled.textarea`
   }
 `;
 
-export const ComposerBottom = styled.div`
+export const StyledComposerBottom = styled.div`
   align-items: center;
   display: flex;
   justify-content: space-between;
   padding: 6px 8px 8px;
 `;
 
-export const ComposerIconGroup = styled.div`
+export const StyledComposerIconGroup = styled.div`
   align-items: center;
   display: flex;
   gap: 4px;
 `;
 
-export const SendFab = styled.button`
+export const StyledSendFab = styled.button`
   align-items: center;
   background: ${ed.primary};
   border: none;
@@ -550,7 +648,7 @@ export const SendFab = styled.button`
   }
 `;
 
-export const DetailsColumn = styled.aside`
+export const StyledDetailsColumn = styled.aside`
   background: ${ed.surfaceContainerLow};
   border-left: 1px solid ${ed.outlineVariantGhost};
   display: flex;
@@ -565,14 +663,14 @@ export const DetailsColumn = styled.aside`
   }
 `;
 
-export const DetailsHeader = styled.div`
+export const StyledDetailsHeader = styled.div`
   align-items: center;
   display: flex;
   justify-content: space-between;
   padding: 20px 20px 12px;
 `;
 
-export const DetailsTitle = styled.h3`
+export const StyledDetailsTitle = styled.h3`
   color: ${ed.onSurface};
   font-size: 0.7rem;
   font-weight: 700;
@@ -581,28 +679,28 @@ export const DetailsTitle = styled.h3`
   text-transform: uppercase;
 `;
 
-export const DetailsScroll = styled.div`
+export const StyledDetailsScroll = styled.div`
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   padding: 0 20px 20px;
 `;
 
-export const BentoGrid = styled.div`
+export const StyledBentoGrid = styled.div`
   display: grid;
   gap: 8px;
   grid-template-columns: 1fr 1fr;
   margin-bottom: 20px;
 `;
 
-export const BentoCell = styled.div`
+export const StyledBentoCell = styled.div`
   background: ${ed.surfaceContainerHighest};
   border: 1px solid ${ed.outlineVariantGhost};
   border-radius: ${ed.radiusMd};
   padding: 12px;
 `;
 
-export const BentoLabel = styled.div`
+export const StyledBentoLabel = styled.div`
   color: ${ed.onSurfaceVariant};
   font-size: 0.6rem;
   font-weight: 700;
@@ -611,20 +709,20 @@ export const BentoLabel = styled.div`
   text-transform: uppercase;
 `;
 
-export const BentoValue = styled.div`
+export const StyledBentoValue = styled.div`
   color: ${ed.onSurface};
   font-size: 1.125rem;
   font-weight: 700;
 `;
 
-export const MediaGrid = styled.div`
+export const StyledMediaGrid = styled.div`
   display: grid;
   gap: 6px;
   grid-template-columns: repeat(3, 1fr);
   margin-top: 8px;
 `;
 
-export const MediaThumb = styled.button`
+export const StyledMediaThumb = styled.button`
   aspect-ratio: 1;
   background: ${ed.surfaceContainerHighest};
   border: 1px solid ${ed.outlineVariantGhost};
@@ -641,9 +739,9 @@ export const MediaThumb = styled.button`
   }
 `;
 
-export const DangerOutlineBtn = styled.button`
+export const StyledDangerOutlineBtn = styled.button`
   background: transparent;
-  border: 1px solid rgba(236, 124, 138, 0.35);
+  border: 1px solid ${ed.primaryMutedBorder};
   border-radius: ${ed.radiusMd};
   color: ${ed.error};
   cursor: pointer;
@@ -657,15 +755,15 @@ export const DangerOutlineBtn = styled.button`
   width: 100%;
 
   &:hover {
-    background: rgba(236, 124, 138, 0.08);
+    background: ${ed.surfaceContainerHigh};
   }
 `;
 
-export const ThreadDrawer = styled.aside`
+export const StyledThreadDrawer = styled.aside`
   background: ${ed.surfaceContainerLow};
   border-left: 1px solid ${ed.outlineVariantGhost};
   bottom: 0;
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.35);
+  box-shadow: ${ed.shadowElevated};
   display: flex;
   flex-direction: column;
   max-width: 400px;
@@ -681,7 +779,7 @@ export const ThreadDrawer = styled.aside`
   }
 `;
 
-export const ThreadDrawerHeader = styled.div`
+export const StyledThreadDrawerHeader = styled.div`
   align-items: center;
   border-bottom: 1px solid ${ed.outlineVariantGhost};
   display: flex;
@@ -690,14 +788,14 @@ export const ThreadDrawerHeader = styled.div`
   padding: 14px 16px;
 `;
 
-export const ThreadDrawerScroll = styled.div`
+export const StyledThreadDrawerScroll = styled.div`
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   padding: 12px 16px;
 `;
 
-export const NotesPanel = styled.div`
+export const StyledNotesPanel = styled.div`
   background: ${ed.surfaceContainerLow};
   border-left: 1px solid ${ed.outlineVariantGhost};
   display: flex;
@@ -711,12 +809,12 @@ export const NotesPanel = styled.div`
   }
 `;
 
-export const NotesHeader = styled.div`
+export const StyledNotesHeader = styled.div`
   border-bottom: 1px solid ${ed.outlineVariantGhost};
   padding: 16px;
 `;
 
-export const NotesTitle = styled.span`
+export const StyledNotesTitle = styled.span`
   color: ${ed.primary};
   font-size: 0.75rem;
   font-weight: 700;
@@ -724,15 +822,15 @@ export const NotesTitle = styled.span`
   text-transform: uppercase;
 `;
 
-export const NotesScroll = styled.div`
+export const StyledNotesScroll = styled.div`
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   padding: 12px 16px;
 `;
 
-export const NoteCard = styled.div`
-  background: rgba(0, 0, 0, 0.25);
+export const StyledNoteCard = styled.div`
+  background: ${ed.surfaceContainerLowest};
   border-left: 2px solid ${ed.primary};
   border-radius: ${ed.radiusMd};
   font-size: 0.8rem;
@@ -741,12 +839,12 @@ export const NoteCard = styled.div`
   padding: 12px;
 `;
 
-export const NotesInputRow = styled.div`
+export const StyledNotesInputRow = styled.div`
   border-top: 1px solid ${ed.outlineVariantGhost};
   padding: 12px 16px 16px;
 `;
 
-export const NotesField = styled.textarea`
+export const StyledNotesField = styled.textarea`
   background: ${ed.surfaceContainerLowest};
   border: 1px solid ${ed.outlineVariantGhost};
   border-radius: ${ed.radiusMd};
@@ -759,12 +857,12 @@ export const NotesField = styled.textarea`
   width: 100%;
 
   &:focus {
-    border-color: rgba(194, 193, 255, 0.45);
+    border-color: ${ed.primaryMutedBorder};
     outline: none;
   }
 `;
 
-export const GlassControlBar = styled.div`
+export const StyledGlassControlBar = styled.div`
   align-items: center;
   backdrop-filter: ${ed.glassBlur};
   background: ${ed.glassPanel};
@@ -781,7 +879,7 @@ export const GlassControlBar = styled.div`
   z-index: 30;
 `;
 
-export const RoundCtrl = styled.button`
+export const StyledRoundCtrl = styled.button`
   align-items: center;
   background: ${ed.surfaceContainerHighest};
   border: none;
@@ -803,7 +901,7 @@ export const RoundCtrl = styled.button`
   }
 `;
 
-export const LeaveCallBtn = styled.button`
+export const StyledLeaveCallBtn = styled.button`
   align-items: center;
   background: ${ed.error};
   border: none;
@@ -812,98 +910,87 @@ export const LeaveCallBtn = styled.button`
   cursor: pointer;
   display: inline-flex;
   font-family: ${ed.fontStack};
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: 0.8125rem;
+  font-weight: 700;
   gap: 8px;
-  padding: 0 18px;
   height: 44px;
+  padding: 0 20px;
 
   &:hover {
-    filter: brightness(1.05);
+    opacity: 0.9;
   }
 `;
 
-export const CallStage = styled.div`
-  align-items: center;
+export const StyledCallStage = styled.div`
   background: ${ed.surfaceContainerLowest};
   display: flex;
   flex: 1 1 auto;
-  justify-content: center;
   min-height: 0;
   position: relative;
 `;
 
-export const CallStageVideo = styled.video`
-  background: #000;
+export const StyledCallStageVideo = styled.video`
+  background: ${ed.surfaceContainerLowest};
   border-radius: ${ed.radiusLg};
-  max-height: 100%;
-  max-width: 100%;
-  object-fit: contain;
-`;
-
-export const PipVideo = styled.video`
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: ${ed.radiusMd};
-  bottom: 100px;
-  box-shadow: ${ed.shadowElevated};
-  max-height: 28vh;
-  max-width: 36vw;
+  height: 100%;
   object-fit: cover;
-  position: absolute;
-  right: 24px;
-  z-index: 25;
+  width: 100%;
 `;
 
-export const GroupCallGrid = styled.div`
-  display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  padding: 16px 20px 120px;
-`;
-
-export const ParticipantTile = styled.div<{ $highlight?: boolean }>`
-  aspect-ratio: 1;
-  background: ${ed.surfaceContainerHighest};
-  border: 1px solid
-    ${({ $highlight }) =>
-      $highlight ? 'rgba(194, 193, 255, 0.45)' : ed.outlineVariantGhost};
+export const StyledPipVideo = styled.video`
+  border: 1px solid ${ed.outlineVariantGhost};
   border-radius: ${ed.radiusMd};
-  box-shadow: ${({ $highlight }) =>
-    $highlight ? '0 0 0 2px rgba(194, 193, 255, 0.35)' : 'none'};
-  overflow: hidden;
+  bottom: 20px;
+  box-shadow: ${ed.shadowElevated};
+  height: 120px;
+  position: absolute;
+  right: 20px;
+  width: 160px;
+  z-index: 10;
+`;
+
+export const StyledGroupCallGrid = styled.div`
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  padding: 16px;
+`;
+
+export const StyledParticipantTile = styled.div<{ $highlight?: boolean }>`
+  background: ${ed.surfaceContainerHigh};
+  border: 2px solid ${({ $highlight }) => ($highlight ? ed.primary : 'transparent')};
+  border-radius: ${ed.radiusLg};
   position: relative;
 `;
 
-export const LiveBadge = styled.div`
+export const StyledLiveBadge = styled.div`
   align-items: center;
-  background: rgba(31, 32, 32, 0.82);
+  background: ${ed.glassPanel};
   backdrop-filter: ${ed.glassBlur};
-  border-radius: ${ed.radiusMd};
+  border-radius: ${ed.radiusFull};
   color: ${ed.onSurface};
-  display: inline-flex;
+  display: flex;
   font-size: 0.65rem;
-  font-weight: 600;
+  font-weight: 800;
   gap: 8px;
   left: 20px;
-  letter-spacing: 0.06em;
-  padding: 8px 14px;
+  padding: 6px 12px;
   position: absolute;
   text-transform: uppercase;
   top: 20px;
   z-index: 20;
 `;
 
-export const Dot = styled.span<{ $tone?: 'live' | 'primary' }>`
-  background: ${({ $tone }) => ($tone === 'primary' ? ed.primary : ed.error)};
-  border-radius: ${ed.radiusFull};
-  display: inline-block;
-  height: 8px;
-  width: 8px;
+export const StyledDot = styled.div<{ $tone?: 'live' }>`
+  background: ${({ $tone }) => ($tone === 'live' ? ed.error : ed.onSurfaceVariant)};
+  border-radius: 50%;
+  height: 6px;
+  width: 6px;
 `;
 
-export const ModalBackdrop = styled.div`
+export const StyledModalBackdrop = styled.div`
   align-items: center;
-  background: rgba(0, 0, 0, 0.55);
+  background: ${ed.scrim};
   display: flex;
   inset: 0;
   justify-content: center;
@@ -912,35 +999,34 @@ export const ModalBackdrop = styled.div`
   z-index: 12000;
 `;
 
-export const ModalPanel = styled.div`
-  background: ${ed.surfaceContainer};
+export const StyledModalPanel = styled.div`
+  background: ${ed.surfaceContainerHigh};
   border: 1px solid ${ed.outlineVariantGhost};
   border-radius: ${ed.radiusLg};
-  max-width: 400px;
-  padding: 24px;
+  box-shadow: ${ed.shadowElevated};
+  max-width: 440px;
+  padding: 32px;
   width: 100%;
 `;
 
-export const MsgActionRow = styled.div`
+export const StyledMsgActionRow = styled.div`
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 6px;
+  gap: 12px;
+  margin-top: 8px;
 `;
 
-export const SmallLinkBtn = styled.button`
+export const StyledSmallLinkBtn = styled.button`
   background: transparent;
   border: none;
-  color: ${ed.onSurfaceVariant};
+  color: ${ed.primary};
   cursor: pointer;
-  font-family: ${ed.fontStack};
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
   padding: 0;
   text-transform: uppercase;
 
   &:hover {
-    color: ${ed.primary};
+    text-decoration: underline;
   }
 `;

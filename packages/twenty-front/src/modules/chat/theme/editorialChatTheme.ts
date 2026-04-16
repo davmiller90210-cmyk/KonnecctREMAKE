@@ -38,6 +38,7 @@ export const editorialChatTheme = {
   glassPanel:
     'linear-gradient(180deg, rgba(31, 32, 32, 0.72) 0%, rgba(31, 32, 32, 0.65) 100%)',
   glassBlur: 'blur(24px)',
+  scrim: 'rgba(0, 0, 0, 0.45)',
   shadowElevated: '0px 20px 40px rgba(0, 0, 0, 0.4)',
   radiusSm: '4px',
   radiusMd: '8px',

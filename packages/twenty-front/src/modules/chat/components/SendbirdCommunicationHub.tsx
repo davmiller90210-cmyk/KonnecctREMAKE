@@ -9,6 +9,7 @@ import {
   type ChangeEvent,
   type KeyboardEvent,
 } from 'react';
+import { Link } from 'react-router-dom';
 import { t } from '@lingui/core/macro';
 import { useAtomValue } from 'jotai';
 import { format, isSameDay } from 'date-fns';
@@ -43,6 +44,10 @@ import {
   IconVideo,
   IconVideoOff,
   IconX,
+  IconBell,
+  IconClock,
+  IconHelp,
+  IconSearch as IconSearchHeader,
 } from 'twenty-ui/display';
 
 import { currentWorkspaceState } from '@/auth/states/currentWorkspaceState';
@@ -1480,22 +1485,22 @@ export const SendbirdCommunicationHub = () => {
 
   if (layoutLoading && !layout) {
     return (
-      <Ed.Shell>
-        <Ed.CenterBlock>
-          <Ed.CenterTitle>{t`Loading workspace…`}</Ed.CenterTitle>
-        </Ed.CenterBlock>
-      </Ed.Shell>
+      <Ed.StyledShell>
+        <Ed.StyledCenterBlock>
+          <Ed.StyledCenterTitle>{t`Loading workspace…`}</Ed.StyledCenterTitle>
+        </Ed.StyledCenterBlock>
+      </Ed.StyledShell>
     );
   }
 
   if (layoutError) {
     return (
-      <Ed.Shell>
-        <Ed.CenterError>
-          <Ed.CenterTitle>{t`Could not load chat layout`}</Ed.CenterTitle>
+      <Ed.StyledShell>
+        <Ed.StyledCenterError>
+          <Ed.StyledCenterTitle>{t`Could not load chat layout`}</Ed.StyledCenterTitle>
           <span>{layoutError}</span>
-        </Ed.CenterError>
-      </Ed.Shell>
+        </Ed.StyledCenterError>
+      </Ed.StyledShell>
     );
   }
 
@@ -1514,8 +1519,46 @@ export const SendbirdCommunicationHub = () => {
     activeGroupRoom?.remoteParticipants?.length ?? 0;
 
   return (
-    <Ed.Shell>
-      <Ed.BodyRow>
+    <Ed.StyledShell>
+      <Ed.StyledGlobalTopNav>
+        <Ed.StyledGlobalNavLeft>
+          <Ed.StyledGlobalNavBrand>{t`Editorial`}</Ed.StyledGlobalNavBrand>
+          <Ed.StyledGlobalNavVerticalDivider />
+          <Ed.StyledGlobalNavLinks>
+            <Ed.StyledGlobalNavLink type="button">{t`Workspace`}</Ed.StyledGlobalNavLink>
+            <Ed.StyledGlobalNavLink type="button" $active>{t`Canvas`}</Ed.StyledGlobalNavLink>
+            <Ed.StyledGlobalNavLink type="button">{t`Automations`}</Ed.StyledGlobalNavLink>
+          </Ed.StyledGlobalNavLinks>
+        </Ed.StyledGlobalNavLeft>
+        <Ed.StyledGlobalNavRight>
+          <Ed.StyledGlobalNavAction type="button" aria-label={t`Search`}>
+            <IconSearchHeader size={18} />
+          </Ed.StyledGlobalNavAction>
+          <Ed.StyledGlobalNavAction type="button" aria-label={t`Notifications`}>
+            <IconBell size={18} />
+          </Ed.StyledGlobalNavAction>
+          <Ed.StyledGlobalNavAction type="button" aria-label={t`History`}>
+            <IconClock size={18} />
+          </Ed.StyledGlobalNavAction>
+          <Ed.StyledGlobalNavAction type="button" aria-label={t`Help`}>
+            <IconHelp size={18} />
+          </Ed.StyledGlobalNavAction>
+          <Ed.StyledExitChatButton
+            as={Link}
+            to="/"
+            aria-label={t`Exit Chat`}
+            title={t`Back to CRM`}
+          >
+            <IconX size={18} />
+          </Ed.StyledExitChatButton>
+          <Avatar
+            avatarUrl={viewerMember?.avatarUrl ?? null}
+            placeholder={viewerMember ? memberDisplayName(viewerMember) : '?'}
+            size="sm"
+          />
+        </Ed.StyledGlobalNavRight>
+      </Ed.StyledGlobalTopNav>
+      <Ed.StyledBodyRow>
         <EditorialWorkspaceRail
           workspaceTitle={workspaceTitle}
           planLabel={planLabel}
@@ -1546,29 +1589,29 @@ export const SendbirdCommunicationHub = () => {
 
         {activeGroupRoom ? (
           <>
-            <Ed.MainColumn style={{ position: 'relative' }}>
-              <Ed.LiveBadge>
-                <Ed.Dot $tone="live" />
+            <Ed.StyledMainColumn style={{ position: 'relative' }}>
+              <Ed.StyledLiveBadge>
+                <Ed.StyledDot $tone="live" />
                 {t`Live call`} · {workspaceTitle}
-              </Ed.LiveBadge>
-              <Ed.CallStage>
-                <Ed.CallStageVideo
+              </Ed.StyledLiveBadge>
+              <Ed.StyledCallStage>
+                <Ed.StyledCallStageVideo
                   ref={remoteVideoRef}
                   autoPlay
                   playsInline
                 />
-                <Ed.PipVideo
+                <Ed.StyledPipVideo
                   ref={localVideoRef}
                   autoPlay
                   playsInline
                   muted
                 />
-              </Ed.CallStage>
-              <Ed.GroupCallGrid>
+              </Ed.StyledCallStage>
+              <Ed.StyledGroupCallGrid>
                 {Array.from({
                   length: Math.max(1, groupCallRemoteCount + 1),
                 }).map((_, i) => (
-                  <Ed.ParticipantTile key={i} $highlight={i === 0}>
+                  <Ed.StyledParticipantTile key={i} $highlight={i === 0}>
                     <div
                       style={{
                         position: 'absolute',
@@ -1582,11 +1625,11 @@ export const SendbirdCommunicationHub = () => {
                     >
                       {i === 0 ? t`You / remote` : `${t`Participant`} ${i}`}
                     </div>
-                  </Ed.ParticipantTile>
+                  </Ed.StyledParticipantTile>
                 ))}
-              </Ed.GroupCallGrid>
-              <Ed.GlassControlBar>
-                <Ed.RoundCtrl
+              </Ed.StyledGroupCallGrid>
+              <Ed.StyledGlassControlBar>
+                <Ed.StyledRoundCtrl
                   type="button"
                   aria-label={t`Mute`}
                   onClick={() => {
@@ -1600,18 +1643,18 @@ export const SendbirdCommunicationHub = () => {
                   }}
                 >
                   <IconMicrophone size={20} />
-                </Ed.RoundCtrl>
-                <Ed.LeaveCallBtn type="button" onClick={handleLeaveGroupRoom}>
+                </Ed.StyledRoundCtrl>
+                <Ed.StyledLeaveCallBtn type="button" onClick={handleLeaveGroupRoom}>
                   <IconPhoneOff size={18} /> {t`Leave`}
-                </Ed.LeaveCallBtn>
-              </Ed.GlassControlBar>
-            </Ed.MainColumn>
-            <Ed.NotesPanel style={{ width: 320 }}>
-              <Ed.NotesHeader>
-                <Ed.NotesTitle>{t`Group chat`}</Ed.NotesTitle>
-              </Ed.NotesHeader>
+                </Ed.StyledLeaveCallBtn>
+              </Ed.StyledGlassControlBar>
+            </Ed.StyledMainColumn>
+            <Ed.StyledNotesPanel style={{ width: 320 }}>
+              <Ed.StyledNotesHeader>
+                <Ed.StyledNotesTitle>{t`Group chat`}</Ed.StyledNotesTitle>
+              </Ed.StyledNotesHeader>
               {renderFeed()}
-              <Ed.ComposerWrap
+              <Ed.StyledComposerWrap
                 style={{
                   borderTop: `1px solid ${editorialChatTheme.outlineVariantGhost}`,
                 }}
@@ -1622,8 +1665,8 @@ export const SendbirdCommunicationHub = () => {
                   hidden
                   onChange={handleFilePick}
                 />
-                <Ed.ComposerBox>
-                  <Ed.ComposerTextarea
+                <Ed.StyledComposerBox>
+                  <Ed.StyledComposerTextarea
                     ref={composerTextareaRef}
                     placeholder={t`Send a message…`}
                     value={composer}
@@ -1634,37 +1677,37 @@ export const SendbirdCommunicationHub = () => {
                     onKeyDown={onComposerKeyDown}
                     disabled={groupChannel == null}
                   />
-                  <Ed.ComposerBottom>
-                    <Ed.SendFab
+                  <Ed.StyledComposerBottom>
+                    <Ed.StyledSendFab
                       type="button"
                       disabled={groupChannel == null || !composer.trim()}
                       onClick={sendMainMessage}
                     >
                       <IconSend size={18} />
-                    </Ed.SendFab>
-                  </Ed.ComposerBottom>
-                </Ed.ComposerBox>
-              </Ed.ComposerWrap>
-            </Ed.NotesPanel>
+                    </Ed.StyledSendFab>
+                  </Ed.StyledComposerBottom>
+                </Ed.StyledComposerBox>
+              </Ed.StyledComposerWrap>
+            </Ed.StyledNotesPanel>
           </>
         ) : directCallActive && selection?.kind === 'dm' ? (
           <>
-            <Ed.MainColumn style={{ position: 'relative' }}>
-              <Ed.CallStage>
-                <Ed.CallStageVideo
+            <Ed.StyledMainColumn style={{ position: 'relative' }}>
+              <Ed.StyledCallStage>
+                <Ed.StyledCallStageVideo
                   ref={remoteVideoRef}
                   autoPlay
                   playsInline
                 />
-                <Ed.PipVideo
+                <Ed.StyledPipVideo
                   ref={localVideoRef}
                   autoPlay
                   playsInline
                   muted
                 />
-              </Ed.CallStage>
-              <Ed.GlassControlBar>
-                <Ed.RoundCtrl
+              </Ed.StyledCallStage>
+              <Ed.StyledGlassControlBar>
+                <Ed.StyledRoundCtrl
                   type="button"
                   aria-label={t`Mute`}
                   onClick={() => toggleMute()}
@@ -1674,9 +1717,9 @@ export const SendbirdCommunicationHub = () => {
                   ) : (
                     <IconMicrophoneOff size={20} />
                   )}
-                </Ed.RoundCtrl>
+                </Ed.StyledRoundCtrl>
                 {activeCall?.isVideoCall ? (
-                  <Ed.RoundCtrl
+                  <Ed.StyledRoundCtrl
                     type="button"
                     aria-label={t`Camera`}
                     onClick={() => toggleVideo()}
@@ -1686,33 +1729,33 @@ export const SendbirdCommunicationHub = () => {
                     ) : (
                       <IconVideoOff size={20} />
                     )}
-                  </Ed.RoundCtrl>
+                  </Ed.StyledRoundCtrl>
                 ) : null}
                 {activeCall?.isVideoCall ? (
-                  <Ed.RoundCtrl
+                  <Ed.StyledRoundCtrl
                     type="button"
                     aria-label={t`Screen share`}
                     onClick={() => toggleScreenShare()}
                   >
                     <IconScreenShare size={20} />
-                  </Ed.RoundCtrl>
+                  </Ed.StyledRoundCtrl>
                 ) : null}
-                <Ed.LeaveCallBtn type="button" onClick={leaveDirectCall}>
+                <Ed.StyledLeaveCallBtn type="button" onClick={leaveDirectCall}>
                   <IconPhoneOff size={18} /> {t`Leave call`}
-                </Ed.LeaveCallBtn>
-              </Ed.GlassControlBar>
-            </Ed.MainColumn>
-            <Ed.NotesPanel>
-              <Ed.NotesHeader>
-                <Ed.NotesTitle>{t`Collaborative notes`}</Ed.NotesTitle>
-              </Ed.NotesHeader>
-              <Ed.NotesScroll>
+                </Ed.StyledLeaveCallBtn>
+              </Ed.StyledGlassControlBar>
+            </Ed.StyledMainColumn>
+            <Ed.StyledNotesPanel>
+              <Ed.StyledNotesHeader>
+                <Ed.StyledNotesTitle>{t`Collaborative notes`}</Ed.StyledNotesTitle>
+              </Ed.StyledNotesHeader>
+              <Ed.StyledNotesScroll>
                 {noteMessages.map((n) => (
-                  <Ed.NoteCard key={n.messageId}>{n.message}</Ed.NoteCard>
+                  <Ed.StyledNoteCard key={n.messageId}>{n.message}</Ed.StyledNoteCard>
                 ))}
-              </Ed.NotesScroll>
-              <Ed.NotesInputRow>
-                <Ed.NotesField
+              </Ed.StyledNotesScroll>
+              <Ed.StyledNotesInputRow>
+                <Ed.StyledNotesField
                   placeholder={t`Add a quick note…`}
                   value={noteDraft}
                   onChange={(e) => setNoteDraft(e.target.value)}
@@ -1729,14 +1772,14 @@ export const SendbirdCommunicationHub = () => {
                   onClick={sendNote}
                   disabled={!noteDraft.trim() || groupChannel == null}
                 />
-              </Ed.NotesInputRow>
-            </Ed.NotesPanel>
+              </Ed.StyledNotesInputRow>
+            </Ed.StyledNotesPanel>
           </>
         ) : (
           <>
-            <Ed.MainColumn style={{ position: 'relative' }}>
-              <Ed.TopBar>
-                <Ed.TopBarLeft>
+            <Ed.StyledMainColumn style={{ position: 'relative' }}>
+              <Ed.StyledTopBar>
+                <Ed.StyledTopBarLeft>
                   {selection?.kind === 'channel' ? (
                     <span
                       style={{
@@ -1748,55 +1791,55 @@ export const SendbirdCommunicationHub = () => {
                     </span>
                   ) : null}
                   <div style={{ minWidth: 0 }}>
-                    <Ed.TopBarTitle>
+                    <Ed.StyledTopBarTitle>
                       {selection ? selectionTitle(selection) : t`Chat`}
-                    </Ed.TopBarTitle>
-                    <Ed.TopBarMeta>{headerSubtitle}</Ed.TopBarMeta>
+                    </Ed.StyledTopBarTitle>
+                    <Ed.StyledTopBarMeta>{headerSubtitle}</Ed.StyledTopBarMeta>
                   </div>
-                </Ed.TopBarLeft>
-                <Ed.TopBarActions>
-                  <Ed.SearchField
+                </Ed.StyledTopBarLeft>
+                <Ed.StyledTopBarActions>
+                  <Ed.StyledSearchField
                     placeholder={t`Search in conversation…`}
                     value={mainSearch}
                     onChange={(e) => setMainSearch(e.target.value)}
                   />
                   {selection?.kind === 'channel' ? (
                     <>
-                      <Ed.IconButtonPrimary
+                      <Ed.StyledIconButtonPrimary
                         type="button"
                         disabled={!callsReady}
                         onClick={() => void handleCreateGroupRoom()}
                       >
                         <IconVideo size={16} /> {t`Join call`}
-                      </Ed.IconButtonPrimary>
+                      </Ed.StyledIconButtonPrimary>
                     </>
                   ) : null}
                   {selection?.kind === 'dm' &&
                   selection.dm.kind === 'direct' &&
                   peerScopedIdForDm ? (
                     <>
-                      <Ed.IconButtonGhost
+                      <Ed.StyledIconButtonGhost
                         type="button"
                         disabled={!callsReady}
                         onClick={() => startDmCall(false)}
                       >
                         <IconPhone size={16} /> {t`Call`}
-                      </Ed.IconButtonGhost>
-                      <Ed.IconButtonPrimary
+                      </Ed.StyledIconButtonGhost>
+                      <Ed.StyledIconButtonPrimary
                         type="button"
                         disabled={!callsReady}
                         onClick={() => startDmCall(true)}
                       >
                         <IconVideo size={16} /> {t`Video`}
-                      </Ed.IconButtonPrimary>
+                      </Ed.StyledIconButtonPrimary>
                     </>
                   ) : null}
-                </Ed.TopBarActions>
-              </Ed.TopBar>
+                </Ed.StyledTopBarActions>
+              </Ed.StyledTopBar>
 
               {connectError ? (
-                <Ed.CenterError>
-                  <Ed.CenterTitle>{t`Could not connect to chat`}</Ed.CenterTitle>
+                <Ed.StyledCenterError>
+                  <Ed.StyledCenterTitle>{t`Could not connect to chat`}</Ed.StyledCenterTitle>
                   <span>{connectError}</span>
                   <Button
                     accent="blue"
@@ -1807,34 +1850,34 @@ export const SendbirdCommunicationHub = () => {
                       setSessionAttempt((n) => n + 1);
                     }}
                   />
-                </Ed.CenterError>
+                </Ed.StyledCenterError>
               ) : !sb ? (
-                <Ed.CenterBlock>
-                  <Ed.CenterTitle>{t`Connecting…`}</Ed.CenterTitle>
-                                   <span style={{ color: editorialChatTheme.onSurfaceVariant }}>
+                <Ed.StyledCenterBlock>
+                  <Ed.StyledCenterTitle>{t`Connecting…`}</Ed.StyledCenterTitle>
+                  <span style={{ color: editorialChatTheme.onSurfaceVariant }}>
                     {t`Signing you in to workspace chat`}
                   </span>
-                </Ed.CenterBlock>
+                </Ed.StyledCenterBlock>
               ) : !channelUrl ? (
-                <Ed.CenterBlock>
-                  <Ed.CenterTitle>
+                <Ed.StyledCenterBlock>
+                  <Ed.StyledCenterTitle>
                     {selection ? t`Almost there` : t`Select a conversation`}
-                  </Ed.CenterTitle>
+                  </Ed.StyledCenterTitle>
                   <span style={{ color: editorialChatTheme.onSurfaceVariant }}>
                     {selection
                       ? t`Linking this thread to chat.`
                       : t`Choose a channel or DM in the list.`}
                   </span>
-                </Ed.CenterBlock>
+                </Ed.StyledCenterBlock>
               ) : (
                 renderFeed()
               )}
               {!connectError && sb && channelUrl ? renderMainComposer() : null}
 
               {threadRoot ? (
-                <Ed.ThreadDrawer role="dialog" aria-modal="true">
-                  <Ed.ThreadDrawerHeader>
-                    <Ed.DetailsTitle>{t`Thread`}</Ed.DetailsTitle>
+                <Ed.StyledThreadDrawer role="dialog" aria-modal="true">
+                  <Ed.StyledThreadDrawerHeader>
+                    <Ed.StyledDetailsTitle>{t`Thread`}</Ed.StyledDetailsTitle>
                     <button
                       type="button"
                       aria-label={t`Close thread`}
@@ -1848,36 +1891,36 @@ export const SendbirdCommunicationHub = () => {
                     >
                       <IconX size={18} />
                     </button>
-                  </Ed.ThreadDrawerHeader>
-                  <Ed.ThreadDrawerScroll>
+                  </Ed.StyledThreadDrawerHeader>
+                  <Ed.StyledThreadDrawerScroll>
                     {renderMessageBlock(threadRoot, { inThread: true })}
                     {threadReplies.map((tm) =>
                       renderMessageBlock(tm, { inThread: true }),
                     )}
-                  </Ed.ThreadDrawerScroll>
-                  <Ed.ComposerWrap>
-                    <Ed.ComposerBox>
-                      <Ed.ComposerTextarea
+                  </Ed.StyledThreadDrawerScroll>
+                  <Ed.StyledComposerWrap>
+                    <Ed.StyledComposerBox>
+                      <Ed.StyledComposerTextarea
                         ref={threadTextareaRef}
                         placeholder={t`Reply in thread…`}
                         value={threadComposer}
                         onChange={(e) => setThreadComposer(e.target.value)}
                         onKeyDown={onThreadKeyDown}
                       />
-                      <Ed.ComposerBottom>
-                        <Ed.SendFab
+                      <Ed.StyledComposerBottom>
+                        <Ed.StyledSendFab
                           type="button"
                           disabled={!threadComposer.trim()}
                           onClick={sendThreadMessage}
                         >
                           <IconSend size={18} />
-                        </Ed.SendFab>
-                      </Ed.ComposerBottom>
-                    </Ed.ComposerBox>
-                  </Ed.ComposerWrap>
-                </Ed.ThreadDrawer>
+                        </Ed.StyledSendFab>
+                      </Ed.StyledComposerBottom>
+                    </Ed.StyledComposerBox>
+                  </Ed.StyledComposerWrap>
+                </Ed.StyledThreadDrawer>
               ) : null}
-            </Ed.MainColumn>
+            </Ed.StyledMainColumn>
 
             <EditorialDetailsPanel
               selection={selection}
@@ -1891,7 +1934,7 @@ export const SendbirdCommunicationHub = () => {
             />
           </>
         )}
-      </Ed.BodyRow>
+      </Ed.StyledBodyRow>
 
       <CreateChannelModal
         isOpen={createChannelOpen}

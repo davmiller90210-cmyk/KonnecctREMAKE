@@ -30,11 +30,11 @@ export const EditorialDetailsPanel = ({
   dmPeerMember,
   memberDisplayName,
 }: EditorialDetailsPanelProps) => (
-  <Ed.DetailsColumn>
-    <Ed.DetailsHeader>
-      <Ed.DetailsTitle>{t`Details`}</Ed.DetailsTitle>
-    </Ed.DetailsHeader>
-    <Ed.DetailsScroll>
+  <Ed.StyledDetailsColumn>
+    <Ed.StyledDetailsHeader>
+      <Ed.StyledDetailsTitle>{t`Details`}</Ed.StyledDetailsTitle>
+    </Ed.StyledDetailsHeader>
+    <Ed.StyledDetailsScroll>
       {selection?.kind === 'channel' && groupChannel ? (
         <>
           <div style={{ textAlign: 'center', marginBottom: 16 }}>
@@ -63,21 +63,21 @@ export const EditorialDetailsPanel = ({
               {channelTopic}
             </p>
           </div>
-          <Ed.BentoGrid>
-            <Ed.BentoCell>
-              <Ed.BentoLabel>{t`Members`}</Ed.BentoLabel>
-              <Ed.BentoValue>{groupChannel.memberCount}</Ed.BentoValue>
-            </Ed.BentoCell>
-            <Ed.BentoCell>
-              <Ed.BentoLabel>{t`Pinned`}</Ed.BentoLabel>
-              <Ed.BentoValue>{pinnedMessages.length}</Ed.BentoValue>
-            </Ed.BentoCell>
-          </Ed.BentoGrid>
+          <Ed.StyledBentoGrid>
+            <Ed.StyledBentoCell>
+              <Ed.StyledBentoLabel>{t`Members`}</Ed.StyledBentoLabel>
+              <Ed.StyledBentoValue>{groupChannel.memberCount}</Ed.StyledBentoValue>
+            </Ed.StyledBentoCell>
+            <Ed.StyledBentoCell>
+              <Ed.StyledBentoLabel>{t`Pinned`}</Ed.StyledBentoLabel>
+              <Ed.StyledBentoValue>{pinnedMessages.length}</Ed.StyledBentoValue>
+            </Ed.StyledBentoCell>
+          </Ed.StyledBentoGrid>
           {pinnedMessages.length > 0 ? (
             <div style={{ marginBottom: 16 }}>
-              <Ed.BentoLabel style={{ marginBottom: 8 }}>
+              <Ed.StyledBentoLabel style={{ marginBottom: 8 }}>
                 {t`Pinned messages`}
-              </Ed.BentoLabel>
+              </Ed.StyledBentoLabel>
               {pinnedMessages.map((p) => (
                 <div
                   key={p.messageId}
@@ -94,25 +94,25 @@ export const EditorialDetailsPanel = ({
           ) : null}
           {mediaThumbs.length > 0 ? (
             <div>
-              <Ed.BentoLabel style={{ marginBottom: 8 }}>
+              <Ed.StyledBentoLabel style={{ marginBottom: 8 }}>
                 {t`Media`}
-              </Ed.BentoLabel>
-              <Ed.MediaGrid>
+              </Ed.StyledBentoLabel>
+              <Ed.StyledMediaGrid>
                 {mediaThumbs.slice(0, 5).map((th) => (
-                  <Ed.MediaThumb
+                  <Ed.StyledMediaThumb
                     key={th.id}
                     type="button"
                     onClick={() => window.open(th.url, '_blank')}
                   >
                     <img alt={t`Attachment preview`} src={th.url} />
-                  </Ed.MediaThumb>
+                  </Ed.StyledMediaThumb>
                 ))}
-              </Ed.MediaGrid>
+              </Ed.StyledMediaGrid>
             </div>
           ) : null}
-          <Ed.DangerOutlineBtn type="button" onClick={onLeaveChannel}>
+          <Ed.StyledDangerOutlineBtn type="button" onClick={onLeaveChannel}>
             {t`Leave channel`}
-          </Ed.DangerOutlineBtn>
+          </Ed.StyledDangerOutlineBtn>
         </>
       ) : selection?.kind === 'dm' && dmPeerMember ? (
         <>
@@ -155,6 +155,6 @@ export const EditorialDetailsPanel = ({
           {t`Select a channel or direct message to see context.`}
         </p>
       )}
-    </Ed.DetailsScroll>
-  </Ed.DetailsColumn>
+    </Ed.StyledDetailsScroll>
+  </Ed.StyledDetailsColumn>
 );

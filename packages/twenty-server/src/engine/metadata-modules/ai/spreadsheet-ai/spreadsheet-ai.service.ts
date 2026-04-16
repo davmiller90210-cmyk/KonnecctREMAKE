@@ -51,8 +51,11 @@ export class SpreadsheetAiService {
         namingStrategyColumns: z.array(z.string()),
       }),
       system: `You are an expert CRM data architect. Your task is to map spreadsheet headers to CRM object fields.
-Return a JSON object with mappings, a suggested UID column, and columns that should be combined for naming (naming strategy).
-Confidence should be between 0 and 1. Only suggest mappings with confidence > 0.5.`,
+Analyze the column names and their likely data types to provide:
+1. 'mappings': Best field matches (confidence > 0.5).
+2. 'uidColumn': Identify the most reliable unique identifier (e.g., Email, ID, External ID).
+3. 'namingStrategyColumns': List columns that should be concatenated to form a display name (e.g., 'First Name' + 'Last Name').
+Be surgical and precise. If you find multiple candidate UID columns, pick the most standard one.`,
       prompt: `Target Object: ${objectMetadata.labelSingular} (${objectMetadata.nameSingular})
 Available Fields:
 ${JSON.stringify(fields, null, 2)}
