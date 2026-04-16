@@ -1961,11 +1961,11 @@ export const SendbirdCommunicationHub = () => {
       />
 
       {incomingCall ? (
-        <Ed.ModalBackdrop role="dialog" aria-modal="true">
-          <Ed.ModalPanel>
-            <Ed.CenterTitle style={{ display: 'block', marginBottom: 8 }}>
+        <Ed.StyledModalBackdrop role="dialog" aria-modal="true">
+          <Ed.StyledModalPanel>
+            <Ed.StyledCenterTitle style={{ display: 'block', marginBottom: 8 }}>
               {t`Incoming call`}
-            </Ed.CenterTitle>
+            </Ed.StyledCenterTitle>
             <p
               style={{
                 color: editorialChatTheme.onSurfaceVariant,
@@ -1997,9 +1997,9 @@ export const SendbirdCommunicationHub = () => {
                 onClick={handleAcceptIncoming}
               />
             </div>
-          </Ed.ModalPanel>
-        </Ed.ModalBackdrop>
+          </Ed.StyledModalPanel>
+        </Ed.StyledModalBackdrop>
       ) : null}
-    </Ed.Shell>
+    </Ed.StyledShell>
   );
 };
