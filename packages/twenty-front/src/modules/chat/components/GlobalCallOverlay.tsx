@@ -43,7 +43,7 @@ const StyledDock = styled.div<{ $expanded: boolean }>`
 
 const StyledExpandedHeader = styled.div`
   align-items: center;
-  background: ${themeCssVariables.color.gray90};
+  background: ${themeCssVariables.background.secondary};
   display: flex;
   gap: ${themeCssVariables.spacing[2]};
   justify-content: space-between;
@@ -52,7 +52,7 @@ const StyledExpandedHeader = styled.div`
 `;
 
 const StyledExpandedVideo = styled.div`
-  background: ${themeCssVariables.color.gray80};
+  background: ${themeCssVariables.background.tertiary};
   flex: 1 1 auto;
   height: 200px;
   position: relative;
