@@ -9,8 +9,6 @@ import { PageChangeEffect } from '@/app/effect-components/PageChangeEffect';
 import { ClerkSessionExchangeEffect } from '@/auth/effect-components/ClerkSessionExchangeEffect';
 import { SignOutOnOtherTabSignOutEffect } from '@/auth/effect-components/SignOutOnOtherTabSignOutEffect';
 import { AuthProvider } from '@/auth/components/AuthProvider';
-import { GlobalMattermostCallShell } from '@/chat/components/GlobalMattermostCallShell';
-import { MattermostCallShellProvider } from '@/chat/contexts/MattermostCallShellContext';
 import { CaptchaProvider } from '@/captcha/components/CaptchaProvider';
 import { ClientConfigProvider } from '@/client-config/components/ClientConfigProvider';
 import { ClientConfigProviderEffect } from '@/client-config/components/ClientConfigProviderEffect';
@@ -55,8 +53,7 @@ export const AppRouterProviders = () => {
           <CaptchaProvider>
             <MinimalMetadataGater>
               <AuthProvider>
-                <MattermostCallShellProvider>
-                  <ApolloCoreProvider>
+                <ApolloCoreProvider>
                     <SSEProvider>
                       <PreComputedChipGeneratorsProvider>
                         <UserThemeProviderEffect />
@@ -74,7 +71,6 @@ export const AppRouterProviders = () => {
                                   <PageFavicon />
                                   <Outlet />
                                   <GlobalFilePreviewModal />
-                                  <GlobalMattermostCallShell />
                                   <CommandMenuConfirmationModalManager />
                                   <CommandRunner />
                                 </StrictMode>
@@ -92,7 +88,6 @@ export const AppRouterProviders = () => {
                       </PreComputedChipGeneratorsProvider>
                     </SSEProvider>
                   </ApolloCoreProvider>
-                </MattermostCallShellProvider>
               </AuthProvider>
             </MinimalMetadataGater>
           </CaptchaProvider>

@@ -1,5 +1,3 @@
-import { KonnecctChatPage } from '@/chat/components/KonnecctChatPage';
-
-export const ChatModule = () => {
-  return <KonnecctChatPage />;
-};
+// Thin re-export kept for backwards compat with pages/chat/Chat.tsx route.
+// All logic lives in KonnecctChatPage → SendbirdCommunicationHub.
+export { KonnecctChatPage as ChatModule } from '@/chat/components/KonnecctChatPage';

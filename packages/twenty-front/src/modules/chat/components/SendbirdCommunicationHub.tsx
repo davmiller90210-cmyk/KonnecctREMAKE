@@ -1,4 +1,4 @@
-/* oxlint-disable twenty/no-state-useref -- Sendbird/Calls SDK needs stable DOM refs and mirrored channel/session handles inside async handlers */
+/* eslint-disable twenty/no-state-useref -- Sendbird/Calls SDK needs stable DOM refs and mirrored channel/session handles inside async handlers */
 import {
   useCallback,
   useEffect,
@@ -70,6 +70,10 @@ import {
   type ChatWorkspaceLayoutDm,
   type ChatWorkspaceMemberOption,
 } from '@/chat/types/chat-workspace-layout.type';
+import { useCrmMentionSearch } from '@/chat/hooks/useCrmMentionSearch';
+import { useCallOverlayOptional } from '@/chat/contexts/CallOverlayContext';
+import { AppPath } from 'twenty-shared/types';
+import { getAppPath } from 'twenty-shared/utils';
 import { REACT_APP_SENDBIRD_APP_ID } from '~/config';
 
 type SendbirdClient = SendbirdChatWith<[GroupChannelModule]>;
@@ -206,6 +210,18 @@ export const SendbirdCommunicationHub = () => {
   const [noteDraft, setNoteDraft] = useState('');
   const [search, setSearch] = useState('');
   const [mainSearch, setMainSearch] = useState('');
+
+  // CRM @mention state
+  type CrmMention = { kind: 'crm'; label: string; href: string } | { kind: 'agent'; label: string; recordId: string };
+  const [mentionOpen, setMentionOpen] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [mentionStart, setMentionStart] = useState<number | null>(null);
+  const [mentionItems, setMentionItems] = useState<CrmMention[]>([]);
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const mentionDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const { searchMentionRecords } = useCrmMentionSearch();
+  const callOverlay = useCallOverlayOptional();
 
   const [threadRoot, setThreadRoot] = useState<BaseMessage | null>(null);
   const [threadReplies, setThreadReplies] = useState<BaseMessage[]>([]);
@@ -803,10 +819,97 @@ export const SendbirdCommunicationHub = () => {
   }, [noteDraft, reload]);
 
   const onComposerKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (mentionOpen) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setMentionIndex((i) => Math.min(i + 1, mentionItems.length - 1));
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setMentionIndex((i) => Math.max(i - 1, 0));
+        return;
+      }
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        const item = mentionItems[mentionIndex];
+        if (item) {
+          applyMention(item);
+        }
+        return;
+      }
+      if (e.key === 'Escape') {
+        setMentionOpen(false);
+        return;
+      }
+    }
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMainMessage();
     }
+  };
+
+  const handleComposerChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setComposer(val);
+    fireTyping();
+
+    // CRM @mention detection
+    const caret = e.target.selectionStart ?? val.length;
+    const textBefore = val.slice(0, caret);
+    const atMatch = /@([\w\s]*)$/.exec(textBefore);
+    if (atMatch) {
+      const q = atMatch[1];
+      setMentionStart(caret - atMatch[0].length);
+      setMentionQuery(q);
+      setMentionOpen(true);
+      setMentionIndex(0);
+
+      if (mentionDebounceRef.current) {
+        clearTimeout(mentionDebounceRef.current);
+      }
+      mentionDebounceRef.current = setTimeout(() => {
+        void (async () => {
+          const results = await searchMentionRecords(q);
+          const items = results.slice(0, 20).map((r) => {
+            if (r.mentionType === 'agent') {
+              return { kind: 'agent' as const, label: r.label, recordId: r.recordId };
+            }
+            const path = getAppPath(AppPath.RecordShowPage, {
+              objectNameSingular: r.objectNameSingular,
+              objectRecordId: r.recordId,
+            });
+            return {
+              kind: 'crm' as const,
+              label: r.label,
+              href: `${window.location.origin}${path}`,
+            };
+          });
+          setMentionItems(items);
+        })();
+      }, 180);
+    } else {
+      setMentionOpen(false);
+      setMentionItems([]);
+    }
+  };
+
+  const applyMention = (item: { kind: string; label: string; href?: string }) => {
+    if (mentionStart === null) return;
+    const before = composer.slice(0, mentionStart);
+    const after = composer.slice(composerTextareaRef.current?.selectionStart ?? composer.length);
+    const chip = item.kind === 'crm' ? `[@${item.label}](${item.href ?? ''}) ` : `@${item.label} `;
+    setComposer(before + chip + after);
+    setMentionOpen(false);
+    setMentionItems([]);
+    requestAnimationFrame(() => {
+      const ta = composerTextareaRef.current;
+      if (ta) {
+        const pos = (before + chip).length;
+        ta.setSelectionRange(pos, pos);
+        ta.focus();
+      }
+    });
   };
 
   const onThreadKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -1454,13 +1557,10 @@ export const SendbirdCommunicationHub = () => {
             placeholder={
               selection
                 ? t`Message ${selectionTitle(selection)}`
-                : t`Write a message…`
+                : t`Write a message\u2026`
             }
             value={composer}
-            onChange={(e) => {
-              setComposer(e.target.value);
-              fireTyping();
-            }}
+            onChange={handleComposerChange}
             onKeyDown={onComposerKeyDown}
             onBlur={() => {
               void groupChannelRef.current?.endTyping().catch(() => undefined);
@@ -1479,9 +1579,75 @@ export const SendbirdCommunicationHub = () => {
             </Ed.SendFab>
           </Ed.ComposerBottom>
         </Ed.ComposerBox>
+        {/* CRM @mention popover */}
+        {mentionOpen && mentionItems.length > 0 && (
+          <div
+            role="listbox"
+            aria-label="CRM mentions"
+            style={{
+              position: 'absolute',
+              bottom: '100%',
+              left: 0,
+              right: 0,
+              background: 'var(--twenty-background-primary, #fff)',
+              border: '1px solid var(--twenty-border-color-medium, #e4e7ec)',
+              borderRadius: 'var(--twenty-border-radius-md, 8px)',
+              boxShadow: 'var(--twenty-box-shadow-strong, 0 8px 32px rgba(15,23,42,.18))',
+              zIndex: 9999,
+              maxHeight: 220,
+              overflowY: 'auto',
+              fontFamily: 'var(--twenty-font-family, Inter, sans-serif)',
+              fontSize: 13,
+            }}
+          >
+            {mentionItems.map((item, idx) => (
+              <div
+                key={`${item.kind}-${item.label}-${idx}`}
+                role="option"
+                aria-selected={idx === mentionIndex}
+                onClick={() => applyMention(item)}
+                style={{
+                  padding: '8px 12px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  background:
+                    idx === mentionIndex
+                      ? 'var(--twenty-background-transparent-light)'
+                      : 'transparent',
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                    color: 'var(--twenty-font-color-light)',
+                    flexShrink: 0,
+                  }}
+                >
+                  {item.kind === 'agent' ? 'AI' : 'CRM'}
+                </span>
+                <span
+                  style={{
+                    color: 'var(--twenty-font-color-primary)',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {item.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </Ed.ComposerWrap>
     );
   };
+
 
   if (layoutLoading && !layout) {
     return (
@@ -1520,45 +1686,9 @@ export const SendbirdCommunicationHub = () => {
 
   return (
     <Ed.StyledShell>
-      <Ed.StyledGlobalTopNav>
-        <Ed.StyledGlobalNavLeft>
-          <Ed.StyledGlobalNavBrand>{t`Editorial`}</Ed.StyledGlobalNavBrand>
-          <Ed.StyledGlobalNavVerticalDivider />
-          <Ed.StyledGlobalNavLinks>
-            <Ed.StyledGlobalNavLink type="button">{t`Workspace`}</Ed.StyledGlobalNavLink>
-            <Ed.StyledGlobalNavLink type="button" $active>{t`Canvas`}</Ed.StyledGlobalNavLink>
-            <Ed.StyledGlobalNavLink type="button">{t`Automations`}</Ed.StyledGlobalNavLink>
-          </Ed.StyledGlobalNavLinks>
-        </Ed.StyledGlobalNavLeft>
-        <Ed.StyledGlobalNavRight>
-          <Ed.StyledGlobalNavAction type="button" aria-label={t`Search`}>
-            <IconSearchHeader size={18} />
-          </Ed.StyledGlobalNavAction>
-          <Ed.StyledGlobalNavAction type="button" aria-label={t`Notifications`}>
-            <IconBell size={18} />
-          </Ed.StyledGlobalNavAction>
-          <Ed.StyledGlobalNavAction type="button" aria-label={t`History`}>
-            <IconClock size={18} />
-          </Ed.StyledGlobalNavAction>
-          <Ed.StyledGlobalNavAction type="button" aria-label={t`Help`}>
-            <IconHelp size={18} />
-          </Ed.StyledGlobalNavAction>
-          <Ed.StyledExitChatButton
-            as={Link}
-            to="/"
-            aria-label={t`Exit Chat`}
-            title={t`Back to CRM`}
-          >
-            <IconX size={18} />
-          </Ed.StyledExitChatButton>
-          <Avatar
-            avatarUrl={viewerMember?.avatarUrl ?? null}
-            placeholder={viewerMember ? memberDisplayName(viewerMember) : '?'}
-            size="sm"
-          />
-        </Ed.StyledGlobalNavRight>
-      </Ed.StyledGlobalTopNav>
+      {/* CRM topbar is provided by the parent layout — no duplicate Editorial nav here */}
       <Ed.StyledBodyRow>
+
         <EditorialWorkspaceRail
           workspaceTitle={workspaceTitle}
           planLabel={planLabel}

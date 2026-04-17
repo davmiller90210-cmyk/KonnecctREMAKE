@@ -25,18 +25,6 @@ function resolveClerkPublishableKey(): string {
   return '';
 }
 
-/** Must match nginx + MM_SERVICESETTINGS_SITEURL (dedicated chat host avoids MM subpath redirect loops). */
-function resolveMattermostWebappUrl(): string {
-  const explicit = process.env.REACT_APP_MATTERMOST_WEBAPP_URL?.trim();
-  if (explicit) {
-    return explicit.replace(/\/$/, '');
-  }
-  const siteUrl = process.env.MATTERMOST_SITE_URL?.trim();
-  if (siteUrl) {
-    return siteUrl.replace(/\/$/, '');
-  }
-  return 'https://chat.konnecct.com';
-}
 
 export function generateFrontConfig(): void {
   const clerkPublishableKey = resolveClerkPublishableKey();
@@ -47,27 +35,15 @@ export function generateFrontConfig(): void {
         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: clerkPublishableKey,
         REACT_APP_CLERK_PUBLISHABLE_KEY: clerkPublishableKey,
         CLERK_PUBLISHABLE_KEY: clerkPublishableKey,
-        REACT_APP_STREAM_API_KEY:
-          process.env.REACT_APP_STREAM_API_KEY ??
-          process.env.STREAM_API_KEY ??
-          '',
-        STREAM_API_KEY: process.env.STREAM_API_KEY ?? '',
-        REACT_APP_CHAT_PROVIDER: process.env.REACT_APP_CHAT_PROVIDER ?? 'sendbird',
+        // Sendbird is the only chat provider
         REACT_APP_SENDBIRD_APP_ID:
           process.env.REACT_APP_SENDBIRD_APP_ID?.trim() ??
           process.env.SENDBIRD_APPLICATION_ID?.trim() ??
           '',
-        REACT_APP_MATTERMOST_WEBAPP_URL: resolveMattermostWebappUrl(),
-        REACT_APP_MATTERMOST_SSO_ENTRY_PATH:
-          process.env.REACT_APP_MATTERMOST_SSO_ENTRY_PATH?.trim() || '/login',
-        REACT_APP_MATTERMOST_USE_NATIVE_HUB:
-          process.env.REACT_APP_MATTERMOST_USE_NATIVE_HUB?.trim().toLowerCase() ===
-          'true'
-            ? 'true'
-            : 'false',
       },
     },
   };
+
 
   const configString = `<!-- BEGIN: Konnecct Config -->
     <script id="twenty-env-config">

@@ -21,6 +21,8 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { useIsMobile } from '@/ui/utilities/responsive/hooks/useIsMobile';
 import { styled } from '@linaria/react';
 import { ThemeContext, themeCssVariables } from 'twenty-ui/theme-constants';
+import { CallOverlayProvider } from '@/chat/contexts/CallOverlayContext';
+import { GlobalCallOverlay } from '@/chat/components/GlobalCallOverlay';
 
 const StyledLayout = styled.div`
   background: ${themeCssVariables.background.noisy};
@@ -57,7 +59,9 @@ const StyledMainContainer = styled.div`
 `;
 
 /**
- * Full-width main column for embedded Mattermost chat: no CRM navigation drawer.
+ * Layout for the Sendbird Communications hub (/chat routes).
+ * Provides CallOverlayProvider so the floating call dock persists across navigation.
+ * No separate CRM navigation drawer — the Sendbird hub renders its own sidebar rail.
  */
 export const ChatEmbedLayout = () => {
   const isMobile = useIsMobile();
@@ -71,55 +75,59 @@ export const ChatEmbedLayout = () => {
 
   return (
     <>
-      <FileUploadProvider>
-        <StyledLayout>
-          <AppErrorBoundary FallbackComponent={AppFullScreenErrorFallback}>
-            <LayoutCustomizationBar />
-            <StyledPageContainer
-              animate={{ marginLeft: 0 }}
-              transition={{
-                duration:
-                  typeof theme.animation.duration.normal === 'number' &&
-                  !Number.isNaN(theme.animation.duration.normal)
-                    ? theme.animation.duration.normal
-                    : 0.2,
-              }}
-            >
-              <PageDragDropProvider>
-                {!showAuthModal && !isNativeChatRoute ? (
-                  <KeyboardShortcutMenu />
-                ) : null}
-                {showAuthModal ? (
-                  <>
-                    <StyledNavigationDrawerWrapper>
-                      <SignInAppNavigationDrawerMock />
-                    </StyledNavigationDrawerWrapper>
+      <CallOverlayProvider>
+        <FileUploadProvider>
+          <StyledLayout>
+            <AppErrorBoundary FallbackComponent={AppFullScreenErrorFallback}>
+              <LayoutCustomizationBar />
+              <StyledPageContainer
+                animate={{ marginLeft: 0 }}
+                transition={{
+                  duration:
+                    typeof theme.animation.duration.normal === 'number' &&
+                    !Number.isNaN(theme.animation.duration.normal)
+                      ? theme.animation.duration.normal
+                      : 0.2,
+                }}
+              >
+                <PageDragDropProvider>
+                  {!showAuthModal && !isNativeChatRoute ? (
+                    <KeyboardShortcutMenu />
+                  ) : null}
+                  {showAuthModal ? (
+                    <>
+                      <StyledNavigationDrawerWrapper>
+                        <SignInAppNavigationDrawerMock />
+                      </StyledNavigationDrawerWrapper>
+                      <StyledMainContainer>
+                        <Suspense fallback={null}>
+                          <SignInBackgroundMockPage />
+                        </Suspense>
+                      </StyledMainContainer>
+                      <AnimatePresence mode="wait">
+                        <LayoutGroup>
+                          <AuthModal>
+                            <Outlet />
+                          </AuthModal>
+                        </LayoutGroup>
+                      </AnimatePresence>
+                    </>
+                  ) : (
                     <StyledMainContainer>
-                      <Suspense fallback={null}>
-                        <SignInBackgroundMockPage />
-                      </Suspense>
+                      <AppErrorBoundary FallbackComponent={AppPageErrorFallback}>
+                        <Outlet />
+                      </AppErrorBoundary>
                     </StyledMainContainer>
-                    <AnimatePresence mode="wait">
-                      <LayoutGroup>
-                        <AuthModal>
-                          <Outlet />
-                        </AuthModal>
-                      </LayoutGroup>
-                    </AnimatePresence>
-                  </>
-                ) : (
-                  <StyledMainContainer>
-                    <AppErrorBoundary FallbackComponent={AppPageErrorFallback}>
-                      <Outlet />
-                    </AppErrorBoundary>
-                  </StyledMainContainer>
-                )}
-              </PageDragDropProvider>
-            </StyledPageContainer>
-            {isMobile && !showAuthModal && <MobileNavigationBar />}
-          </AppErrorBoundary>
-        </StyledLayout>
-      </FileUploadProvider>
+                  )}
+                </PageDragDropProvider>
+              </StyledPageContainer>
+              {isMobile && !showAuthModal && <MobileNavigationBar />}
+            </AppErrorBoundary>
+          </StyledLayout>
+        </FileUploadProvider>
+        {/* Persistent call dock — renders over all routes inside this layout */}
+        <GlobalCallOverlay />
+      </CallOverlayProvider>
     </>
   );
 };

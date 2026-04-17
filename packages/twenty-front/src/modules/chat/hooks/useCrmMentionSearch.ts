@@ -16,11 +16,11 @@ import { normalizeSearchText } from '~/utils/normalizeSearchText';
 const MENTION_SEARCH_LIMIT = 50;
 
 /**
- * CRM @mention search for Mattermost composer only. Uses flat object metadata
- * (no objectMetadataItemsWithFieldsSelector) so lazy-loaded chat chunks do not
- * pull the heavy selector chain that can break jotai atom resolution.
+ * Universal CRM @mention search for any chat composer (Sendbird, or future providers).
+ * Searches CRM records (contacts, leads, companies, deals, etc.) + AI agents.
+ * Returns backend-agnostic MentionSearchResult items.
  */
-export const useMattermostRecordMentionSearch = () => {
+export const useCrmMentionSearch = () => {
   const flatObjectMetadataItems =
     useAtomStateValue(flatObjectMetadataItemsSelector) ?? [];
   const apolloCoreClient = useContext(ApolloCoreClientContext);

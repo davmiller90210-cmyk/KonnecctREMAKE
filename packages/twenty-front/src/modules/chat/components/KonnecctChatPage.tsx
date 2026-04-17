@@ -1,34 +1,18 @@
-import { styled } from '@linaria/react';
 import { lazy, Suspense } from 'react';
-import { themeCssVariables } from 'twenty-ui/theme-constants';
-
+import { styled } from '@linaria/react';
 import { editorialChatTheme } from '@/chat/theme/editorialChatTheme';
-
-import { MattermostChatEmbed } from '@/chat/components/MattermostChatEmbed';
-import {
-  REACT_APP_CHAT_PROVIDER,
-  REACT_APP_MATTERMOST_USE_NATIVE_HUB,
-} from '~/config';
 import { PageContentSkeletonLoader } from '~/loading/components/PageContentSkeletonLoader';
 
+const SendbirdCommunicationHub = lazy(
+  () => import('@/chat/components/SendbirdCommunicationHub'),
+);
+
 /**
- * Native Twenty-UI Mattermost client (REST + WS via crm-server PAT vault).
- * Requires Mattermost provisioning/admin token on the API; opt in with
- * REACT_APP_MATTERMOST_USE_NATIVE_HUB=true at build time.
+ * Fills layout main column (flex chain + min-height) for full-viewport chat.
+ * Background uses the Sendbird editorial surface token for theme consistency.
  */
-const MattermostHub = lazy(async () => {
-  const m = await import('@/chat/components/MattermostHub');
-  return { default: m.MattermostHub || m.default };
-});
-
-const CommunicationHub = lazy(() => import('@/chat/components/CommunicationHub'));
-
-const SendbirdCommunicationHub = lazy(() => import('@/chat/components/SendbirdCommunicationHub'));
-
-/** Fills layout main column (flex chain + min-height) for full-viewport chat. */
-const StyledChatPageRoot = styled.div<{ $sendbird?: boolean }>`
-  background: ${({ $sendbird }) =>
-    $sendbird ? editorialChatTheme.surface : themeCssVariables.background.noisy};
+const StyledChatPageRoot = styled.div`
+  background: ${editorialChatTheme.surface};
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
@@ -38,26 +22,10 @@ const StyledChatPageRoot = styled.div<{ $sendbird?: boolean }>`
   width: 100%;
 `;
 
-const ChatLoadingFallback = () => (
-  <PageContentSkeletonLoader />
+export const KonnecctChatPage = () => (
+  <StyledChatPageRoot>
+    <Suspense fallback={<PageContentSkeletonLoader />}>
+      <SendbirdCommunicationHub />
+    </Suspense>
+  </StyledChatPageRoot>
 );
-
-export const KonnecctChatPage = () => {
-  return (
-    <StyledChatPageRoot $sendbird={REACT_APP_CHAT_PROVIDER === 'sendbird'}>
-      <Suspense fallback={<ChatLoadingFallback />}>
-        {REACT_APP_CHAT_PROVIDER === 'mattermost' ? (
-          REACT_APP_MATTERMOST_USE_NATIVE_HUB ? (
-            <MattermostHub />
-          ) : (
-            <MattermostChatEmbed />
-          )
-        ) : REACT_APP_CHAT_PROVIDER === 'sendbird' ? (
-          <SendbirdCommunicationHub />
-        ) : (
-          <CommunicationHub />
-        )}
-      </Suspense>
-    </StyledChatPageRoot>
-  );
-};
