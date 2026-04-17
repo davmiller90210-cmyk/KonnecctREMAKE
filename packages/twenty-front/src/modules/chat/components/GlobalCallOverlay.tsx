@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { styled } from '@linaria/react';
 import {
-  IconMaximize,
+  IconArrowsDiagonal,
+  IconArrowsDiagonalMinimize2,
   IconMicrophone,
   IconMicrophoneOff,
-  IconMinimize,
   IconPhone,
   IconPhoneOff,
   IconVideo,
@@ -168,7 +168,7 @@ export const GlobalCallOverlay = () => {
           <StyledTitle>{title}</StyledTitle>
           <StyledTimer>{formatDuration(durationSeconds)}</StyledTimer>
           <IconButton
-            Icon={IconMinimize}
+            Icon={IconArrowsDiagonalMinimize2}
             variant="tertiary"
             size="small"
             ariaLabel="Minimize call"
@@ -224,7 +224,7 @@ export const GlobalCallOverlay = () => {
         onClick={toggleMute}
       />
       <IconButton
-        Icon={IconMaximize}
+        Icon={IconArrowsDiagonal}
         variant="tertiary"
         size="small"
         ariaLabel="Expand call"
