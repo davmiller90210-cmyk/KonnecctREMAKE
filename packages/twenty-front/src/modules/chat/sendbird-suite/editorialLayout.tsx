@@ -1132,3 +1132,32 @@ export const StyledAIStreamingDot = styled.span<{ $visible: boolean }>`
   animation: ai-pulse 1.2s ease-in-out infinite;
 `;
 
+// ─── Compatibility aliases ──────────────────────────────────────────────────
+// Several call sites import these as `Ed.MsgRow`, `Ed.ComposerBox`, etc.
+// The canonical exports above are prefixed with `Styled` — re-export under the
+// short names so existing usages keep working without touching every caller.
+export const MsgRow = StyledMsgRow;
+export const MsgStack = StyledMsgStack;
+export const MsgMeta = StyledMsgMeta;
+export const MsgAuthor = StyledMsgAuthor;
+export const MsgTime = StyledMsgTime;
+export const MsgText = StyledMsgText;
+export const MsgActionRow = StyledMsgActionRow;
+export const FileCard = StyledFileCard;
+export const ReactionRow = StyledReactionRow;
+export const ReactionChip = StyledReactionChip;
+export const SmallLinkBtn = StyledSmallLinkBtn;
+export const ThreadHint = StyledThreadHint;
+export const MessageScroll = StyledMessageScroll;
+export const DatePill = StyledDatePill;
+export const DatePillInner = StyledDatePillInner;
+export const TypingLine = StyledTypingLine;
+export const ComposerWrap = StyledComposerWrap;
+export const ComposerBox = StyledComposerBox;
+export const ComposerToolbar = StyledComposerToolbar;
+export const ToolbarBtn = StyledToolbarBtn;
+export const ComposerTextarea = StyledComposerTextarea;
+export const ComposerBottom = StyledComposerBottom;
+export const ComposerIconGroup = StyledComposerIconGroup;
+export const SendFab = StyledSendFab;
+

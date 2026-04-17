@@ -35,6 +35,7 @@ import * as SendBirdCall from 'sendbird-calls';
 import { Button } from 'twenty-ui/input';
 import {
   Avatar,
+  IconArrowLeft,
   IconMicrophone,
   IconMicrophoneOff,
   IconPhone,
@@ -2055,6 +2056,20 @@ const SendbirdCommunicationHubInner = () => {
             <Ed.StyledMainColumn style={{ position: 'relative' }}>
               <Ed.StyledTopBar>
                 <Ed.StyledTopBarLeft>
+                  <Ed.StyledIconButtonGhost
+                    as={Link}
+                    to={getAppPath(AppPath.Index)}
+                    aria-label={t`Back to CRM`}
+                    title={t`Back to CRM`}
+                    style={{
+                      textDecoration: 'none',
+                      paddingLeft: 8,
+                      paddingRight: 10,
+                    }}
+                  >
+                    <IconArrowLeft size={16} />
+                    {t`CRM`}
+                  </Ed.StyledIconButtonGhost>
                   {selection?.kind === 'channel' ? (
                     <span
                       style={{
