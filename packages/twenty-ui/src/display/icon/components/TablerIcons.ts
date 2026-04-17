@@ -20,6 +20,7 @@ export {
   IconArrowUp,
   IconArrowUpRight,
   IconArrowsDiagonal,
+  IconArrowsDiagonalMinimize2,
   IconArrowsSort,
   IconArrowsSplit2,
   IconArrowsVertical,
