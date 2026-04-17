@@ -1,5 +1,5 @@
 import { t } from '@lingui/core/macro';
-import { Avatar, IconPlus, IconSearch, IconUsers } from 'twenty-ui/display';
+import { Avatar, IconPlus, IconSearch, IconSparkles, IconUsers } from 'twenty-ui/display';
 import { SearchInput } from 'twenty-ui/input';
 
 import { editorialChatTheme } from '@/chat/theme/editorialChatTheme';
@@ -17,6 +17,10 @@ export type EditorialWorkspaceRailProps = {
   isWorkspaceAdmin: boolean;
   onOpenCreateChannel: () => void;
   onOpenNewDm: () => void;
+  /** Called when user clicks the KonnecctAI shortcut */
+  onOpenAI: () => void;
+  /** Whether the AI panel is currently open */
+  isAIOpen: boolean;
   search: string;
   onSearchChange: (value: string) => void;
   filteredCategories: ChatWorkspaceLayoutCategory[];
@@ -29,9 +33,7 @@ export type EditorialWorkspaceRailProps = {
     label: string;
   };
   viewerAvatarUrl: string | null;
-  /** Shown next to the avatar in the rail footer. */
   viewerFooterTitle: string;
-  /** Placeholder initials when no avatar image is available. */
   viewerAvatarPlaceholder: string;
   viewerAvatarPlaceholderSeed: string;
 };
@@ -42,6 +44,8 @@ export const EditorialWorkspaceRail = ({
   isWorkspaceAdmin,
   onOpenCreateChannel,
   onOpenNewDm,
+  onOpenAI,
+  isAIOpen,
   search,
   onSearchChange,
   filteredCategories,
@@ -60,14 +64,8 @@ export const EditorialWorkspaceRail = ({
       <Ed.StyledRailBrandTitle>{workspaceTitle}</Ed.StyledRailBrandTitle>
       {planLabel ? <Ed.StyledRailBrandMeta>{planLabel}</Ed.StyledRailBrandMeta> : null}
     </Ed.StyledRailHeader>
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 8,
-        margin: '0 16px 12px',
-      }}
-    >
+
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, margin: '0 16px 12px' }}>
       {isWorkspaceAdmin ? (
         <Ed.StyledRailPrimaryCta type="button" onClick={onOpenCreateChannel}>
           <IconPlus size={18} /> {t`New channel`}
@@ -89,7 +87,21 @@ export const EditorialWorkspaceRail = ({
         <IconUsers size={18} /> {t`New direct message`}
       </Ed.StyledRailPrimaryCta>
     </div>
+
     <Ed.StyledRailScroll>
+      {/* ─── KonnecctAI shortcut — always first ─── */}
+      <Ed.StyledAIRailButton
+        type="button"
+        $active={isAIOpen}
+        onClick={onOpenAI}
+        aria-label={t`Open KonnecctAI`}
+      >
+        <IconSparkles size={15} />
+        <span style={{ flex: 1 }}>{t`KonnecctAI`}</span>
+        {isAIOpen ? <Ed.StyledAIStreamingDot $visible={true} /> : null}
+      </Ed.StyledAIRailButton>
+
+      {/* ─── Search ─── */}
       <Ed.StyledRailNavRow
         type="button"
         onClick={() => {
@@ -109,6 +121,8 @@ export const EditorialWorkspaceRail = ({
           />
         </div>
       </div>
+
+      {/* ─── Channels ─── */}
       {filteredCategories.map((cat) => (
         <div key={cat.id}>
           <Ed.StyledRailSectionLabel>{cat.name}</Ed.StyledRailSectionLabel>
@@ -116,9 +130,7 @@ export const EditorialWorkspaceRail = ({
             <Ed.StyledRailChannelRow
               key={ch.id}
               type="button"
-              $active={
-                selection?.kind === 'channel' && selection.channel.id === ch.id
-              }
+              $active={selection?.kind === 'channel' && selection.channel.id === ch.id}
               onClick={() => onSelectChannel(ch)}
             >
               <span style={{ opacity: 0.5 }}>#</span>
@@ -127,6 +139,8 @@ export const EditorialWorkspaceRail = ({
           ))}
         </div>
       ))}
+
+      {/* ─── DMs ─── */}
       <Ed.StyledRailSectionLabel>{t`Direct messages`}</Ed.StyledRailSectionLabel>
       {filteredDms.map((dm) => {
         const row = dmRowMeta(dm);
@@ -148,6 +162,7 @@ export const EditorialWorkspaceRail = ({
         );
       })}
     </Ed.StyledRailScroll>
+
     <Ed.StyledRailFooter>
       <Ed.StyledRailUserRow>
         <Avatar
@@ -157,12 +172,8 @@ export const EditorialWorkspaceRail = ({
           size="sm"
         />
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 600 }}>
-            {viewerFooterTitle}
-          </div>
-          <div
-            style={{ fontSize: 11, color: editorialChatTheme.onSurfaceVariant }}
-          >
+          <div style={{ fontSize: 13, fontWeight: 600 }}>{viewerFooterTitle}</div>
+          <div style={{ fontSize: 11, color: editorialChatTheme.onSurfaceVariant }}>
             {isWorkspaceAdmin ? t`Admin` : t`Member`}
           </div>
         </div>

@@ -41,6 +41,7 @@ import {
   IconPhoneOff,
   IconScreenShare,
   IconSend,
+  IconSparkles,
   IconVideo,
   IconVideoOff,
   IconX,
@@ -72,6 +73,12 @@ import {
 } from '@/chat/types/chat-workspace-layout.type';
 import { useCrmMentionSearch } from '@/chat/hooks/useCrmMentionSearch';
 import { useCallOverlayOptional } from '@/chat/contexts/CallOverlayContext';
+import {
+  KonnecctAIPanelProvider,
+  useKonnecctAIPanel,
+  type KonnecctAIChannelContext,
+} from '@/chat/contexts/KonnecctAIPanelContext';
+import { KonnecctAIPanel } from '@/chat/components/KonnecctAIPanel';
 import { AppPath } from 'twenty-shared/types';
 import { getAppPath } from 'twenty-shared/utils';
 import { REACT_APP_SENDBIRD_APP_ID } from '~/config';
@@ -172,7 +179,8 @@ function isImageFileMessage(m: FileMessage): boolean {
   );
 }
 
-export const SendbirdCommunicationHub = () => {
+/** Inner component — must be rendered inside KonnecctAIPanelProvider */
+const SendbirdCommunicationHubInner = () => {
   const tokenPair = useAtomValue(tokenPairState.atom);
   const crmToken = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
   const currentWorkspace = useAtomValue(currentWorkspaceState.atom);
@@ -212,7 +220,10 @@ export const SendbirdCommunicationHub = () => {
   const [mainSearch, setMainSearch] = useState('');
 
   // CRM @mention state
-  type CrmMention = { kind: 'crm'; label: string; href: string } | { kind: 'agent'; label: string; recordId: string };
+  type CrmMention =
+    | { kind: 'crm'; label: string; href: string }
+    | { kind: 'agent'; label: string; recordId: string }
+    | { kind: 'konnecctai'; label: string; recordId: string };
   const [mentionOpen, setMentionOpen] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
   const [mentionStart, setMentionStart] = useState<number | null>(null);
@@ -222,6 +233,7 @@ export const SendbirdCommunicationHub = () => {
 
   const { searchMentionRecords } = useCrmMentionSearch();
   const callOverlay = useCallOverlayOptional();
+  const aiPanel = useKonnecctAIPanel();
 
   const [threadRoot, setThreadRoot] = useState<BaseMessage | null>(null);
   const [threadReplies, setThreadReplies] = useState<BaseMessage[]>([]);
@@ -764,9 +776,78 @@ export const SendbirdCommunicationHub = () => {
   const sendMainMessage = useCallback(() => {
     const text = composer.trim();
     const ch = groupChannelRef.current;
-    if (!ch || !text) {
+    if (!text) return;
+
+    // ─── @KonnecctAI intercept ───────────────────────────────────────────
+    // If the message starts with @KonnecctAI (case-insensitive), strip that
+    // prefix, build chat context, open the AI panel and inject the query.
+    const aiMatch = /^@KonnecctAI\b\s*/i.exec(text);
+    if (aiMatch) {
+      const query = text.slice(aiMatch[0].length).trim();
+
+      // Build rich channel context for the AI
+      const members = groupChannel?.members ?? [];
+      const recentMsgs = messages.slice(-20).map((m) => ({
+        author:
+          senderUserId(m)
+            ? (memberByScopedId.get(senderUserId(m)!)
+                ? memberDisplayName(memberByScopedId.get(senderUserId(m)!)!)
+                : (senderUserId(m) ?? 'Member'))
+            : 'Member',
+        body: messageBody(m).slice(0, 300),
+        ts: m.createdAt,
+      }));
+
+      const channelCtx: KonnecctAIChannelContext = {
+        channelUrl,
+        channelName:
+          selection?.kind === 'channel'
+            ? selection.channel.name
+            : selection?.kind === 'dm'
+              ? (selection.dm.title?.trim() ?? 'Direct message')
+              : '',
+        kind: selection?.kind ?? null,
+        memberNames: members
+          .slice(0, 40)
+          .map(
+            (mem) =>
+              [mem.nickname, mem.userId].find(Boolean) ?? mem.userId,
+          ),
+        recentMessages: recentMsgs,
+      };
+      aiPanel.setChannelContext(channelCtx);
+
+      // Build the full question with injected context preamble
+      const contextLines: string[] = [];
+      if (channelCtx.channelName) {
+        contextLines.push(
+          `[Current channel: ${channelCtx.kind === 'channel' ? '#' : ''}${channelCtx.channelName}]`,
+        );
+      }
+      if (channelCtx.memberNames.length) {
+        contextLines.push(
+          `[Members: ${channelCtx.memberNames.slice(0, 10).join(', ')}${channelCtx.memberNames.length > 10 ? ` (+${channelCtx.memberNames.length - 10} more)` : ''}]`,
+        );
+      }
+      if (recentMsgs.length) {
+        const snippet = recentMsgs
+          .slice(-5)
+          .map((m) => `${m.author}: ${m.body}`)
+          .join('\n');
+        contextLines.push(`[Recent messages:\n${snippet}]`);
+      }
+      const fullQuery = contextLines.length
+        ? `${contextLines.join('\n')}\n\n${query || 'Summarize the recent conversation above.'}`
+        : (query || 'Hello');
+
+      aiPanel.open(fullQuery);
+      setComposer('');
+      void ch?.endTyping().catch(() => undefined);
       return;
     }
+    // ─────────────────────────────────────────────────────────────────────
+
+    if (!ch) return;
     const pending = ch.sendUserMessage({ message: text });
     pending.onPending((msg) => {
       setMessages((prev) => filterMainFeedMessages(upsertMessage(prev, msg)));
@@ -781,7 +862,8 @@ export const SendbirdCommunicationHub = () => {
     });
     setComposer('');
     void ch.endTyping().catch(() => undefined);
-  }, [composer, reload]);
+  }, [composer, reload, aiPanel, selection, channelUrl, groupChannel, messages, memberByScopedId]);
+
 
   const sendThreadMessage = useCallback(() => {
     const text = threadComposer.trim();
@@ -885,9 +967,22 @@ export const SendbirdCommunicationHub = () => {
               href: `${window.location.origin}${path}`,
             };
           });
-          setMentionItems(items);
+
+          // Always pin @KonnecctAI first when query matches "ko" / "konnecct" / "ai" or is empty
+          const showKonnecctAI =
+            q.length === 0 ||
+            'konnecctai'.startsWith(q.toLowerCase()) ||
+            'konnecct'.startsWith(q.toLowerCase()) ||
+            'ai'.startsWith(q.toLowerCase());
+
+          const konnecctAIItem = showKonnecctAI
+            ? [{ kind: 'konnecctai' as const, label: 'KonnecctAI', recordId: '' }]
+            : [];
+
+          setMentionItems([...konnecctAIItem, ...items]);
         })();
       }, 180);
+
     } else {
       setMentionOpen(false);
       setMentionItems([]);
@@ -898,6 +993,23 @@ export const SendbirdCommunicationHub = () => {
     if (mentionStart === null) return;
     const before = composer.slice(0, mentionStart);
     const after = composer.slice(composerTextareaRef.current?.selectionStart ?? composer.length);
+
+    if (item.kind === 'konnecctai') {
+      // Pre-fill the composer with @KonnecctAI so the user types their question inline
+      setComposer(`${before}@KonnecctAI ${after}`);
+      setMentionOpen(false);
+      setMentionItems([]);
+      requestAnimationFrame(() => {
+        const ta = composerTextareaRef.current;
+        if (ta) {
+          const pos = (before + '@KonnecctAI ').length;
+          ta.setSelectionRange(pos, pos);
+          ta.focus();
+        }
+      });
+      return;
+    }
+
     const chip = item.kind === 'crm' ? `[@${item.label}](${item.href ?? ''}) ` : `@${item.label} `;
     setComposer(before + chip + after);
     setMentionOpen(false);
@@ -1607,32 +1719,50 @@ export const SendbirdCommunicationHub = () => {
                 aria-selected={idx === mentionIndex}
                 onClick={() => applyMention(item)}
                 style={{
-                  padding: '8px 12px',
+                  padding: item.kind === 'konnecctai' ? '10px 12px' : '8px 12px',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 8,
                   background:
                     idx === mentionIndex
-                      ? 'var(--twenty-background-transparent-light)'
+                      ? item.kind === 'konnecctai'
+                        ? 'linear-gradient(90deg, rgba(79,70,229,0.12) 0%, transparent 100%)'
+                        : 'var(--twenty-background-transparent-light)'
                       : 'transparent',
+                  borderBottom: item.kind === 'konnecctai' ? '1px solid var(--twenty-border-color-medium, #e4e7ec)' : 'none',
                 }}
               >
                 <span
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.04em',
-                    color: 'var(--twenty-font-color-light)',
-                    flexShrink: 0,
-                  }}
+                  style={
+                    item.kind === 'konnecctai'
+                      ? {
+                          background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+                          borderRadius: 4,
+                          color: '#fff',
+                          flexShrink: 0,
+                          fontSize: 10,
+                          fontWeight: 700,
+                          letterSpacing: '0.04em',
+                          padding: '2px 6px',
+                          textTransform: 'uppercase',
+                        }
+                      : {
+                          fontSize: 10,
+                          fontWeight: 600,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.04em',
+                          color: 'var(--twenty-font-color-light)',
+                          flexShrink: 0,
+                        }
+                  }
                 >
-                  {item.kind === 'agent' ? 'AI' : 'CRM'}
+                  {item.kind === 'konnecctai' ? '✦ AI' : item.kind === 'agent' ? 'AI' : 'CRM'}
                 </span>
                 <span
                   style={{
-                    color: 'var(--twenty-font-color-primary)',
+                    color: item.kind === 'konnecctai' ? 'var(--twenty-color-blue)' : 'var(--twenty-font-color-primary)',
+                    fontWeight: item.kind === 'konnecctai' ? 600 : 400,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
@@ -1640,8 +1770,20 @@ export const SendbirdCommunicationHub = () => {
                 >
                   {item.label}
                 </span>
+                {item.kind === 'konnecctai' ? (
+                  <span
+                    style={{
+                      color: 'var(--twenty-font-color-tertiary)',
+                      fontSize: 11,
+                      marginLeft: 'auto',
+                    }}
+                  >
+                    Ask anything
+                  </span>
+                ) : null}
               </div>
             ))}
+
           </div>
         )}
       </Ed.ComposerWrap>
@@ -1695,6 +1837,8 @@ export const SendbirdCommunicationHub = () => {
           isWorkspaceAdmin={isWorkspaceAdmin}
           onOpenCreateChannel={() => setCreateChannelOpen(true)}
           onOpenNewDm={() => setDmModalOpen(true)}
+          onOpenAI={() => aiPanel.toggle()}
+          isAIOpen={aiPanel.isOpen}
           search={search}
           onSearchChange={setSearch}
           filteredCategories={filteredCategories}
@@ -1716,6 +1860,7 @@ export const SendbirdCommunicationHub = () => {
           }
           viewerAvatarPlaceholderSeed={viewerUserWorkspaceId ?? 'me'}
         />
+
 
         {activeGroupRoom ? (
           <>
@@ -1964,6 +2109,17 @@ export const SendbirdCommunicationHub = () => {
                       </Ed.StyledIconButtonPrimary>
                     </>
                   ) : null}
+                  {/* KonnecctAI toggle button */}
+                  <Ed.StyledAIToggleButton
+                    type="button"
+                    $active={aiPanel.isOpen}
+                    onClick={() => aiPanel.toggle()}
+                    aria-label={t`KonnecctAI`}
+                    title={aiPanel.isOpen ? t`Hide KonnecctAI` : t`Ask KonnecctAI`}
+                  >
+                    <IconSparkles size={15} />
+                    {t`AI`}
+                  </Ed.StyledAIToggleButton>
                 </Ed.StyledTopBarActions>
               </Ed.StyledTopBar>
 
@@ -2062,6 +2218,7 @@ export const SendbirdCommunicationHub = () => {
               dmPeerMember={dmPeerMember}
               memberDisplayName={memberDisplayName}
             />
+            <KonnecctAIPanel />
           </>
         )}
       </Ed.StyledBodyRow>
@@ -2133,5 +2290,15 @@ export const SendbirdCommunicationHub = () => {
     </Ed.StyledShell>
   );
 };
+
+/**
+ * SendbirdCommunicationHub — entrypoint with all required context providers.
+ * The inner hub uses KonnecctAIPanelProvider for the AI slide-in panel.
+ */
+export const SendbirdCommunicationHub = () => (
+  <KonnecctAIPanelProvider>
+    <SendbirdCommunicationHubInner />
+  </KonnecctAIPanelProvider>
+);
 
 export default SendbirdCommunicationHub;

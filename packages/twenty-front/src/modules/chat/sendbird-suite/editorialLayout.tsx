@@ -1030,3 +1030,105 @@ export const StyledSmallLinkBtn = styled.button`
     text-decoration: underline;
   }
 `;
+
+// ─── KonnecctAI UI Tokens ─────────────────────────────────────────────────────
+
+/**
+ * Topbar AI toggle button — gradient accent when active, ghost when idle.
+ * $active drives the highlighted gradient state.
+ */
+export const StyledAIToggleButton = styled.button<{ $active?: boolean }>`
+  align-items: center;
+  background: ${({ $active }) =>
+    $active
+      ? 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)'
+      : ed.surfaceContainerHigh};
+  border: 1px solid
+    ${({ $active }) => ($active ? 'transparent' : ed.outlineVariantGhost)};
+  border-radius: ${ed.radiusMd};
+  box-shadow: ${({ $active }) =>
+    $active ? '0 0 0 3px rgba(124, 58, 237, 0.22)' : 'none'};
+  color: ${({ $active }) => ($active ? '#fff' : ed.primary)};
+  cursor: pointer;
+  display: inline-flex;
+  font-family: ${ed.fontStack};
+  font-size: 0.8125rem;
+  font-weight: 600;
+  gap: 6px;
+  padding: 7px 12px;
+  transition:
+    background 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+
+  &:not(:disabled):hover {
+    background: ${({ $active }) =>
+      $active
+        ? 'linear-gradient(135deg, #4338ca 0%, #6d28d9 100%)'
+        : ed.surfaceContainerHighest};
+  }
+`;
+
+/**
+ * Sidebar AI shortcut row — always visible above channels.
+ * Uses a subtle gradient left-accent to differentiate from regular nav items.
+ */
+export const StyledAIRailButton = styled.button<{ $active?: boolean }>`
+  align-items: center;
+  background: ${({ $active }) =>
+    $active
+      ? 'linear-gradient(90deg, rgba(79,70,229,0.18) 0%, transparent 100%)'
+      : 'transparent'};
+  border: none;
+  border-left: 2px solid
+    ${({ $active }) => ($active ? '#7c3aed' : 'transparent')};
+  border-radius: 0 ${ed.radiusMd} ${ed.radiusMd} 0;
+  color: ${({ $active }) => ($active ? '#c2c1ff' : ed.onSurfaceVariant)};
+  cursor: pointer;
+  display: flex;
+  font-family: ${ed.fontStack};
+  font-size: 0.875rem;
+  font-weight: ${({ $active }) => ($active ? '600' : '400')};
+  gap: 9px;
+  margin-bottom: 2px;
+  padding: 8px 10px 8px 12px;
+  text-align: left;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+  width: 100%;
+
+  &:hover {
+    background: linear-gradient(
+      90deg,
+      rgba(79, 70, 229, 0.12) 0%,
+      transparent 100%
+    );
+    color: #c2c1ff;
+  }
+`;
+
+/** Animated sparkle dot shown next to "KonnecctAI" when streaming */
+export const StyledAIStreamingDot = styled.span<{ $visible: boolean }>`
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  border-radius: 50%;
+  display: ${({ $visible }) => ($visible ? 'inline-block' : 'none')};
+  height: 6px;
+  margin-left: 4px;
+  width: 6px;
+
+  @keyframes ai-pulse {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.4;
+      transform: scale(0.7);
+    }
+  }
+
+  animation: ai-pulse 1.2s ease-in-out infinite;
+`;
+
