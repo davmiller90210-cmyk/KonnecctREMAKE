@@ -3,13 +3,16 @@ import { describe, expect, it } from 'vitest';
 
 import { upsertMessage } from '@/chat/sendbird/messageDedup';
 
-const makeMessage = (params: { messageId: number; reqId?: string }): BaseMessage =>
+const makeMessage = (params: {
+  messageId: number;
+  reqId?: string;
+}): BaseMessage =>
   ({
     messageType: MessageType.USER,
     messageId: params.messageId,
     reqId: params.reqId,
     message: 'hello',
-  }) as BaseMessage;
+  }) as unknown as BaseMessage;
 
 describe('messageDedup', () => {
   it('replaces pending message by reqId', () => {

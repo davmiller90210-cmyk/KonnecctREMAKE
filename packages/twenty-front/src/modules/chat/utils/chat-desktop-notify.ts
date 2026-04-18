@@ -20,6 +20,16 @@ export const notifyIncomingChatIfBackground = (options: {
   }
 };
 
+/**
+ * Sendbird’s full web push flow needs FCM credentials, a registered service
+ * worker, and usually a backend endpoint to store tokens. Until that is wired,
+ * we still request the browser notification permission so background tab alerts
+ * work via the standard Notification API.
+ */
+export const registerSendbirdWebPushWhenPossible = async () => {
+  await requestChatNotificationPermission();
+};
+
 export const requestChatNotificationPermission = () => {
   if (typeof Notification === 'undefined') {
     return Promise.resolve('unsupported' as const);

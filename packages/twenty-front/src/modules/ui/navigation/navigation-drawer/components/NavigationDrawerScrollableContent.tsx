@@ -1,4 +1,3 @@
-import { useIsChatDrawer } from '@/navigation/hooks/useIsChatDrawer';
 import { useIsSettingsDrawer } from '@/navigation/hooks/useIsSettingsDrawer';
 import { ScrollWrapper } from '@/ui/utilities/scroll/components/ScrollWrapper';
 import { styled } from '@linaria/react';
@@ -25,14 +24,13 @@ export const NavigationDrawerScrollableContent = ({
   children: ReactNode;
 }) => {
   const isSettingsDrawer = useIsSettingsDrawer();
-  const isChatDrawer = useIsChatDrawer();
   const isMobile = useIsMobile();
-  const usePaddedLayout = isSettingsDrawer || isChatDrawer;
+  const usePaddedLayout = isSettingsDrawer;
 
   return (
     <ScrollWrapper
       componentInstanceId={`scroll-wrapper-${
-        isSettingsDrawer ? 'settings-' : isChatDrawer ? 'chat-' : ''
+        isSettingsDrawer ? 'settings-' : ''
       }navigation-drawer`}
       defaultEnableXScroll={false}
     >

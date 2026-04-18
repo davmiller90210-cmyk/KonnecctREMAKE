@@ -1,7 +1,6 @@
 import { styled } from '@linaria/react';
 import { type ReactNode, useState } from 'react';
 
-import { useIsChatDrawer } from '@/navigation/hooks/useIsChatDrawer';
 import { useIsSettingsDrawer } from '@/navigation/hooks/useIsSettingsDrawer';
 import { tableWidthResizeIsActiveState } from '@/object-record/record-table/states/tableWidthResizeIsActivedState';
 import { ResizablePanelEdge } from '@/ui/layout/resizable-panel/components/ResizablePanelEdge';
@@ -84,8 +83,7 @@ export const NavigationDrawer = ({
   const [isResizing, setIsResizing] = useState(false);
   const isMobile = useIsMobile();
   const isSettingsDrawer = useIsSettingsDrawer();
-  const isChatDrawer = useIsChatDrawer();
-  const showBackButton = (isSettingsDrawer || isChatDrawer) && !!title;
+  const showBackButton = isSettingsDrawer && !!title;
 
   const [isNavigationDrawerExpanded, setIsNavigationDrawerExpanded] =
     useAtomState(isNavigationDrawerExpandedState);
@@ -139,10 +137,7 @@ export const NavigationDrawer = ({
           {children}
         </StyledContainer>
 
-        {isNavigationDrawerExpanded &&
-          !isMobile &&
-          !isSettingsDrawer &&
-          !isChatDrawer && (
+        {isNavigationDrawerExpanded && !isMobile && !isSettingsDrawer && (
             <ResizablePanelEdge
               side="right"
               constraints={NAVIGATION_DRAWER_CONSTRAINTS}

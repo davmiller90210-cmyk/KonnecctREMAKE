@@ -25,7 +25,10 @@ import * as SendBirdCall from 'sendbird-calls';
 
 import { tokenPairState } from '@/auth/states/tokenPairState';
 import { chatUnreadMapState } from '@/chat/states/chatUnreadState';
-import { notifyIncomingChatIfBackground } from '@/chat/utils/chat-desktop-notify';
+import {
+  notifyIncomingChatIfBackground,
+  registerSendbirdWebPushWhenPossible,
+} from '@/chat/utils/chat-desktop-notify';
 import { getMentionedUserIds } from '@/chat/utils/parseChatMessage';
 import { useSnackBar } from '@/ui/feedback/snack-bar-manager/hooks/useSnackBar';
 import { REACT_APP_SENDBIRD_APP_ID } from '~/config';
@@ -106,8 +109,10 @@ export const SendbirdClientProvider = ({
   const { enqueueInfoSnackBar } = useSnackBar();
 
   const activeChannelRef = useRef<ActiveChannelContext>({ url: null });
+  const sessionUserIdRef = useRef<string | null>(null);
   const tokenRef = useRef<string | undefined>(crmToken);
   tokenRef.current = crmToken;
+  sessionUserIdRef.current = sessionUserId;
 
   const setActiveChannelUrl = useCallback((url: string | null) => {
     activeChannelRef.current = { url };
@@ -196,39 +201,78 @@ export const SendbirdClientProvider = ({
           setCallsReady(false);
         }
 
+        const syncUnreadMapFromSendbird = async () => {
+          try {
+            const query = instance.groupChannel.createMyGroupChannelListQuery({
+              limit: 100,
+            });
+            const map: Record<string, number> = {};
+            let hasMore = true;
+            while (hasMore) {
+              const channels = await query.next();
+              for (const ch of channels) {
+                map[ch.url] = ch.unreadMessageCount;
+              }
+              hasMore = query.hasNext;
+            }
+            setUnreadMap(map);
+          } catch {
+            /* noop */
+          }
+        };
+
         const appHandler = new GroupChannelHandler({
           onMessageReceived: (channel, message) => {
-            const activeUrl = activeChannelRef.current.url;
-            const isViewingChannel =
-              channel.url === activeUrl && !document.hidden;
+            void (async () => {
+              const activeUrl = activeChannelRef.current.url;
+              const isViewingChannel =
+                channel.url === activeUrl && !document.hidden;
 
-            if (!isViewingChannel) {
-              setUnreadMap((prev) => ({
-                ...prev,
-                [channel.url]: (prev[channel.url] ?? 0) + 1,
-              }));
-            }
+              try {
+                const fresh = await instance.groupChannel.getChannel(
+                  channel.url,
+                );
+                if (!isViewingChannel) {
+                  setUnreadMap((prev) => ({
+                    ...prev,
+                    [channel.url]: fresh.unreadMessageCount,
+                  }));
+                } else {
+                  setUnreadMap((prev) => ({
+                    ...prev,
+                    [channel.url]: 0,
+                  }));
+                }
+              } catch {
+                if (!isViewingChannel) {
+                  setUnreadMap((prev) => ({
+                    ...prev,
+                    [channel.url]: (prev[channel.url] ?? 0) + 1,
+                  }));
+                }
+              }
 
-            if (!sessionUserIdRef.current) return;
+              if (!sessionUserIdRef.current) return;
 
-            const body = (message as unknown as { message?: string }).message;
-            if (!body) return;
+              const body = (message as unknown as { message?: string }).message;
+              if (!body) return;
 
-            const mentioned = getMentionedUserIds(body);
-            if (mentioned.includes(sessionUserIdRef.current)) {
-              if (!isViewingChannel) {
-                enqueueInfoSnackBar({
-                  message: body.slice(0, 140),
+              const mentioned = getMentionedUserIds(body);
+              if (mentioned.includes(sessionUserIdRef.current)) {
+                if (!isViewingChannel) {
+                  enqueueInfoSnackBar({
+                    message: body.slice(0, 140),
+                  });
+                }
+              }
+
+              if (document.hidden) {
+                notifyIncomingChatIfBackground({
+                  title: channel.name || 'New message',
+                  body: body.slice(0, 140),
                 });
               }
-            }
-
-            if (document.hidden) {
-              notifyIncomingChatIfBackground({
-                title: channel.name || 'New message',
-                body: body.slice(0, 140),
-              });
-            }
+            })();
           },
         });
 
@@ -236,6 +280,9 @@ export const SendbirdClientProvider = ({
           APP_LEVEL_HANDLER_KEY,
           appHandler,
         );
+
+        void syncUnreadMapFromSendbird();
+        void registerSendbirdWebPushWhenPossible();
       } catch (error) {
         if (cancelled) return;
         setConnectError(
@@ -251,9 +298,6 @@ export const SendbirdClientProvider = ({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [crmToken, attempt]);
-
-  const sessionUserIdRef = useRef<string | null>(null);
-  sessionUserIdRef.current = sessionUserId;
 
   useEffect(() => {
     return () => {

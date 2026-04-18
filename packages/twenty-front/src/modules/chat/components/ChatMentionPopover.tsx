@@ -2,7 +2,7 @@ import { styled } from '@linaria/react';
 
 import { type MentionItem } from '@/chat/types/MentionItem';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
-import { IconRobot, IconSparkles } from 'twenty-ui/display';
+import { IconRobot, IconSparkles, IconUser } from 'twenty-ui/display';
 
 const StyledPopover = styled.div`
   background: ${themeCssVariables.background.primary};
@@ -75,11 +75,17 @@ export const ChatMentionPopover = ({
             ? IconSparkles
             : item.kind === 'agent'
               ? IconRobot
-              : null;
+              : item.kind === 'user'
+                ? IconUser
+                : null;
 
         return (
           <StyledRow
-            key={`${item.kind}-${item.label}-${index}`}
+            key={
+              item.kind === 'user'
+                ? `${item.kind}-${item.userId}`
+                : `${item.kind}-${item.label}-${index}`
+            }
             active={index === activeIndex}
             onMouseEnter={() => onHover(index)}
             onClick={() => onSelect(item)}
@@ -92,7 +98,9 @@ export const ChatMentionPopover = ({
                 ? 'AI'
                 : item.kind === 'agent'
                   ? 'Agent'
-                  : (item.objectLabelSingular ?? '')}
+                  : item.kind === 'user'
+                    ? 'Member'
+                    : (item.objectLabelSingular ?? '')}
             </StyledRowSubLabel>
           </StyledRow>
         );

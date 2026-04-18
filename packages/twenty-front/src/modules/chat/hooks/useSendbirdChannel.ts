@@ -2,20 +2,21 @@
 import {
   GroupChannelHandler,
   MessageCollectionInitPolicy,
+  MessageFilter,
   type GroupChannel,
-  type GroupChannelCollection,
+  type Member,
+  type MessageCollection,
 } from '@sendbird/chat/groupChannel';
 import {
-  MessageFilter,
   MessageType,
   type BaseMessage,
   type FileMessage,
-  type Member,
   type UserMessage,
 } from '@sendbird/chat/message';
 import { useEffect, useRef, useState } from 'react';
 
 import { useSendbirdClient } from '@/chat/providers/SendbirdClientProvider';
+import { getMentionedUserIds } from '@/chat/utils/parseChatMessage';
 
 const HANDLER_KEY = 'konnecct-chat-page-handler';
 
@@ -73,7 +74,7 @@ export const useSendbirdChannel = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const collectionRef = useRef<GroupChannelCollection | null>(null);
+  const collectionRef = useRef<MessageCollection | null>(null);
   const activeUrlRef = useRef<string | null>(null);
   activeUrlRef.current = channelUrl;
 
@@ -139,23 +140,26 @@ export const useSendbirdChannel = ({
           },
         });
 
-        const initial = await collection
-          .initialize(MessageCollectionInitPolicy.CACHE_AND_REPLACE_BY_API)
+        const initHandler = await collection.initialize(
+          MessageCollectionInitPolicy.CACHE_AND_REPLACE_BY_API,
+        );
+
+        initHandler
           .onCacheResult((_, cached) => {
             if (activeUrlRef.current !== channelUrl) return;
-            setMessages(cached);
+            setMessages(cached ?? []);
           })
           .onApiResult((_, apiMessages) => {
             if (activeUrlRef.current !== channelUrl) return;
-            setMessages(apiMessages);
+            setMessages(apiMessages ?? []);
           });
 
         if (cancelled) {
-          initial.dispose();
+          collection.dispose();
           return;
         }
 
-        collectionRef.current = initial;
+        collectionRef.current = collection;
 
         try {
           await groupChannel.markAsRead();
@@ -196,7 +200,11 @@ export const useSendbirdChannel = ({
 
   const sendMessage = async (text: string) => {
     if (!channel || !text.trim()) return;
-    const params = { message: text };
+    const mentionedUserIds = getMentionedUserIds(text);
+    const params = {
+      message: text,
+      ...(mentionedUserIds.length > 0 ? { mentionedUserIds } : {}),
+    };
     await new Promise<void>((resolve, reject) => {
       channel
         .sendUserMessage(params)

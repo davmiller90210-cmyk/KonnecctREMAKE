@@ -74,6 +74,8 @@ type ChatComposerProps = {
   onSendFile?: (file: File) => Promise<void> | void;
   onTypingStart?: () => void;
   onTypingEnd?: () => void;
+  /** Current channel members for @user mentions (Sendbird user ids). */
+  mentionUserCandidates?: { userId: string; label: string }[];
 };
 
 const MENTION_DEBOUNCE_MS = 150;
@@ -86,6 +88,7 @@ export const ChatComposer = ({
   onSendFile,
   onTypingStart,
   onTypingEnd,
+  mentionUserCandidates = [],
 }: ChatComposerProps) => {
   const { t } = useLingui();
   const { searchMentionRecords } = useCrmMentionSearch();
@@ -190,7 +193,22 @@ export const ChatComposer = ({
           ? [{ kind: 'konnecctai', label: 'KonnecctAI' }]
           : [];
 
-        setMentionItems([...withAi, ...base]);
+        const qLower = queryLower;
+        const memberItems: MentionItem[] = mentionUserCandidates
+          .filter(
+            (m) =>
+              qLower.length === 0 ||
+              m.label.toLowerCase().includes(qLower) ||
+              m.userId.toLowerCase().includes(qLower),
+          )
+          .slice(0, 15)
+          .map((m) => ({
+            kind: 'user' as const,
+            userId: m.userId,
+            label: m.label,
+          }));
+
+        setMentionItems([...withAi, ...memberItems, ...base]);
       })();
     }, MENTION_DEBOUNCE_MS);
   };
@@ -209,6 +227,8 @@ export const ChatComposer = ({
       insertion = `[@${item.label}](${item.href}) `;
     } else if (item.kind === 'agent') {
       insertion = `[@${item.label}](twenty://agent/${item.recordId}) `;
+    } else if (item.kind === 'user') {
+      insertion = `[@${item.label}](twenty://user/${item.userId}) `;
     }
 
     const nextValue = before + insertion + after;

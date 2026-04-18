@@ -87,6 +87,10 @@ export const ChatMessageContent = ({
             return;
           }
 
+          if (node.kind === 'user') {
+            return;
+          }
+
           if (node.href && node.href.startsWith('http')) {
             window.open(node.href, '_blank', 'noopener,noreferrer');
           }

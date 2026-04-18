@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { styled } from '@linaria/react';
 import {
   IconArrowsDiagonal,
-  IconArrowsDiagonalMinimize2,
+  IconChevronDown,
   IconMicrophone,
   IconMicrophoneOff,
   IconPhoneOff,
@@ -35,7 +35,7 @@ const StyledDock = styled.div<{ $expanded: boolean }>`
     $expanded ? '0' : themeCssVariables.spacing[3]};
   position: fixed;
   right: ${themeCssVariables.spacing[4]};
-  width: ${({ $expanded }) => ($expanded ? '340px' : 'auto')};
+  width: ${({ $expanded }) => ($expanded ? 'min(420px, 92vw)' : 'auto')};
   z-index: 20000;
 `;
 
@@ -49,16 +49,54 @@ const StyledExpandedHeader = styled.div`
   padding: 0 ${themeCssVariables.spacing[3]};
 `;
 
-const StyledExpandedVideo = styled.div`
+const StyledVideoStage = styled.div`
+  background: #0b0b0c;
+  flex: 1 1 auto;
+  min-height: 220px;
+  position: relative;
+`;
+
+const StyledRemoteVideo = styled.video`
+  height: 100%;
+  object-fit: contain;
+  width: 100%;
+`;
+
+const StyledLocalVideo = styled.video<{ $pip: boolean }>`
+  border: 1px solid ${themeCssVariables.border.color.medium};
+  border-radius: ${themeCssVariables.border.radius.sm};
+  bottom: ${themeCssVariables.spacing[2]};
+  object-fit: cover;
+  position: absolute;
+  right: ${themeCssVariables.spacing[2]};
+  ${({ $pip }) =>
+    $pip
+      ? `
+ height: 88px;
+    width: 118px;
+  `
+      : `
+    height: 1px;
+    width: 1px;
+    opacity: 0;
+    pointer-events: none;
+  `}
+`;
+
+const StyledVoiceFallback = styled.div`
   align-items: center;
-  background: ${themeCssVariables.background.tertiary};
   color: ${themeCssVariables.font.color.tertiary};
   display: flex;
-  flex: 1 1 auto;
   font-family: ${themeCssVariables.font.family};
   font-size: ${themeCssVariables.font.size.sm};
-  height: 200px;
+  height: 100%;
   justify-content: center;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  z-index: 1;
 `;
 
 const StyledExpandedControls = styled.div`
@@ -114,15 +152,34 @@ function formatDuration(seconds: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-/**
- * Call controls dock. Sendbird attaches media to hidden `<video>` elements in
- * `SendbirdCallsProvider`; this UI stays lightweight and shell-global.
- */
 export const GlobalCallOverlay = () => {
   const ctx = useCallOverlayOptional();
   const calls = useSendbirdCallsOptional();
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const durationTickRef = useRef(0);
+  const localVideoRef = useRef<HTMLVideoElement | null>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  useLayoutEffect(() => {
+    if (!ctx?.callState?.active || !calls?.activeCall) {
+      return;
+    }
+    const local = localVideoRef.current;
+    const remote = remoteVideoRef.current;
+    if (!local || !remote) {
+      return;
+    }
+    if (ctx.callState.expanded) {
+      void calls.bindToVisibleOverlayVideos(local, remote);
+    } else {
+      void calls.bindToHiddenBootstrapVideos();
+    }
+  }, [
+    calls,
+    ctx?.callState?.active,
+    ctx?.callState?.expanded,
+    calls?.activeCall?.callId,
+  ]);
 
   useEffect(() => {
     if (!ctx?.callState?.active) {
@@ -159,6 +216,9 @@ export const GlobalCallOverlay = () => {
   const sdkMuted = direct
     ? !direct.isLocalAudioEnabled
     : (ctx.callState.muted ?? false);
+  const isVideoCall = direct
+    ? direct.isVideoCall
+    : (ctx.callState.videoOn ?? false);
   const sdkVideoOn = direct
     ? direct.isVideoCall && direct.isLocalVideoEnabled
     : (ctx.callState.videoOn ?? false);
@@ -190,7 +250,7 @@ export const GlobalCallOverlay = () => {
           <StyledTitle>{title}</StyledTitle>
           <StyledTimer>{formatDuration(durationSeconds)}</StyledTimer>
           <IconButton
-            Icon={IconArrowsDiagonalMinimize2}
+            Icon={IconChevronDown}
             variant="tertiary"
             size="small"
             ariaLabel="Minimize call"
@@ -200,9 +260,25 @@ export const GlobalCallOverlay = () => {
       )}
 
       {expanded && (
-        <StyledExpandedVideo>
-          {sdkVideoOn ? 'Video call' : 'Voice call'}
-        </StyledExpandedVideo>
+        <StyledVideoStage>
+          <StyledRemoteVideo
+            ref={remoteVideoRef}
+            playsInline
+            autoPlay
+            aria-label="Remote video"
+          />
+          <StyledLocalVideo
+            ref={localVideoRef}
+            $pip={isVideoCall}
+            playsInline
+            muted
+            autoPlay
+            aria-label="Local video"
+          />
+          {!isVideoCall ? (
+            <StyledVoiceFallback>{`Voice call`}</StyledVoiceFallback>
+          ) : null}
+        </StyledVideoStage>
       )}
 
       {expanded ? (
@@ -214,13 +290,15 @@ export const GlobalCallOverlay = () => {
             ariaLabel={sdkMuted ? 'Unmute' : 'Mute'}
             onClick={handleMute}
           />
-          <IconButton
-            Icon={sdkVideoOn ? IconVideo : IconVideoOff}
-            variant={sdkVideoOn ? 'primary' : 'tertiary'}
-            size="small"
-            ariaLabel={sdkVideoOn ? 'Turn off camera' : 'Turn on camera'}
-            onClick={handleVideo}
-          />
+          {isVideoCall ? (
+            <IconButton
+              Icon={sdkVideoOn ? IconVideo : IconVideoOff}
+              variant={sdkVideoOn ? 'primary' : 'tertiary'}
+              size="small"
+              ariaLabel={sdkVideoOn ? 'Turn off camera' : 'Turn on camera'}
+              onClick={handleVideo}
+            />
+          ) : null}
           <IconButton
             Icon={IconPhoneOff}
             variant="primary"

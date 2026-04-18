@@ -15,7 +15,7 @@ import {
 import { useCallOverlay } from '@/chat/contexts/CallOverlayContext';
 import { useSendbirdClient } from '@/chat/providers/SendbirdClientProvider';
 
-const StyledHiddenVideo = styled.video`
+const StyledBootstrapVideo = styled.video`
   height: 1px;
   left: 0;
   opacity: 0;
@@ -28,7 +28,6 @@ const StyledHiddenVideo = styled.video`
 const CALL_LISTENER_KEY = 'konnecct-sendbird-app-calls';
 
 type SendbirdCallsContextValue = {
-  /** Start a 1:1 call to a Sendbird-scoped user id (e.g. DM `peerAgoraUserId`). */
   dialDirect: (args: {
     peerUserId: string;
     isVideoCall: boolean;
@@ -41,6 +40,13 @@ type SendbirdCallsContextValue = {
   endActiveCall: () => void;
   toggleMute: () => void;
   toggleVideo: () => void;
+  /** Re-attach media to the overlay `<video>` elements (expanded dock). */
+  bindToVisibleOverlayVideos: (
+    local: HTMLVideoElement,
+    remote: HTMLVideoElement,
+  ) => Promise<void>;
+  /** Restore media to bootstrap elements (minimized dock). */
+  bindToHiddenBootstrapVideos: () => Promise<void>;
 };
 
 const SendbirdCallsContext = createContext<SendbirdCallsContextValue | null>(
@@ -58,12 +64,27 @@ export const SendbirdCallsProvider = ({ children }: { children: ReactNode }) => 
 
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
+  const activeCallRef = useRef<SendBirdCall.DirectCall | null>(null);
 
   const [incomingCall, setIncomingCall] =
     useState<SendBirdCall.DirectCall | null>(null);
   const [activeCall, setActiveCall] =
     useState<SendBirdCall.DirectCall | null>(null);
   const [, refreshCallUi] = useReducer((x: number) => x + 1, 0);
+
+  activeCallRef.current = activeCall;
+
+  useEffect(() => {
+    if (!callsReady) {
+      return;
+    }
+
+    try {
+      SendBirdCall.useMedia({ audio: true, video: true });
+    } catch {
+      /* Permissions may still be granted when placing a call. */
+    }
+  }, [callsReady]);
 
   useEffect(() => {
     if (!callsReady) {
@@ -85,15 +106,47 @@ export const SendbirdCallsProvider = ({ children }: { children: ReactNode }) => 
     };
   }, [callsReady]);
 
+  const bindToVisibleOverlayVideos = useCallback(
+    async (local: HTMLVideoElement, remote: HTMLVideoElement) => {
+      const call = activeCallRef.current;
+      if (!call) {
+        return;
+      }
+      try {
+        await call.setLocalMediaView(local);
+        await call.setRemoteMediaView(remote);
+      } catch {
+        /* noop */
+      }
+    },
+    [],
+  );
+
+  const bindToHiddenBootstrapVideos = useCallback(async () => {
+    const call = activeCallRef.current;
+    const localEl = localVideoRef.current;
+    const remoteEl = remoteVideoRef.current;
+    if (!call || !localEl || !remoteEl) {
+      return;
+    }
+    try {
+      await call.setLocalMediaView(localEl);
+      await call.setRemoteMediaView(remoteEl);
+    } catch {
+      /* noop */
+    }
+  }, []);
+
   const attachEndedHandler = useCallback(
     (call: SendBirdCall.DirectCall) => {
       const prev = call.onEnded;
-      call.onEnded = () => {
+      call.onEnded = (ended) => {
         setActiveCall(null);
         setIncomingCall(null);
+        activeCallRef.current = null;
         endOverlayCall();
         refreshCallUi();
-        prev?.();
+        prev?.(ended);
       };
     },
     [endOverlayCall],
@@ -134,7 +187,8 @@ export const SendbirdCallsProvider = ({ children }: { children: ReactNode }) => 
 
         attachEndedHandler(call);
         setActiveCall(call);
-        startOverlayCall(title);
+        activeCallRef.current = call;
+        startOverlayCall(title, { isVideoCall });
         refreshCallUi();
       } catch {
         /* noop — user can retry */
@@ -167,8 +221,11 @@ export const SendbirdCallsProvider = ({ children }: { children: ReactNode }) => 
 
     attachEndedHandler(call);
     setActiveCall(call);
+    activeCallRef.current = call;
     setIncomingCall(null);
-    startOverlayCall(call.remoteUser?.nickname ?? 'Call');
+    startOverlayCall(call.remoteUser?.nickname ?? 'Call', {
+      isVideoCall: call.isVideoCall,
+    });
     refreshCallUi();
   }, [attachEndedHandler, incomingCall, startOverlayCall]);
 
@@ -181,6 +238,7 @@ export const SendbirdCallsProvider = ({ children }: { children: ReactNode }) => 
     activeCall?.end();
     setActiveCall(null);
     setIncomingCall(null);
+    activeCallRef.current = null;
     endOverlayCall();
   }, [activeCall, endOverlayCall]);
 
@@ -221,12 +279,20 @@ export const SendbirdCallsProvider = ({ children }: { children: ReactNode }) => 
     endActiveCall,
     toggleMute,
     toggleVideo,
+    bindToVisibleOverlayVideos,
+    bindToHiddenBootstrapVideos,
   };
 
   return (
     <SendbirdCallsContext.Provider value={value}>
-      <StyledHiddenVideo ref={localVideoRef} playsInline muted aria-hidden />
-      <StyledHiddenVideo ref={remoteVideoRef} playsInline aria-hidden />
+      <StyledBootstrapVideo
+        ref={localVideoRef}
+        playsInline
+        muted
+        autoPlay
+        aria-hidden
+      />
+      <StyledBootstrapVideo ref={remoteVideoRef} playsInline autoPlay aria-hidden />
       {children}
     </SendbirdCallsContext.Provider>
   );

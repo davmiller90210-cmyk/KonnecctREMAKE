@@ -1,4 +1,3 @@
-import { useIsChatDrawer } from '@/navigation/hooks/useIsChatDrawer';
 import { useIsSettingsDrawer } from '@/navigation/hooks/useIsSettingsDrawer';
 import { isNavigationDrawerExpandedState } from '@/ui/navigation/states/isNavigationDrawerExpanded';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
@@ -35,11 +34,10 @@ export const NavigationDrawerSection = ({
 }) => {
   const isMobile = useIsMobile();
   const isSettingsDrawer = useIsSettingsDrawer();
-  const isChatDrawer = useIsChatDrawer();
   const isNavigationDrawerExpanded = useAtomStateValue(
     isNavigationDrawerExpandedState,
   );
-  const usePaddedLayout = isSettingsDrawer || isChatDrawer;
+  const usePaddedLayout = isSettingsDrawer;
   const isMainNavCollapsed =
     !usePaddedLayout && !isMobile && !isNavigationDrawerExpanded;
 

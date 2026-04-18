@@ -1,6 +1,5 @@
 import { type ReactNode } from 'react';
 
-import { useIsChatDrawer } from '@/navigation/hooks/useIsChatDrawer';
 import { useIsSettingsDrawer } from '@/navigation/hooks/useIsSettingsDrawer';
 import { NavigationDrawerSection } from '@/ui/navigation/navigation-drawer/components/NavigationDrawerSection';
 import { styled } from '@linaria/react';
@@ -26,12 +25,11 @@ export const NavigationDrawerFixedContent = ({
   children: ReactNode;
 }) => {
   const isSettingsDrawer = useIsSettingsDrawer();
-  const isChatDrawer = useIsChatDrawer();
   const isMobile = useIsMobile();
 
   return (
     <StyledFixedContainer
-      isPadded={isSettingsDrawer || isChatDrawer}
+      isPadded={isSettingsDrawer}
       isMobile={isMobile}
     >
       <NavigationDrawerSection>{children}</NavigationDrawerSection>

@@ -9,6 +9,11 @@ export type MentionItem =
       recordId: string;
     }
   | {
+      kind: 'user';
+      label: string;
+      userId: string;
+    }
+  | {
       kind: 'crm';
       label: string;
       objectNameSingular: string;

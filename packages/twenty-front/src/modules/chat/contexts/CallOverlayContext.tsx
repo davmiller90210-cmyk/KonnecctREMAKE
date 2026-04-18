@@ -27,7 +27,10 @@ export type CallOverlayState = {
 type CallOverlayContextValue = {
   callState: CallOverlayState | null;
   /** Start a call - pass the title (name of contact/channel) */
-  startCall: (title: string) => void;
+  startCall: (
+    title: string,
+    options?: { isVideoCall?: boolean },
+  ) => void;
   /** End the current call */
   endCall: () => void;
   /** Toggle minimized/expanded state */
@@ -53,16 +56,20 @@ export const CallOverlayProvider = ({
 }) => {
   const [callState, setCallState] = useState<CallOverlayState | null>(null);
 
-  const startCall = useCallback((title: string) => {
-    setCallState({
-      active: true,
-      title,
-      expanded: false,
-      durationSeconds: 0,
-      muted: false,
-      videoOn: false,
-    });
-  }, []);
+  const startCall = useCallback(
+    (title: string, options?: { isVideoCall?: boolean }) => {
+      const isVideoCall = options?.isVideoCall === true;
+      setCallState({
+        active: true,
+        title,
+        expanded: false,
+        durationSeconds: 0,
+        muted: false,
+        videoOn: isVideoCall,
+      });
+    },
+    [],
+  );
 
   const endCall = useCallback(() => {
     setCallState(null);
