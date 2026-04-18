@@ -5,7 +5,12 @@ import { Avatar } from 'twenty-ui/display';
 import { Button } from 'twenty-ui/input';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 
-import { ChatModalShell } from '@/chat/components/ChatModalShell';
+import {
+  Modal,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+} from 'twenty-ui/layout';
 import {
   type ChatWorkspaceLayoutResponse,
   type ChatWorkspaceMemberOption,
@@ -81,6 +86,13 @@ const StyledInviteEmpty = styled.span`
 const StyledErrorText = styled.div`
   color: ${themeCssVariables.color.red5};
   font-size: ${themeCssVariables.font.size.xs};
+`;
+
+const StyledModalTitle = styled.div`
+  color: ${themeCssVariables.font.color.primary};
+  font-family: ${themeCssVariables.font.family};
+  font-size: ${themeCssVariables.font.size.lg};
+  font-weight: ${themeCssVariables.font.weight.semiBold};
 `;
 
 type CreateChannelModalProps = {
@@ -247,12 +259,18 @@ export const CreateChannelModal = ({
   ]);
 
   return (
-    <ChatModalShell
+    <Modal
       isOpen={isOpen}
-      maxWidth={440}
-      title={t`New channel`}
-      onClose={onClose}
+      size="medium"
+      padding="none"
+      modalZIndex={10000}
+      backdropZIndex={9999}
+      onBackdropMouseDown={onClose}
     >
+      <ModalHeader hasBorderBottom>
+        <StyledModalTitle>{t`New channel`}</StyledModalTitle>
+      </ModalHeader>
+      <ModalContent gap={4}>
       <div>
         <StyledLabel htmlFor="channel-name">{t`Channel name`}</StyledLabel>
         <StyledInput
@@ -345,8 +363,8 @@ export const CreateChannelModal = ({
       ) : null}
 
       {error ? <StyledErrorText>{error}</StyledErrorText> : null}
-
-      <StyledRow style={{ justifyContent: 'flex-end' }}>
+      </ModalContent>
+      <ModalFooter>
         <Button title={t`Cancel`} variant="secondary" onClick={onClose} />
         <Button
           title={submitting ? t`Creating…` : t`Create`}
@@ -355,7 +373,7 @@ export const CreateChannelModal = ({
           disabled={submitting}
           onClick={() => void handleSubmit()}
         />
-      </StyledRow>
-    </ChatModalShell>
+      </ModalFooter>
+    </Modal>
   );
 };

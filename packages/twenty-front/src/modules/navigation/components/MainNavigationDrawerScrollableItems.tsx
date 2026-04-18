@@ -1,10 +1,13 @@
 import { useLocation } from 'react-router-dom';
 import { useLingui } from '@lingui/react/macro';
 import { styled } from '@linaria/react';
+import { useAtomValue } from 'jotai';
 import { lazy, Suspense } from 'react';
 
+import { chatTotalUnreadState } from '@/chat/states/chatUnreadState';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 import { IconMessage, IconSparkles } from 'twenty-ui/display';
+import { NotificationCounter } from 'twenty-ui/navigation';
 
 
 import { NavigationDrawerOpenedSection } from '@/navigation-menu-item/display/sections/components/NavigationDrawerOpenedSection';
@@ -37,6 +40,9 @@ const StyledScrollableItemsContainer = styled.div`
 export const MainNavigationDrawerScrollableItems = () => {
   const location = useLocation();
   const { t } = useLingui();
+  const chatTotalUnread = useAtomValue(chatTotalUnreadState);
+  const showChatUnread =
+    chatTotalUnread > 0 && !location.pathname.startsWith('/chat');
 
   return (
     <StyledScrollableItemsContainer>
@@ -51,6 +57,11 @@ export const MainNavigationDrawerScrollableItems = () => {
         to="/chat"
         Icon={IconMessage}
         active={location.pathname.startsWith('/chat')}
+        rightOptions={
+          showChatUnread ? (
+            <NotificationCounter count={chatTotalUnread} />
+          ) : undefined
+        }
       />
       <NavigationDrawerItem
         label={t`Superagents`}

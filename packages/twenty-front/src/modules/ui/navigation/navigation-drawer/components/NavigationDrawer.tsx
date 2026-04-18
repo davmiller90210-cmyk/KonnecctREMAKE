@@ -1,6 +1,7 @@
 import { styled } from '@linaria/react';
 import { type ReactNode, useState } from 'react';
 
+import { useIsChatDrawer } from '@/navigation/hooks/useIsChatDrawer';
 import { useIsSettingsDrawer } from '@/navigation/hooks/useIsSettingsDrawer';
 import { tableWidthResizeIsActiveState } from '@/object-record/record-table/states/tableWidthResizeIsActivedState';
 import { ResizablePanelEdge } from '@/ui/layout/resizable-panel/components/ResizablePanelEdge';
@@ -51,7 +52,7 @@ const StyledAnimatedContainer = styled.div<{
 `;
 
 const StyledContainer = styled.div<{
-  isSettings?: boolean;
+  isBackButtonDrawer?: boolean;
   isMobile?: boolean;
   isExpanded?: boolean;
 }>`
@@ -60,8 +61,8 @@ const StyledContainer = styled.div<{
   flex-direction: column;
   gap: ${themeCssVariables.spacing[3]};
   height: 100%;
-  padding: ${({ isSettings, isMobile }) =>
-    isSettings
+  padding: ${({ isBackButtonDrawer, isMobile }) =>
+    isBackButtonDrawer
       ? isMobile
         ? `${themeCssVariables.spacing[3]} 0 0 ${themeCssVariables.spacing[8]}`
         : `${themeCssVariables.spacing[3]} 0 ${themeCssVariables.spacing[4]} 0`
@@ -83,6 +84,8 @@ export const NavigationDrawer = ({
   const [isResizing, setIsResizing] = useState(false);
   const isMobile = useIsMobile();
   const isSettingsDrawer = useIsSettingsDrawer();
+  const isChatDrawer = useIsChatDrawer();
+  const showBackButton = (isSettingsDrawer || isChatDrawer) && !!title;
 
   const [isNavigationDrawerExpanded, setIsNavigationDrawerExpanded] =
     useAtomState(isNavigationDrawerExpandedState);
@@ -124,11 +127,11 @@ export const NavigationDrawer = ({
         isResizing={isResizing}
       >
         <StyledContainer
-          isSettings={isSettingsDrawer}
+          isBackButtonDrawer={showBackButton}
           isMobile={isMobile}
           isExpanded={isNavigationDrawerExpanded}
         >
-          {isSettingsDrawer && title ? (
+          {showBackButton ? (
             <NavigationDrawerBackButton title={title} />
           ) : (
             <NavigationDrawerHeader showCollapseButton />
@@ -136,18 +139,21 @@ export const NavigationDrawer = ({
           {children}
         </StyledContainer>
 
-        {isNavigationDrawerExpanded && !isMobile && !isSettingsDrawer && (
-          <ResizablePanelEdge
-            side="right"
-            constraints={NAVIGATION_DRAWER_CONSTRAINTS}
-            currentWidth={navigationDrawerWidth}
-            onWidthChange={handleWidthChange}
-            onCollapse={handleCollapse}
-            showHandle={false}
-            cssVariableName={NAVIGATION_DRAWER_WIDTH_VAR}
-            onResizeStart={handleResizeStart}
-          />
-        )}
+        {isNavigationDrawerExpanded &&
+          !isMobile &&
+          !isSettingsDrawer &&
+          !isChatDrawer && (
+            <ResizablePanelEdge
+              side="right"
+              constraints={NAVIGATION_DRAWER_CONSTRAINTS}
+              currentWidth={navigationDrawerWidth}
+              onWidthChange={handleWidthChange}
+              onCollapse={handleCollapse}
+              showHandle={false}
+              cssVariableName={NAVIGATION_DRAWER_WIDTH_VAR}
+              onResizeStart={handleResizeStart}
+            />
+          )}
       </StyledAnimatedContainer>
     </>
   );

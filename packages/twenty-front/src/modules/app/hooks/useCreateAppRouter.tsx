@@ -3,7 +3,7 @@ import { LazyRoute } from '@/app/components/LazyRoute';
 import { SettingsRoutes } from '@/app/components/SettingsRoutes';
 import indexAppPath from '@/navigation/utils/indexAppPath';
 import { BlankLayout } from '@/ui/layout/page/components/BlankLayout';
-import { MainLayoutSwitcher } from '@/ui/layout/page/components/MainLayoutSwitcher';
+import { DefaultLayout } from '@/ui/layout/page/components/DefaultLayout';
 import { AppPath } from 'twenty-shared/types';
 
 import { lazy } from 'react';
@@ -43,9 +43,9 @@ const Authorize = lazy(() =>
   })),
 );
 
-const KonnecctChatPage = lazy(() =>
-  import('@/chat/components/KonnecctChatPage').then((module) => ({
-    default: module.KonnecctChatPage,
+const ChatPage = lazy(() =>
+  import('@/chat/components/ChatPage').then((module) => ({
+    default: module.ChatPage,
   })),
 );
 
@@ -127,12 +127,12 @@ export const useCreateAppRouter = (
         // to set scroll position before the page is rendered
         loader={async () => Promise.resolve(null)}
       >
-        <Route element={<MainLayoutSwitcher />}>
+        <Route element={<DefaultLayout />}>
           <Route
             path="/chat"
             element={
               <LazyRoute>
-                <KonnecctChatPage />
+                <ChatPage />
               </LazyRoute>
             }
           />
@@ -140,7 +140,7 @@ export const useCreateAppRouter = (
             path="/chat/c/:channelId"
             element={
               <LazyRoute>
-                <KonnecctChatPage />
+                <ChatPage />
               </LazyRoute>
             }
           />
@@ -148,7 +148,7 @@ export const useCreateAppRouter = (
             path="/chat/dm/:dmThreadId"
             element={
               <LazyRoute>
-                <KonnecctChatPage />
+                <ChatPage />
               </LazyRoute>
             }
           />

@@ -2,61 +2,51 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { styled } from '@linaria/react';
 import { t } from '@lingui/core/macro';
 import { Button } from 'twenty-ui/input';
+import {
+  Modal,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+} from 'twenty-ui/layout';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 import { type ChatWorkspaceMemberOption } from '@/chat/types/chat-workspace-layout.type';
 
-const StyledBackdrop = styled.div`
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.45);
-  padding: ${themeCssVariables.spacing[4]};
-`;
-
-const StyledPanel = styled.div`
-  width: 100%;
-  max-width: 420px;
-  border-radius: ${themeCssVariables.border.radius.md};
-  background: ${themeCssVariables.background.primary};
-  border: 1px solid ${themeCssVariables.border.color.medium};
-  padding: ${themeCssVariables.spacing[5]};
-  display: flex;
-  flex-direction: column;
-  gap: ${themeCssVariables.spacing[4]};
+const StyledModalTitle = styled.div`
+  color: ${themeCssVariables.font.color.primary};
   font-family: ${themeCssVariables.font.family};
+  font-size: ${themeCssVariables.font.size.lg};
+  font-weight: ${themeCssVariables.font.weight.semiBold};
 `;
 
 const StyledLabel = styled.div`
-  font-size: ${themeCssVariables.font.size.sm};
   color: ${themeCssVariables.font.color.secondary};
+  font-family: ${themeCssVariables.font.family};
+  font-size: ${themeCssVariables.font.size.sm};
 `;
 
 const StyledMemberList = styled.div`
-  max-height: 220px;
-  overflow-y: auto;
   border: 1px solid ${themeCssVariables.border.color.medium};
   border-radius: ${themeCssVariables.border.radius.sm};
+  max-height: 220px;
+  overflow-y: auto;
 `;
 
 const StyledMemberButton = styled.button<{ isSelected: boolean }>`
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: ${themeCssVariables.spacing[3]};
-  border: none;
-  border-bottom: 1px solid ${themeCssVariables.border.color.medium};
   background: ${({ isSelected }) =>
     isSelected
       ? themeCssVariables.background.transparent.medium
       : 'transparent'};
+  border: none;
+  border-bottom: 1px solid ${themeCssVariables.border.color.medium};
+  color: ${themeCssVariables.font.color.primary};
   cursor: pointer;
+  display: block;
   font-family: ${themeCssVariables.font.family};
   font-size: ${themeCssVariables.font.size.sm};
-  color: ${themeCssVariables.font.color.primary};
+  padding: ${themeCssVariables.spacing[3]};
+  text-align: left;
+  width: 100%;
 
   &:last-child {
     border-bottom: none;
@@ -65,6 +55,26 @@ const StyledMemberButton = styled.button<{ isSelected: boolean }>`
   &:hover {
     background: ${themeCssVariables.background.transparent.light};
   }
+`;
+
+const StyledEmptyHint = styled.div`
+  color: ${themeCssVariables.font.color.tertiary};
+  font-family: ${themeCssVariables.font.family};
+  font-size: ${themeCssVariables.font.size.xs};
+  padding: ${themeCssVariables.spacing[3]};
+`;
+
+const StyledEmailHint = styled.span`
+  color: ${themeCssVariables.font.color.tertiary};
+  display: block;
+  font-size: ${themeCssVariables.font.size.xs};
+  margin-top: 2px;
+`;
+
+const StyledErrorText = styled.div`
+  color: ${themeCssVariables.color.red5};
+  font-family: ${themeCssVariables.font.family};
+  font-size: ${themeCssVariables.font.size.xs};
 `;
 
 type NewDmModalProps = {
@@ -127,9 +137,7 @@ export const NewDmModal = ({
 
   const selectableMembers = useMemo(
     () =>
-      members.filter(
-        (m) => m.userWorkspaceId !== viewerUserWorkspaceId,
-      ),
+      members.filter((m) => m.userWorkspaceId !== viewerUserWorkspaceId),
     [members, viewerUserWorkspaceId],
   );
 
@@ -169,36 +177,29 @@ export const NewDmModal = ({
     }
   }, [token, selectedId, onClose, onCreated, onLayoutRefresh]);
 
-  if (!isOpen) {
-    return null;
-  }
-
   return (
-    <StyledBackdrop
-      role="dialog"
-      aria-modal="true"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
+    <Modal
+      isOpen={isOpen}
+      size="medium"
+      padding="none"
+      modalZIndex={10000}
+      backdropZIndex={9999}
+      onBackdropMouseDown={onClose}
     >
-      <StyledPanel onClick={(e) => e.stopPropagation()}>
+      <ModalHeader hasBorderBottom>
+        <StyledModalTitle>{t`New direct message`}</StyledModalTitle>
+      </ModalHeader>
+      <ModalContent gap={4}>
         <StyledLabel>{t`Start a direct message with…`}</StyledLabel>
         <StyledMemberList>
           {selectableMembers.length === 0 ? (
-            <div
-              style={{
-                padding: themeCssVariables.spacing[3],
-                fontSize: 12,
-                color: themeCssVariables.font.color.tertiary,
-              }}
-            >
+            <StyledEmptyHint>
               {t`No other members in this workspace`}
-            </div>
+            </StyledEmptyHint>
           ) : (
             selectableMembers.map((m) => {
-              const label = [m.firstName, m.lastName].filter(Boolean).join(' ') || m.email;
+              const label =
+                [m.firstName, m.lastName].filter(Boolean).join(' ') || m.email;
 
               return (
                 <StyledMemberButton
@@ -209,16 +210,7 @@ export const NewDmModal = ({
                 >
                   {label}
                   {m.email ? (
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 11,
-                        color: themeCssVariables.font.color.tertiary,
-                        marginTop: 2,
-                      }}
-                    >
-                      {m.email}
-                    </span>
+                    <StyledEmailHint>{m.email}</StyledEmailHint>
                   ) : null}
                 </StyledMemberButton>
               );
@@ -226,34 +218,18 @@ export const NewDmModal = ({
           )}
         </StyledMemberList>
 
-        {error && (
-          <div
-            style={{
-              color: themeCssVariables.color.red5,
-              fontSize: 12,
-            }}
-          >
-            {error}
-          </div>
-        )}
-
-        <div
-          style={{
-            display: 'flex',
-            gap: themeCssVariables.spacing[2],
-            justifyContent: 'flex-end',
-          }}
-        >
-          <Button title={t`Cancel`} variant="secondary" onClick={onClose} />
-          <Button
-            title={submitting ? t`Opening…` : t`Open`}
-            variant="primary"
-            accent="blue"
-            disabled={submitting || !selectedId}
-            onClick={() => void handleSubmit()}
-          />
-        </div>
-      </StyledPanel>
-    </StyledBackdrop>
+        {error ? <StyledErrorText>{error}</StyledErrorText> : null}
+      </ModalContent>
+      <ModalFooter>
+        <Button title={t`Cancel`} variant="secondary" onClick={onClose} />
+        <Button
+          title={submitting ? t`Opening…` : t`Open`}
+          variant="primary"
+          accent="blue"
+          disabled={submitting || !selectedId}
+          onClick={() => void handleSubmit()}
+        />
+      </ModalFooter>
+    </Modal>
   );
 };

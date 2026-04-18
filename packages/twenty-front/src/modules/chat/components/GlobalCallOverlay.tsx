@@ -5,7 +5,6 @@ import {
   IconArrowsDiagonalMinimize2,
   IconMicrophone,
   IconMicrophoneOff,
-  IconPhone,
   IconPhoneOff,
   IconVideo,
   IconVideoOff,
@@ -14,8 +13,7 @@ import { IconButton } from 'twenty-ui/input';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 import { useCallOverlayOptional } from '@/chat/contexts/CallOverlayContext';
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
+import { useSendbirdCallsOptional } from '@/chat/providers/SendbirdCallsProvider';
 
 const StyledDock = styled.div<{ $expanded: boolean }>`
   align-items: ${({ $expanded }) => ($expanded ? 'stretch' : 'center')};
@@ -52,19 +50,14 @@ const StyledExpandedHeader = styled.div`
 `;
 
 const StyledExpandedVideo = styled.div`
-  background: ${themeCssVariables.background.tertiary};
-  flex: 1 1 auto;
-  height: 200px;
-  position: relative;
-`;
-
-const StyledVideoPlaceholder = styled.div`
   align-items: center;
-  color: ${themeCssVariables.font.color.light};
+  background: ${themeCssVariables.background.tertiary};
+  color: ${themeCssVariables.font.color.tertiary};
   display: flex;
+  flex: 1 1 auto;
   font-family: ${themeCssVariables.font.family};
   font-size: ${themeCssVariables.font.size.sm};
-  height: 100%;
+  height: 200px;
   justify-content: center;
 `;
 
@@ -90,10 +83,10 @@ const StyledTitle = styled.span`
 
 const StyledTimer = styled.span`
   color: ${themeCssVariables.font.color.tertiary};
+  flex-shrink: 0;
   font-family: ${themeCssVariables.font.family};
   font-size: ${themeCssVariables.font.size.xs};
   font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
 `;
 
 const StyledActiveDot = styled.span`
@@ -105,12 +98,15 @@ const StyledActiveDot = styled.span`
   width: 8px;
 
   @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.4;
+    }
   }
 `;
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -118,16 +114,15 @@ function formatDuration(seconds: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
 /**
- * GlobalCallOverlay — mounts at the root layout level so it persists
- * across all routes. When a call is active it floats bottom-right.
- * Minimized: compact dock bar. Expanded: video area + controls.
+ * Call controls dock. Sendbird attaches media to hidden `<video>` elements in
+ * `SendbirdCallsProvider`; this UI stays lightweight and shell-global.
  */
 export const GlobalCallOverlay = () => {
   const ctx = useCallOverlayOptional();
+  const calls = useSendbirdCallsOptional();
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const durationTickRef = useRef(0);
 
   useEffect(() => {
     if (!ctx?.callState?.active) {
@@ -135,13 +130,16 @@ export const GlobalCallOverlay = () => {
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
+      durationTickRef.current = 0;
       return;
     }
 
-    // Start timer only once when call becomes active
+    durationTickRef.current = ctx.callState.durationSeconds;
+
     if (!timerRef.current) {
       timerRef.current = setInterval(() => {
-        ctx.setDuration((ctx.callState?.durationSeconds ?? 0) + 1);
+        durationTickRef.current += 1;
+        ctx.setDuration(durationTickRef.current);
       }, 1000);
     }
 
@@ -157,12 +155,36 @@ export const GlobalCallOverlay = () => {
     return null;
   }
 
-  const { callState, endCall, toggleExpand, toggleMute, toggleVideo } = ctx;
-  const { title, expanded, durationSeconds, muted, videoOn } = callState;
+  const direct = calls?.activeCall ?? null;
+  const sdkMuted = direct
+    ? !direct.isLocalAudioEnabled
+    : (ctx.callState.muted ?? false);
+  const sdkVideoOn = direct
+    ? direct.isVideoCall && direct.isLocalVideoEnabled
+    : (ctx.callState.videoOn ?? false);
 
-  if (expanded) {
-    return (
-      <StyledDock $expanded role="complementary" aria-label="Active call">
+  const handleEnd = () => {
+    if (calls?.activeCall) {
+      calls.endActiveCall();
+    } else {
+      ctx.endCall();
+    }
+  };
+
+  const handleMute = () => {
+    calls?.toggleMute();
+  };
+
+  const handleVideo = () => {
+    calls?.toggleVideo();
+  };
+
+  const { callState, toggleExpand } = ctx;
+  const { title, expanded, durationSeconds } = callState;
+
+  return (
+    <StyledDock $expanded={expanded} role="complementary" aria-label="Active call">
+      {expanded && (
         <StyledExpandedHeader>
           <StyledActiveDot aria-hidden />
           <StyledTitle>{title}</StyledTitle>
@@ -175,27 +197,29 @@ export const GlobalCallOverlay = () => {
             onClick={toggleExpand}
           />
         </StyledExpandedHeader>
+      )}
 
+      {expanded && (
         <StyledExpandedVideo>
-          <StyledVideoPlaceholder>
-            {videoOn ? 'Camera on' : 'Camera off'}
-          </StyledVideoPlaceholder>
+          {sdkVideoOn ? 'Video call' : 'Voice call'}
         </StyledExpandedVideo>
+      )}
 
+      {expanded ? (
         <StyledExpandedControls>
           <IconButton
-            Icon={muted ? IconMicrophoneOff : IconMicrophone}
-            variant={muted ? 'primary' : 'tertiary'}
+            Icon={sdkMuted ? IconMicrophoneOff : IconMicrophone}
+            variant={sdkMuted ? 'primary' : 'tertiary'}
             size="small"
-            ariaLabel={muted ? 'Unmute' : 'Mute'}
-            onClick={toggleMute}
+            ariaLabel={sdkMuted ? 'Unmute' : 'Mute'}
+            onClick={handleMute}
           />
           <IconButton
-            Icon={videoOn ? IconVideo : IconVideoOff}
-            variant={videoOn ? 'primary' : 'tertiary'}
+            Icon={sdkVideoOn ? IconVideo : IconVideoOff}
+            variant={sdkVideoOn ? 'primary' : 'tertiary'}
             size="small"
-            ariaLabel={videoOn ? 'Turn off camera' : 'Turn on camera'}
-            onClick={toggleVideo}
+            ariaLabel={sdkVideoOn ? 'Turn off camera' : 'Turn on camera'}
+            onClick={handleVideo}
           />
           <IconButton
             Icon={IconPhoneOff}
@@ -203,40 +227,37 @@ export const GlobalCallOverlay = () => {
             accent="danger"
             size="small"
             ariaLabel="End call"
-            onClick={endCall}
+            onClick={handleEnd}
           />
         </StyledExpandedControls>
-      </StyledDock>
-    );
-  }
-
-  // Minimized dock
-  return (
-    <StyledDock $expanded={false} role="complementary" aria-label="Active call">
-      <StyledActiveDot aria-hidden />
-      <StyledTitle>{title}</StyledTitle>
-      <StyledTimer>{formatDuration(durationSeconds)}</StyledTimer>
-      <IconButton
-        Icon={muted ? IconMicrophoneOff : IconMicrophone}
-        variant="tertiary"
-        size="small"
-        ariaLabel={muted ? 'Unmute' : 'Mute'}
-        onClick={toggleMute}
-      />
-      <IconButton
-        Icon={IconArrowsDiagonal}
-        variant="tertiary"
-        size="small"
-        ariaLabel="Expand call"
-        onClick={toggleExpand}
-      />
-      <IconButton
-        Icon={IconPhoneOff}
-        variant="tertiary"
-        size="small"
-        ariaLabel="End call"
-        onClick={endCall}
-      />
+      ) : (
+        <>
+          <StyledActiveDot aria-hidden />
+          <StyledTitle>{title}</StyledTitle>
+          <StyledTimer>{formatDuration(durationSeconds)}</StyledTimer>
+          <IconButton
+            Icon={sdkMuted ? IconMicrophoneOff : IconMicrophone}
+            variant="tertiary"
+            size="small"
+            ariaLabel={sdkMuted ? 'Unmute' : 'Mute'}
+            onClick={handleMute}
+          />
+          <IconButton
+            Icon={IconArrowsDiagonal}
+            variant="tertiary"
+            size="small"
+            ariaLabel="Expand call"
+            onClick={toggleExpand}
+          />
+          <IconButton
+            Icon={IconPhoneOff}
+            variant="tertiary"
+            size="small"
+            ariaLabel="End call"
+            onClick={handleEnd}
+          />
+        </>
+      )}
     </StyledDock>
   );
 };

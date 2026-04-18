@@ -1,4 +1,9 @@
 import { AuthModal } from '@/auth/components/AuthModal';
+import { GlobalCallOverlay } from '@/chat/components/GlobalCallOverlay';
+import { IncomingCallDialog } from '@/chat/components/calls/IncomingCallDialog';
+import { CallOverlayProvider } from '@/chat/contexts/CallOverlayContext';
+import { SendbirdClientProvider } from '@/chat/providers/SendbirdClientProvider';
+import { SendbirdCallsProvider } from '@/chat/providers/SendbirdCallsProvider';
 import { AppErrorBoundary } from '@/error-handler/components/AppErrorBoundary';
 import { AppFullScreenErrorFallback } from '@/error-handler/components/AppFullScreenErrorFallback';
 import { AppPageErrorFallback } from '@/error-handler/components/AppPageErrorFallback';
@@ -8,6 +13,7 @@ import { LayoutCustomizationBar } from '@/layout-customization/components/Layout
 import { AppNavigationDrawer } from '@/navigation/components/AppNavigationDrawer';
 import { MobileNavigationBar } from '@/navigation/components/MobileNavigationBar';
 import { PageDragDropProvider } from '@/navigation-menu-item/display/dnd/providers/PageDragDropProvider';
+import { useIsChatPage } from '@/navigation/hooks/useIsChatPage';
 import { useIsSettingsPage } from '@/navigation/hooks/useIsSettingsPage';
 import { OBJECT_SETTINGS_WIDTH } from '@/settings/data-model/constants/ObjectSettings';
 import { SignInAppNavigationDrawerMock } from '@/sign-in-background-mock/components/SignInAppNavigationDrawerMock';
@@ -27,6 +33,7 @@ import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import { Outlet } from 'react-router-dom';
 import { useScreenSize } from 'twenty-ui/utilities';
 import { ThemeContext, themeCssVariables } from 'twenty-ui/theme-constants';
+
 const StyledLayout = styled.div`
   background: ${themeCssVariables.background.noisy};
   display: flex;
@@ -60,74 +67,87 @@ const StyledMainContainer = styled.div`
   overflow: hidden;
 `;
 
-export const DefaultLayout = () => {
+const DefaultLayoutBody = () => {
   const isMobile = useIsMobile();
   const isSettingsPage = useIsSettingsPage();
+  const isChatPage = useIsChatPage();
   const windowsWidth = useScreenSize().width;
   const showAuthModal = useShowAuthModal();
   const useShowFullScreen = useShowFullscreen();
   const { theme } = useContext(ThemeContext);
 
   return (
-    <>
-      <FileUploadProvider>
-        <StyledLayout>
-          <AppErrorBoundary FallbackComponent={AppFullScreenErrorFallback}>
-            <LayoutCustomizationBar />
-            <StyledPageContainer
-              animate={{
-                marginLeft:
-                  isSettingsPage && !isMobile && !useShowFullScreen
-                    ? (windowsWidth -
-                        (OBJECT_SETTINGS_WIDTH +
-                          NAVIGATION_DRAWER_CONSTRAINTS.default +
-                          76)) /
-                      2
-                    : 0,
-              }}
-              transition={{
-                duration: theme.animation.duration.normal,
-              }}
-            >
-              <PageDragDropProvider>
-                {!showAuthModal && <KeyboardShortcutMenu />}
-                {showAuthModal ? (
-                  <StyledNavigationDrawerWrapper>
-                    <SignInAppNavigationDrawerMock />
-                  </StyledNavigationDrawerWrapper>
-                ) : useShowFullScreen ? null : (
-                  <StyledNavigationDrawerWrapper>
-                    <AppNavigationDrawer />
-                  </StyledNavigationDrawerWrapper>
-                )}
-                {showAuthModal ? (
-                  <>
-                    <StyledMainContainer>
-                      <Suspense fallback={null}>
-                        <SignInBackgroundMockPage />
-                      </Suspense>
-                    </StyledMainContainer>
-                    <AnimatePresence mode="wait">
-                      <LayoutGroup>
-                        <AuthModal>
-                          <Outlet />
-                        </AuthModal>
-                      </LayoutGroup>
-                    </AnimatePresence>
-                  </>
-                ) : (
-                  <StyledMainContainer>
-                    <AppErrorBoundary FallbackComponent={AppPageErrorFallback}>
+    <StyledLayout>
+      <AppErrorBoundary FallbackComponent={AppFullScreenErrorFallback}>
+        <LayoutCustomizationBar />
+        <StyledPageContainer
+          animate={{
+            marginLeft:
+              isSettingsPage && !isMobile && !useShowFullScreen
+                ? (windowsWidth -
+                    (OBJECT_SETTINGS_WIDTH +
+                      NAVIGATION_DRAWER_CONSTRAINTS.default +
+                      76)) /
+                  2
+                : 0,
+          }}
+          transition={{
+            duration: theme.animation.duration.normal,
+          }}
+        >
+          <PageDragDropProvider>
+            {!showAuthModal && !isChatPage && <KeyboardShortcutMenu />}
+            {showAuthModal ? (
+              <StyledNavigationDrawerWrapper>
+                <SignInAppNavigationDrawerMock />
+              </StyledNavigationDrawerWrapper>
+            ) : useShowFullScreen ? null : (
+              <StyledNavigationDrawerWrapper>
+                <AppNavigationDrawer />
+              </StyledNavigationDrawerWrapper>
+            )}
+            {showAuthModal ? (
+              <>
+                <StyledMainContainer>
+                  <Suspense fallback={null}>
+                    <SignInBackgroundMockPage />
+                  </Suspense>
+                </StyledMainContainer>
+                <AnimatePresence mode="wait">
+                  <LayoutGroup>
+                    <AuthModal>
                       <Outlet />
-                    </AppErrorBoundary>
-                  </StyledMainContainer>
-                )}
-              </PageDragDropProvider>
-            </StyledPageContainer>
-            {isMobile && !showAuthModal && <MobileNavigationBar />}
-          </AppErrorBoundary>
-        </StyledLayout>
-      </FileUploadProvider>
-    </>
+                    </AuthModal>
+                  </LayoutGroup>
+                </AnimatePresence>
+              </>
+            ) : (
+              <StyledMainContainer>
+                <AppErrorBoundary FallbackComponent={AppPageErrorFallback}>
+                  <Outlet />
+                </AppErrorBoundary>
+              </StyledMainContainer>
+            )}
+          </PageDragDropProvider>
+        </StyledPageContainer>
+        {isMobile && !showAuthModal && <MobileNavigationBar />}
+      </AppErrorBoundary>
+    </StyledLayout>
+  );
+};
+
+export const DefaultLayout = () => {
+  return (
+    <CallOverlayProvider>
+      <SendbirdClientProvider>
+        <SendbirdCallsProvider>
+          <FileUploadProvider>
+            <DefaultLayoutBody />
+          </FileUploadProvider>
+          <GlobalCallOverlay />
+          <IncomingCallDialog />
+        </SendbirdCallsProvider>
+      </SendbirdClientProvider>
+    </CallOverlayProvider>
   );
 };
