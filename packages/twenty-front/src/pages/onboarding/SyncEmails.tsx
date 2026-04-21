@@ -12,12 +12,14 @@ import { isGoogleCalendarEnabledState } from '@/client-config/states/isGoogleCal
 import { isGoogleMessagingEnabledState } from '@/client-config/states/isGoogleMessagingEnabledState';
 import { isMicrosoftCalendarEnabledState } from '@/client-config/states/isMicrosoftCalendarEnabledState';
 import { isMicrosoftMessagingEnabledState } from '@/client-config/states/isMicrosoftMessagingEnabledState';
+import { useSetNextOnboardingStatus } from '@/onboarding/hooks/useSetNextOnboardingStatus';
 import { useLoadCurrentUser } from '@/users/hooks/useLoadCurrentUser';
 import { useTriggerApisOAuth } from '@/settings/accounts/hooks/useTriggerApiOAuth';
 import { PageFocusId } from '@/types/PageFocusId';
 import { ModalContent } from 'twenty-ui/layout';
 import { useHotkeysOnFocusedElement } from '@/ui/utilities/hotkey/hooks/useHotkeysOnFocusedElement';
 import { t } from '@lingui/core/macro';
+import { useSnackBar } from '@/ui/feedback/snack-bar-manager/hooks/useSnackBar';
 import { AppPath, ConnectedAccountProvider } from 'twenty-shared/types';
 import { IconGoogle, IconMicrosoft } from 'twenty-ui/display';
 import { MainButton } from 'twenty-ui/input';
@@ -57,6 +59,8 @@ export const SyncEmails = () => {
   const { theme } = useContext(ThemeContext);
   const { triggerApisOAuth } = useTriggerApisOAuth();
   const { loadCurrentUser } = useLoadCurrentUser();
+  const setNextOnboardingStatus = useSetNextOnboardingStatus();
+  const { enqueueWarningSnackBar } = useSnackBar();
   const [visibility, setVisibility] = useState<MessageChannelVisibility>(
     MessageChannelVisibility.SHARE_EVERYTHING,
   );
@@ -80,9 +84,18 @@ export const SyncEmails = () => {
   };
 
   const continueWithoutSync = async () => {
-    await skipSyncEmailOnboardingStatusMutation();
-    // Refetch user so onboardingStatus matches server (avoids stale Jotai until full reload).
-    await loadCurrentUser();
+    // Prevent users from getting blocked on this screen if the skip mutation fails transiently.
+    setNextOnboardingStatus();
+
+    try {
+      await skipSyncEmailOnboardingStatusMutation();
+      // Refetch user so onboardingStatus matches server (avoids stale Jotai until full reload).
+      await loadCurrentUser();
+    } catch {
+      enqueueWarningSnackBar({
+        message: t`Couldn't sync onboarding state with the server. Please refresh if this screen comes back.`,
+      });
+    }
   };
 
   const userAuthenticatedWithSSO =
