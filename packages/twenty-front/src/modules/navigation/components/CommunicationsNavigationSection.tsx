@@ -23,7 +23,7 @@ const StyledGlassOuter = styled.div`
     ${themeCssVariables.color.sky} 45%,
     ${themeCssVariables.color.blue3} 100%
   );
-  border-radius: ${themeCssVariables.border.radius.lg};
+  border-radius: ${themeCssVariables.border.radius.md};
   box-shadow:
     0 1px 0 ${themeCssVariables.background.transparent.light} inset,
     ${themeCssVariables.boxShadow.strong};
@@ -43,7 +43,7 @@ const StyledGlassInner = styled.div`
     ${themeCssVariables.background.secondary} 0%,
     ${themeCssVariables.background.primary} 100%
   );
-  border-radius: calc(${themeCssVariables.border.radius.lg} - 1px);
+  border-radius: calc(${themeCssVariables.border.radius.md} - 1px);
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
