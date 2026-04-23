@@ -39,4 +39,10 @@ export class ChatMessageEntity extends WorkspaceRelatedEntity {
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  editedAt: Date | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  deletedAt: Date | null;
 }

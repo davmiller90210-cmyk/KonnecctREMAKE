@@ -69,6 +69,8 @@ const StyledHiddenFileInput = styled.input`
   display: none;
 `;
 
+const CHAT_COMPOSER_DRAFT_PREFIX = 'twenty-chat-composer-draft:';
+
 type ChatComposerProps = {
   disabled?: boolean;
   placeholder?: string;
@@ -84,10 +86,14 @@ type ChatComposerProps = {
   mentionUserCandidates?: { userId: string; label: string }[];
   /** Bearer token for server-proxied Giphy GIF picker (native chat). */
   gifPickerToken?: string | null;
+  /** When set, draft text is restored and persisted in `localStorage` for this conversation. */
+  draftStorageKey?: string | null;
 };
 
 export type ChatComposerHandle = {
   focusMessageInput: () => void;
+  /** Apply draft text from URL/deep-link (does not clear mention/slash state). */
+  setMessageDraft: (text: string) => void;
 };
 
 const MENTION_DEBOUNCE_MS = 150;
@@ -107,6 +113,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
       onCollapseThreadUi,
       mentionUserCandidates = [],
       gifPickerToken,
+      draftStorageKey = null,
     },
     ref,
   ) {
@@ -116,6 +123,8 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
 
   const [value, setValue] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const draftPersistenceKeyRef = useRef<string | null>(null);
+  const draftSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [mentionOpen, setMentionOpen] = useState(false);
   const [mentionItems, setMentionItems] = useState<MentionItem[]>([]);
@@ -135,12 +144,6 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTypingRef = useRef(false);
 
-  useImperativeHandle(ref, () => ({
-    focusMessageInput: () => {
-      textareaRef.current?.focus();
-    },
-  }));
-
   useEffect(() => {
     return () => {
       if (mentionDebounceRef.current) clearTimeout(mentionDebounceRef.current);
@@ -148,12 +151,77 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
     };
   }, []);
 
+  useEffect(() => {
+    if (draftStorageKey === draftPersistenceKeyRef.current) {
+      return;
+    }
+    draftPersistenceKeyRef.current = draftStorageKey;
+    if (!draftStorageKey) {
+      setValue('');
+      return;
+    }
+    try {
+      const raw = localStorage.getItem(
+        CHAT_COMPOSER_DRAFT_PREFIX + draftStorageKey,
+      );
+      setValue(typeof raw === 'string' ? raw : '');
+    } catch {
+      setValue('');
+    }
+  }, [draftStorageKey]);
+
+  useEffect(() => {
+    if (!draftStorageKey) {
+      return;
+    }
+    if (draftSaveTimerRef.current) {
+      clearTimeout(draftSaveTimerRef.current);
+    }
+    draftSaveTimerRef.current = setTimeout(() => {
+      try {
+        if (value.trim()) {
+          localStorage.setItem(
+            CHAT_COMPOSER_DRAFT_PREFIX + draftStorageKey,
+            value,
+          );
+        } else {
+          localStorage.removeItem(
+            CHAT_COMPOSER_DRAFT_PREFIX + draftStorageKey,
+          );
+        }
+      } catch {
+        // quota / private mode
+      }
+    }, 450);
+    return () => {
+      if (draftSaveTimerRef.current) {
+        clearTimeout(draftSaveTimerRef.current);
+      }
+    };
+  }, [value, draftStorageKey]);
+
   const autoResize = useCallback(() => {
     const ta = textareaRef.current;
     if (!ta) return;
     ta.style.height = 'auto';
     ta.style.height = `${Math.min(ta.scrollHeight, 160)}px`;
   }, []);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      focusMessageInput: () => {
+        textareaRef.current?.focus();
+      },
+      setMessageDraft: (text: string) => {
+        setValue(text);
+        requestAnimationFrame(() => {
+          autoResize();
+        });
+      },
+    }),
+    [autoResize],
+  );
 
   useEffect(() => {
     autoResize();
@@ -306,6 +374,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
             objectLabelSingular: r.objectLabelSingular,
             recordId: r.recordId,
             href: `twenty://record/${r.objectNameSingular}/${r.recordId}`,
+            imageUrl: r.imageUrl?.trim() || undefined,
           };
         });
 
@@ -430,6 +499,15 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
     try {
       await onSend(text);
       setValue('');
+      if (draftStorageKey) {
+        try {
+          localStorage.removeItem(
+            CHAT_COMPOSER_DRAFT_PREFIX + draftStorageKey,
+          );
+        } catch {
+          // ignore
+        }
+      }
       resetMention();
       resetSlash();
       setGifPickerOpen(false);

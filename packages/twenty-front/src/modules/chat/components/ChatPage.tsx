@@ -18,14 +18,18 @@ import { ChatContextPanel } from '@/chat/components/ChatContextPanel';
 import { ChatConversationListPanel } from '@/chat/components/ChatConversationListPanel';
 import { ChatInAppNotificationsPopover } from '@/chat/components/ChatInAppNotificationsPopover';
 import { ChatMessageList } from '@/chat/components/ChatMessageList';
+import { ChatEditMessageModal } from '@/chat/components/ChatEditMessageModal';
 import { ChatQuickSwitcher } from '@/chat/components/ChatQuickSwitcher';
+import { ChatConnectivityBanner } from '@/chat/ui/thread/ChatConnectivityBanner';
 import { ChatMessageThreadSkeleton } from '@/chat/ui/thread/ChatMessageThreadSkeleton';
 import { ChatThreadFrame } from '@/chat/ui/thread/ChatThreadFrame';
+import { useChatDocumentTitle } from '@/chat/hooks/useChatDocumentTitle';
 import { useChatWorkspaceLayout } from '@/chat/hooks/useChatWorkspaceLayout';
 import {
   isChatSendSoundEnabled,
   setChatSendSoundEnabled,
 } from '@/chat/constants/chatSendSoundStorage';
+import { requestChatNotificationPermission } from '@/chat/utils/chat-desktop-notify';
 import {
   NATIVE_CHAT_OPTIMISTIC_ID_PREFIX,
   useNativeChatChannel,
@@ -176,7 +180,7 @@ export const ChatPage = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const params = useParams<{ channelId?: string; dmThreadId?: string }>();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const composerRef = useRef<ChatComposerHandle>(null);
   const tokenPair = useAtomValue(tokenPairState.atom);
   const token = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
@@ -186,6 +190,8 @@ export const ChatPage = () => {
     error: layoutError,
     reload: reloadChatLayout,
   } = useChatWorkspaceLayout();
+
+  useChatDocumentTitle(layout);
 
   const [mobileListOpen, setMobileListOpen] = useState(false);
   const [quickSwitcherOpen, setQuickSwitcherOpen] = useState(false);
@@ -197,6 +203,14 @@ export const ChatPage = () => {
   const [sendSoundOn, setSendSoundOn] = useState(() =>
     isChatSendSoundEnabled(),
   );
+
+  useEffect(() => {
+    void requestChatNotificationPermission();
+  }, []);
+  const [editTarget, setEditTarget] = useState<{
+    id: string;
+    body: string;
+  } | null>(null);
 
   useEffect(() => {
     if (isMobile) {
@@ -246,6 +260,16 @@ export const ChatPage = () => {
   const selectedChannelId =
     selection?.kind === 'channel' ? selection.channel.id : null;
   const selectedDmThreadId = selection?.kind === 'dm' ? selection.dm.id : null;
+
+  const composerDraftKey = useMemo(() => {
+    if (selectedChannelId) {
+      return `c:${selectedChannelId}`;
+    }
+    if (selectedDmThreadId) {
+      return `dm:${selectedDmThreadId}`;
+    }
+    return null;
+  }, [selectedChannelId, selectedDmThreadId]);
 
   useEffect(() => {
     if (layoutLoading || !layout) {
@@ -332,7 +356,11 @@ export const ChatPage = () => {
     toggleReaction,
     pinMessage,
     unpinMessage,
+    updateMessage,
+    deleteMessage,
     highlightMessageId,
+    connectivity,
+    reload: reloadChannelMessages,
   } = useNativeChatChannel({
     channelId: selectedChannelId,
     dmThreadId: selectedDmThreadId,
@@ -413,6 +441,35 @@ export const ChatPage = () => {
     }).catch(() => {});
   }, [searchParams, selectedChannelId, selectedDmThreadId, token]);
 
+  useEffect(() => {
+    const raw = searchParams.get('messageDraft');
+    if (!raw || (!selectedChannelId && !selectedDmThreadId)) {
+      return;
+    }
+    let decoded = raw;
+    try {
+      decoded = decodeURIComponent(raw);
+    } catch {
+      // use raw
+    }
+    window.setTimeout(() => {
+      composerRef.current?.setMessageDraft(decoded);
+    }, 0);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete('messageDraft');
+        return next;
+      },
+      { replace: true },
+    );
+  }, [
+    searchParams,
+    selectedChannelId,
+    selectedDmThreadId,
+    setSearchParams,
+  ]);
+
   const title = selection
     ? resolveTitle(selection, t`Direct message`)
     : t`Chat`;
@@ -485,6 +542,53 @@ export const ChatPage = () => {
     [enqueueErrorSnackBar, t, unpinMessage],
   );
 
+  const handleEditMessage = useCallback(
+    (messageId: string, currentBody: string) => {
+      setEditTarget({ id: messageId, body: currentBody });
+    },
+    [],
+  );
+
+  const handleDeleteMessage = useCallback(
+    (messageId: string) => {
+      if (!window.confirm(t`Delete this message? You can't undo this.`)) {
+        return;
+      }
+      void (async () => {
+        try {
+          await deleteMessage(messageId);
+        } catch (error) {
+          enqueueErrorSnackBar({
+            message:
+              error instanceof Error
+                ? error.message
+                : t`Could not delete message`,
+          });
+        }
+      })();
+    },
+    [deleteMessage, enqueueErrorSnackBar, t],
+  );
+
+  const handleSaveEditedMessage = useCallback(
+    async (body: string) => {
+      if (!editTarget) {
+        return;
+      }
+      try {
+        await updateMessage(editTarget.id, body);
+        setEditTarget(null);
+      } catch (error) {
+        enqueueErrorSnackBar({
+          message:
+            error instanceof Error ? error.message : t`Could not save message`,
+        });
+        throw error;
+      }
+    },
+    [editTarget, enqueueErrorSnackBar, t, updateMessage],
+  );
+
   const scrollToChatMessage = (messageId: string) => {
     document
       .getElementById(`chat-msg-${messageId}`)
@@ -548,13 +652,13 @@ export const ChatPage = () => {
       </PageHeader>
       <PageBody>
         <StyledWorkspace>
-          <StyledListColumn $mobileOpen={mobileListOpen}>
-            <ChatConversationListPanel
-              onMobileNavigate={
-                isMobile ? () => setMobileListOpen(false) : undefined
-              }
-            />
-          </StyledListColumn>
+          {isMobile ? (
+            <StyledListColumn $mobileOpen={mobileListOpen}>
+              <ChatConversationListPanel
+                onMobileNavigate={() => setMobileListOpen(false)}
+              />
+            </StyledListColumn>
+          ) : null}
 
           <StyledThreadColumn>
             <ChatThreadFrame>
@@ -578,6 +682,10 @@ export const ChatPage = () => {
                 <ChatMessageThreadSkeleton />
               ) : (
                 <>
+                  <ChatConnectivityBanner
+                    status={connectivity}
+                    onRefresh={reloadChannelMessages}
+                  />
                   <ChatPinnedMessagesStrip
                     pins={pinnedMessages}
                     onSelectMessageId={scrollToChatMessage}
@@ -601,10 +709,13 @@ export const ChatPage = () => {
                     onToggleReaction={handleToggleReaction}
                     onPinMessage={handlePinMessage}
                     onUnpinMessage={handleUnpinMessage}
+                    onEditMessage={handleEditMessage}
+                    onDeleteMessage={handleDeleteMessage}
                   />
                   {canPost ? (
                     <ChatComposer
                       ref={composerRef}
+                      disabled={connectivity === 'offline'}
                       onSend={sendMessage}
                       onTypingStart={sendTypingStart}
                       onTypingEnd={sendTypingEnd}
@@ -613,6 +724,7 @@ export const ChatPage = () => {
                       viewerDisplayName={viewerDisplayName}
                       onCollapseThreadUi={() => setDetailsOpen(false)}
                       gifPickerToken={token}
+                      draftStorageKey={composerDraftKey}
                     />
                   ) : (
                     <StyledEmptyState>
@@ -627,11 +739,18 @@ export const ChatPage = () => {
           <StyledDetailsColumn $open={detailsOpen}>
             <ChatContextPanel
               selection={contextSelection}
+              authToken={token}
               onClose={() => setDetailsOpen(false)}
             />
           </StyledDetailsColumn>
         </StyledWorkspace>
       </PageBody>
+      <ChatEditMessageModal
+        isOpen={editTarget !== null}
+        initialBody={editTarget?.body ?? ''}
+        onClose={() => setEditTarget(null)}
+        onSave={handleSaveEditedMessage}
+      />
       <ChatQuickSwitcher
         isOpen={quickSwitcherOpen}
         onClose={() => setQuickSwitcherOpen(false)}

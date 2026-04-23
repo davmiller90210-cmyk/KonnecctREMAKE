@@ -32,6 +32,42 @@ export class TimelineActivityService {
     private readonly workspaceManyOrAllFlatEntityMapsCacheService: WorkspaceManyOrAllFlatEntityMapsCacheService,
   ) {}
 
+  /**
+   * Inserts a one-off morph timeline row on the given CRM record (e.g. chat linked / discussed).
+   * Uses the same insert path as seeded activities; bypasses merge logic in upsertEvents.
+   */
+  async appendMorphActivityForRecord(input: {
+    workspaceId: string;
+    workspaceMemberId: string;
+    objectSingularName: string;
+    recordId: string;
+    eventName: string;
+    summary: string;
+    metadata?: Record<string, string>;
+  }): Promise<void> {
+    await this.timelineActivityRepository.insertTimelineActivities({
+      objectSingularName: input.objectSingularName,
+      workspaceId: input.workspaceId,
+      payloads: [
+        {
+          name: input.eventName,
+          recordId: input.recordId,
+          workspaceMemberId: input.workspaceMemberId,
+          properties: {
+            diff: {
+              chatActivity: {
+                after: {
+                  summary: input.summary,
+                  ...(input.metadata ?? {}),
+                },
+              },
+            },
+          } as TimelineActivityPayload['properties'],
+        },
+      ],
+    });
+  }
+
   private targetObjects: Record<ActivityType, string> = {
     note: 'noteTarget',
     task: 'taskTarget',

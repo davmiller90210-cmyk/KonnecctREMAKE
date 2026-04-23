@@ -2,11 +2,13 @@ import { useAtomValue } from 'jotai';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { tokenPairState } from '@/auth/states/tokenPairState';
+import { useBrowserOnline } from '@/chat/hooks/useBrowserOnline';
 import {
   type NativeChatMessage,
   type NativeChatPinnedMessage,
   type NativeTypingMember,
 } from '@/chat/types/native-chat-message.type';
+import { type ChatConnectivityStatus } from '@/chat/types/chat-connectivity.type';
 import { type NativeChatReadState } from '@/chat/types/native-chat-read-state.type';
 import {
   parseSseBlock,
@@ -54,14 +56,24 @@ type UseNativeChatChannelResult = {
   ) => Promise<void>;
   pinMessage: (messageId: string) => Promise<void>;
   unpinMessage: (messageId: string) => Promise<void>;
+  updateMessage: (messageId: string, body: string) => Promise<void>;
+  deleteMessage: (messageId: string) => Promise<void>;
   /** Message id to play a brief “just sent” highlight on the bubble. */
   highlightMessageId: string | null;
+  /** Browser offline or realtime stream appears stale. */
+  connectivity: ChatConnectivityStatus;
 };
 
 const TYPING_TTL_MS = 4500;
 const TYPING_POST_MIN_INTERVAL_MS = 2000;
+/** After live SSE bytes, if nothing arrives for this long, show degraded banner. */
+const STREAM_STALE_MS = 70_000;
+const FULL_FETCH_MAX_ATTEMPTS = 3;
 
 export const nativeMessageBody = (message: NativeChatMessage): string => {
+  if (message.isDeleted) {
+    return '';
+  }
   return message.body;
 };
 
@@ -111,6 +123,7 @@ export const useNativeChatChannel = ({
 }: UseNativeChatChannelOptions): UseNativeChatChannelResult => {
   const tokenPair = useAtomValue(tokenPairState.atom);
   const token = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
+  const browserOnline = useBrowserOnline();
 
   const [channel, setChannel] = useState<{ id: string } | null>(null);
   const [messages, setMessages] = useState<NativeChatMessage[]>([]);
@@ -124,9 +137,13 @@ export const useNativeChatChannel = ({
   const [highlightMessageId, setHighlightMessageId] = useState<string | null>(
     null,
   );
+  const [connectivity, setConnectivity] =
+    useState<ChatConnectivityStatus>('live');
   const highlightTimeoutRef = useRef<number | null>(null);
   const lastMessageAtRef = useRef<string | null>(null);
   const lastSseActivityRef = useRef(0);
+  const lastStreamChunkAtRef = useRef(0);
+  const streamEverReceivedChunkRef = useRef(false);
   const typingByUserRef = useRef<Map<string, TypingEntry>>(new Map());
   const typingTickRef = useRef<number | null>(null);
   const lastTypingPostRef = useRef(0);
@@ -202,6 +219,33 @@ export const useNativeChatChannel = ({
     };
   }, [flushTypingState]);
 
+  useEffect(() => {
+    if (!channelId && !dmThreadId) {
+      setConnectivity('live');
+      return;
+    }
+
+    const tick = () => {
+      if (!browserOnline) {
+        setConnectivity('offline');
+        return;
+      }
+      if (!streamEverReceivedChunkRef.current) {
+        setConnectivity('live');
+        return;
+      }
+      const stale =
+        Date.now() - lastStreamChunkAtRef.current > STREAM_STALE_MS;
+      setConnectivity(stale ? 'degraded' : 'live');
+    };
+
+    tick();
+    const id = window.setInterval(tick, 2000);
+    return () => {
+      window.clearInterval(id);
+    };
+  }, [browserOnline, channelId, dmThreadId]);
+
   const postTyping = useCallback(
     async (active: boolean) => {
       if (!token || (!channelId && !dmThreadId)) {
@@ -263,11 +307,7 @@ export const useNativeChatChannel = ({
         return;
       }
 
-      if (mode === 'full') {
-        setIsLoading(true);
-        setLoadError(null);
-      }
-      try {
+      const runOnce = async () => {
         const params = new URLSearchParams();
         if (channelId) {
           params.set('channelId', channelId);
@@ -318,17 +358,44 @@ export const useNativeChatChannel = ({
         if (latest) {
           lastMessageAtRef.current = latest;
         }
-      } catch (fetchError) {
-        if (mode === 'full') {
+      };
+
+      if (mode === 'full') {
+        setIsLoading(true);
+        setLoadError(null);
+        let lastError: unknown = null;
+        for (let attempt = 0; attempt < FULL_FETCH_MAX_ATTEMPTS; attempt += 1) {
+          try {
+            await runOnce();
+            lastError = null;
+            break;
+          } catch (fetchError) {
+            lastError = fetchError;
+            if (attempt < FULL_FETCH_MAX_ATTEMPTS - 1) {
+              await sleep(450 * (attempt + 1));
+            }
+          }
+        }
+        if (lastError !== null) {
           setLoadError(
-            fetchError instanceof Error
-              ? fetchError.message
+            lastError instanceof Error
+              ? lastError.message
               : 'Unable to load chat',
           );
         }
-      }
-      if (mode === 'full') {
         setIsLoading(false);
+        return;
+      }
+
+      try {
+        await runOnce();
+      } catch {
+        await sleep(800);
+        try {
+          await runOnce();
+        } catch {
+          // incremental failure is non-fatal; polling / SSE will retry
+        }
       }
     },
     [channelId, dmThreadId, token],
@@ -337,6 +404,8 @@ export const useNativeChatChannel = ({
   useEffect(() => {
     lastMessageAtRef.current = null;
     lastSseActivityRef.current = 0;
+    lastStreamChunkAtRef.current = 0;
+    streamEverReceivedChunkRef.current = false;
     streamAttemptRef.current = 0;
     typingByUserRef.current = new Map();
     setTypingMembers([]);
@@ -414,6 +483,10 @@ export const useNativeChatChannel = ({
 
           while (!cancelled && !abortController.signal.aborted) {
             const chunk = await reader.read();
+            if (!chunk.done && chunk.value?.byteLength) {
+              lastStreamChunkAtRef.current = Date.now();
+              streamEverReceivedChunkRef.current = true;
+            }
             if (chunk.done) {
               break;
             }
@@ -435,7 +508,8 @@ export const useNativeChatChannel = ({
                     void fetchPinned();
                   } else if (
                     eventKind === 'reactions-updated' ||
-                    eventKind === 'pins-updated'
+                    eventKind === 'pins-updated' ||
+                    eventKind === 'message-updated'
                   ) {
                     void fetchMessages('full');
                     void fetchPinned();
@@ -746,6 +820,76 @@ export const useNativeChatChannel = ({
     [fetchMessages, fetchPinned, token],
   );
 
+  const updateMessage = useCallback(
+    async (messageId: string, body: string) => {
+      if (!token) {
+        return;
+      }
+      const trimmed = body.trim();
+      if (!trimmed) {
+        return;
+      }
+      const response = await fetch(
+        `/chat/messages/${encodeURIComponent(messageId)}`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ body: trimmed }),
+        },
+      );
+      if (!response.ok) {
+        const msg = await parseFetchErrorMessage(
+          response,
+          'Unable to update message',
+        );
+        throw new Error(msg);
+      }
+      let serverMessage: NativeChatMessage | null = null;
+      try {
+        serverMessage = (await response.json()) as NativeChatMessage;
+      } catch {
+        serverMessage = null;
+      }
+      if (serverMessage?.id) {
+        setMessages((previousMessages) =>
+          mergeNativeMessages(previousMessages, [serverMessage as NativeChatMessage]),
+        );
+      }
+      await fetchMessages('full');
+    },
+    [fetchMessages, token],
+  );
+
+  const deleteMessage = useCallback(
+    async (messageId: string) => {
+      if (!token) {
+        return;
+      }
+      const response = await fetch(
+        `/chat/messages/${encodeURIComponent(messageId)}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+      if (!response.ok) {
+        const msg = await parseFetchErrorMessage(
+          response,
+          'Unable to delete message',
+        );
+        throw new Error(msg);
+      }
+      await fetchMessages('full');
+      await fetchPinned();
+    },
+    [fetchMessages, fetchPinned, token],
+  );
+
   return {
     channel,
     messages,
@@ -763,7 +907,10 @@ export const useNativeChatChannel = ({
     toggleReaction,
     pinMessage,
     unpinMessage,
+    updateMessage,
+    deleteMessage,
     highlightMessageId,
+    connectivity,
   };
 };
 

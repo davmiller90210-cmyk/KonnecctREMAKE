@@ -131,6 +131,8 @@ type ChatMessageListProps = {
   ) => Promise<void>;
   onPinMessage: (messageId: string) => Promise<void>;
   onUnpinMessage: (messageId: string) => Promise<void>;
+  onEditMessage?: (messageId: string, currentBody: string) => void;
+  onDeleteMessage?: (messageId: string) => void;
 };
 
 export const ChatMessageList = ({
@@ -145,6 +147,8 @@ export const ChatMessageList = ({
   onToggleReaction,
   onPinMessage,
   onUnpinMessage,
+  onEditMessage,
+  onDeleteMessage,
 }: ChatMessageListProps) => {
   const { t } = useLingui();
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -156,6 +160,9 @@ export const ChatMessageList = ({
     for (let i = messages.length - 1; i >= 0; i -= 1) {
       const message = messages[i];
       if (message.kind === 'system') {
+        continue;
+      }
+      if (message.isDeleted) {
         continue;
       }
       if (message.id.startsWith(NATIVE_CHAT_OPTIMISTIC_ID_PREFIX)) {
@@ -188,6 +195,7 @@ export const ChatMessageList = ({
         !readState ||
         !viewerUserWorkspaceId ||
         message.kind === 'system' ||
+        message.isDeleted ||
         message.id !== lastOwnMessageId
       ) {
         return null;
@@ -364,16 +372,29 @@ export const ChatMessageList = ({
         timeLabel={formatTime(new Date(message.createdAt).getTime())}
         avatarUrl={senderAvatarUrl(message)}
         body={nativeMessageBody(message)}
+        crmMentionSnapshots={message.crmMentionSnapshots}
         readReceipt={receipt}
         reactions={message.reactions}
         isPinned={message.isPinned}
         highlightSend={highlightMessageId === message.id}
         canPin={canPin}
+        isDeleted={Boolean(message.isDeleted)}
+        isEdited={Boolean(message.editedAt)}
         onToggleReaction={(emoji, remove) =>
           onToggleReaction(message.id, emoji, remove)
         }
         onPin={() => onPinMessage(message.id)}
         onUnpin={() => onUnpinMessage(message.id)}
+        onEditMessage={
+          isOwn && !message.isDeleted && onEditMessage
+            ? () => onEditMessage(message.id, message.body)
+            : undefined
+        }
+        onDeleteMessage={
+          isOwn && !message.isDeleted && onDeleteMessage
+            ? () => onDeleteMessage(message.id)
+            : undefined
+        }
       />,
     );
 

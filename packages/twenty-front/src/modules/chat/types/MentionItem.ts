@@ -20,4 +20,5 @@ export type MentionItem =
       objectLabelSingular: string;
       recordId: string;
       href: string;
+      imageUrl?: string;
     };

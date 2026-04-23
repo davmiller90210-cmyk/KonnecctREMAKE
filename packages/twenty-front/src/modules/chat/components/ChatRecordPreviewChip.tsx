@@ -5,14 +5,17 @@ import { useNavigate } from 'react-router-dom';
 import { AppPath } from 'twenty-shared/types';
 import { getAppPath } from 'twenty-shared/utils';
 
+import { type NativeChatCrmMentionSnapshot } from '@/chat/types/native-chat-message.type';
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
 import { useLazyFindOneRecord } from '@/object-record/hooks/useLazyFindOneRecord';
 import { type ObjectRecord } from '@/object-record/types/ObjectRecord';
+import { useOpenRecordInSidePanel } from '@/side-panel/hooks/useOpenRecordInSidePanel';
 import {
   getCachedChatRecordPreview,
   setCachedChatRecordPreview,
 } from '@/chat/utils/chatRecordPreviewCache';
 import { withChatRecordPreviewSlot } from '@/chat/utils/chatRecordPreviewConcurrency';
+import { Avatar } from 'twenty-ui/display';
 import { Button } from 'twenty-ui/input';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 
@@ -27,6 +30,21 @@ const StyledCard = styled.div`
   padding: ${themeCssVariables.spacing[2]};
 `;
 
+const StyledCardHeader = styled.div`
+  display: flex;
+  flex-direction: row;
+  gap: ${themeCssVariables.spacing[2]};
+  min-width: 0;
+`;
+
+const StyledCardText = styled.div`
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+`;
+
 const StyledMeta = styled.div`
   color: ${themeCssVariables.font.color.tertiary};
   font-family: ${themeCssVariables.font.family};
@@ -38,6 +56,18 @@ const StyledTitle = styled.div`
   font-family: ${themeCssVariables.font.family};
   font-size: ${themeCssVariables.font.size.sm};
   font-weight: ${themeCssVariables.font.weight.medium};
+`;
+
+const StyledOwner = styled.div`
+  color: ${themeCssVariables.font.color.secondary};
+  font-family: ${themeCssVariables.font.family};
+  font-size: ${themeCssVariables.font.size.xs};
+`;
+
+const StyledActions = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: ${themeCssVariables.spacing[1]};
 `;
 
 const StyledMentionChip = styled.button`
@@ -54,6 +84,11 @@ const StyledMentionChip = styled.button`
 
   &:hover {
     background: ${themeCssVariables.accent.tertiary};
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
   }
 `;
 
@@ -77,15 +112,18 @@ type ChatRecordPreviewChipProps = {
   objectNameSingular: string;
   recordId: string;
   mentionLabel: string;
+  snapshot?: NativeChatCrmMentionSnapshot | null;
 };
 
 export const ChatRecordPreviewChip = ({
   objectNameSingular,
   recordId,
   mentionLabel,
+  snapshot,
 }: ChatRecordPreviewChipProps) => {
   const { t } = useLingui();
   const navigate = useNavigate();
+  const { openRecordInSidePanel } = useOpenRecordInSidePanel();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);
   const [record, setRecord] = useState<ObjectRecord | undefined>(() =>
@@ -101,7 +139,29 @@ export const ChatRecordPreviewChip = ({
     objectNameSingular,
   });
 
-  const objectLabel = objectMetadataItem?.labelSingular ?? objectNameSingular;
+  const restricted = Boolean(snapshot?.restricted);
+  const snapshotTitle =
+    snapshot && !restricted && snapshot.displayName.trim()
+      ? snapshot.displayName.trim()
+      : null;
+  const snapshotOwner =
+    snapshot && !restricted && snapshot.ownerDisplayLabel?.trim()
+      ? snapshot.ownerDisplayLabel.trim()
+      : null;
+
+  const objectLabel =
+    snapshot && !restricted && snapshot.objectLabel.trim()
+      ? snapshot.objectLabel
+      : (objectMetadataItem?.labelSingular ?? objectNameSingular);
+
+  const skipLiveFetch =
+    restricted ||
+    Boolean(
+      snapshot &&
+        !restricted &&
+        snapshot.displayName.trim() &&
+        snapshot.objectLabel.trim(),
+    );
 
   useEffect(() => {
     const el = rootRef.current;
@@ -123,7 +183,7 @@ export const ChatRecordPreviewChip = ({
   }, []);
 
   useEffect(() => {
-    if (!visible || record || !recordId || !objectMetadataItem) {
+    if (!visible || skipLiveFetch || record || !recordId || !objectMetadataItem) {
       return;
     }
     const cached = getCachedChatRecordPreview(objectNameSingular, recordId);
@@ -162,15 +222,31 @@ export const ChatRecordPreviewChip = ({
     objectNameSingular,
     record,
     recordId,
+    skipLiveFetch,
     visible,
   ]);
 
   const title = useMemo(
-    () => resolveTitle(record, mentionLabel),
-    [mentionLabel, record],
+    () => snapshotTitle ?? resolveTitle(record, mentionLabel),
+    [mentionLabel, record, snapshotTitle],
   );
 
-  const openRecord = () => {
+  const ownerLine = useMemo(() => {
+    if (restricted) {
+      return null;
+    }
+    if (snapshotOwner) {
+      return snapshotOwner;
+    }
+    return null;
+  }, [restricted, snapshotOwner]);
+
+  const avatarUrl =
+    snapshot && !restricted && snapshot.imageUrl?.trim()
+      ? snapshot.imageUrl.trim()
+      : null;
+
+  const openFullRecord = () => {
     const path = getAppPath(AppPath.RecordShowPage, {
       objectNameSingular,
       objectRecordId: recordId,
@@ -178,24 +254,81 @@ export const ChatRecordPreviewChip = ({
     navigate(path);
   };
 
+  const openPeek = () => {
+    if (restricted) {
+      return;
+    }
+    try {
+      openRecordInSidePanel({ objectNameSingular, recordId });
+    } catch {
+      openFullRecord();
+    }
+  };
+
   return (
     <div ref={rootRef}>
-      <StyledMentionChip type="button" onClick={openRecord}>
+      <StyledMentionChip
+        type="button"
+        onClick={openPeek}
+        disabled={restricted}
+        title={
+          restricted
+            ? undefined
+            : t`Open record preview`
+        }
+      >
         @{mentionLabel}
       </StyledMentionChip>
       {visible ? (
         <StyledCard>
-          <StyledMeta>{objectLabel}</StyledMeta>
-          <StyledTitle>
-            {loading && !record ? t`Loading…` : title}
-          </StyledTitle>
-          <Button
-            title={t`Open record`}
-            variant="secondary"
-            size="small"
-            accent="blue"
-            onClick={openRecord}
-          />
+          {restricted ? (
+            <>
+              <StyledMeta>{objectLabel}</StyledMeta>
+              <StyledTitle>{t`Restricted`}</StyledTitle>
+              <StyledOwner>
+                {t`You don’t have access to this record.`}
+              </StyledOwner>
+            </>
+          ) : (
+            <>
+              <StyledCardHeader>
+                <Avatar
+                  size="md"
+                  placeholder={title}
+                  avatarUrl={avatarUrl}
+                />
+                <StyledCardText>
+                  <StyledMeta>{objectLabel}</StyledMeta>
+                  <StyledTitle>
+                    {loading && !snapshotTitle && !record
+                      ? t`Loading…`
+                      : title}
+                  </StyledTitle>
+                  {ownerLine ? (
+                    <StyledOwner>
+                      {`${t`Owner`}: ${ownerLine}`}
+                    </StyledOwner>
+                  ) : null}
+                </StyledCardText>
+              </StyledCardHeader>
+              <StyledActions>
+                <Button
+                  title={t`Preview in side panel`}
+                  variant="secondary"
+                  size="small"
+                  accent="blue"
+                  onClick={openPeek}
+                />
+                <Button
+                  title={t`Open full record`}
+                  variant="secondary"
+                  size="small"
+                  accent="blue"
+                  onClick={openFullRecord}
+                />
+              </StyledActions>
+            </>
+          )}
         </StyledCard>
       ) : null}
     </div>

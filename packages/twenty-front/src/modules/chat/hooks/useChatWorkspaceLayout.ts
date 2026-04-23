@@ -8,6 +8,7 @@ import {
   parseSseBlock,
   parseSseEventBlocks,
 } from '@/chat/utils/parseChatSse';
+import { notifyIncomingChatIfBackground } from '@/chat/utils/chat-desktop-notify';
 
 const sleep = (ms: number) =>
   new Promise<void>((resolve) => {
@@ -27,14 +28,27 @@ export const useChatWorkspaceLayout = () => {
   const layoutRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  /** Avoid flashing "Connecting…" on periodic / SSE-driven layout refreshes. */
+  const layoutExistsRef = useRef(false);
+  const lastDesktopNotifiedIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    layoutExistsRef.current = layout !== null;
+  }, [layout]);
 
   const reload = useCallback(async () => {
     if (!token) {
+      layoutExistsRef.current = false;
       setLayout(null);
+      setIsLoading(false);
+      setUnreadMap({});
       return;
     }
 
-    setIsLoading(true);
+    const showBlockingLoading = !layoutExistsRef.current;
+    if (showBlockingLoading) {
+      setIsLoading(true);
+    }
     setError(null);
 
     try {
@@ -88,14 +102,18 @@ export const useChatWorkspaceLayout = () => {
         ].filter((entry) => Number(entry[1]) > 0),
       );
       setUnreadMap(nextUnreadMap);
+      layoutExistsRef.current = true;
     } catch (fetchError) {
       setError(
         fetchError instanceof Error ? fetchError.message : 'Unknown error',
       );
       setLayout(null);
+      layoutExistsRef.current = false;
       setUnreadMap({});
     } finally {
-      setIsLoading(false);
+      if (showBlockingLoading) {
+        setIsLoading(false);
+      }
     }
   }, [setUnreadMap, token]);
 
@@ -135,6 +153,40 @@ export const useChatWorkspaceLayout = () => {
     const abortController = new AbortController();
     let cancelled = false;
     let attempt = 0;
+
+    const fetchAndMaybeNotifyDesktop = async () => {
+      try {
+        const response = await fetch('/chat/notifications?limit=8', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!response.ok) {
+          return;
+        }
+        const data = (await response.json()) as {
+          notifications?: Array<{
+            id: string;
+            bodyPreview: string;
+            readAt: string | null;
+          }>;
+        };
+        const firstUnread = data.notifications?.find((row) => !row.readAt);
+        if (
+          !firstUnread ||
+          firstUnread.id === lastDesktopNotifiedIdRef.current
+        ) {
+          return;
+        }
+        lastDesktopNotifiedIdRef.current = firstUnread.id;
+        notifyIncomingChatIfBackground({
+          title: 'New chat message',
+          body: firstUnread.bodyPreview,
+        });
+      } catch {
+        // ignore
+      }
+    };
 
     const runInboxStream = async () => {
       while (!cancelled && !abortController.signal.aborted) {
@@ -176,10 +228,12 @@ export const useChatWorkspaceLayout = () => {
                   const eventKind = payload.type ?? sseType;
                   if (eventKind === 'notification-updated') {
                     scheduleReload();
+                    void fetchAndMaybeNotifyDesktop();
                   }
                 } catch {
                   if (sseType === 'notification-updated') {
                     scheduleReload();
+                    void fetchAndMaybeNotifyDesktop();
                   }
                 }
               }

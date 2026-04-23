@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { In, Repository } from 'typeorm';
@@ -73,6 +73,13 @@ export type ChatLayoutResponse = {
     userWorkspaceId: string;
     isWorkspaceAdmin: boolean;
   };
+};
+
+export type ChatRosterMemberDTO = {
+  userWorkspaceId: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl: string | null;
 };
 
 @Injectable()
@@ -469,5 +476,93 @@ export class ChatLayoutService {
     } catch {
       return false;
     }
+  }
+
+  async getChannelRosterMembers(
+    workspaceId: string,
+    channelId: string,
+  ): Promise<{ members: ChatRosterMemberDTO[] }> {
+    const channel = await this.chatChannelRepository.findOne({
+      where: { id: channelId, workspaceId },
+    });
+
+    if (!channel) {
+      throw new NotFoundException('Channel not found');
+    }
+
+    const memberRows = await this.chatChannelMemberRepository.find({
+      where: { channelId },
+    });
+
+    if (memberRows.length === 0) {
+      return { members: [] };
+    }
+
+    const userWorkspaceIds = memberRows.map((row) => row.userWorkspaceId);
+    const userWorkspaces = await this.userWorkspaceRepository.find({
+      where: { id: In(userWorkspaceIds), workspaceId },
+      relations: ['user'],
+    });
+    const orderById = new Map(
+      userWorkspaceIds.map((id, index) => [id, index]),
+    );
+
+    userWorkspaces.sort(
+      (a, b) =>
+        (orderById.get(a.id) ?? 0) - (orderById.get(b.id) ?? 0),
+    );
+
+    return {
+      members: userWorkspaces.map((uw) => ({
+        userWorkspaceId: uw.id,
+        firstName: uw.user?.firstName ?? '',
+        lastName: uw.user?.lastName ?? '',
+        avatarUrl: uw.user?.defaultAvatarUrl ?? null,
+      })),
+    };
+  }
+
+  async getDmThreadRosterMembers(
+    workspaceId: string,
+    dmThreadId: string,
+  ): Promise<{ members: ChatRosterMemberDTO[] }> {
+    const thread = await this.chatDmThreadRepository.findOne({
+      where: { id: dmThreadId, workspaceId },
+    });
+
+    if (!thread) {
+      throw new NotFoundException('Thread not found');
+    }
+
+    const participantRows = await this.chatDmParticipantRepository.find({
+      where: { threadId: dmThreadId },
+    });
+
+    if (participantRows.length === 0) {
+      return { members: [] };
+    }
+
+    const userWorkspaceIds = participantRows.map((row) => row.userWorkspaceId);
+    const userWorkspaces = await this.userWorkspaceRepository.find({
+      where: { id: In(userWorkspaceIds), workspaceId },
+      relations: ['user'],
+    });
+    const orderById = new Map(
+      userWorkspaceIds.map((id, index) => [id, index]),
+    );
+
+    userWorkspaces.sort(
+      (a, b) =>
+        (orderById.get(a.id) ?? 0) - (orderById.get(b.id) ?? 0),
+    );
+
+    return {
+      members: userWorkspaces.map((uw) => ({
+        userWorkspaceId: uw.id,
+        firstName: uw.user?.firstName ?? '',
+        lastName: uw.user?.lastName ?? '',
+        avatarUrl: uw.user?.defaultAvatarUrl ?? null,
+      })),
+    };
   }
 }

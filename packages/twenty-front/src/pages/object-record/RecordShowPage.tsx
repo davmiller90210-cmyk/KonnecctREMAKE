@@ -1,5 +1,6 @@
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
+import { RecordPageChatMenu } from '@/chat/components/RecordPageChatMenu';
 import { CommandMenuItemMoreActionsButton } from '@/command-menu-item/server-items/display/components/CommandMenuItemMoreActionsButton';
 import { RecordShowCommandMenu } from '@/command-menu-item/components/RecordShowCommandMenu';
 import { CommandMenuComponentInstanceContext } from '@/command-menu/states/contexts/CommandMenuComponentInstanceContext';
@@ -20,9 +21,6 @@ import { useIsFeatureEnabled } from '@/workspace/hooks/useIsFeatureEnabled';
 import { RecordShowPageHeader } from '~/pages/object-record/RecordShowPageHeader';
 import { RecordShowPageTitle } from '~/pages/object-record/RecordShowPageTitle';
 import { FeatureFlagKey } from '~/generated-metadata/graphql';
-import { IconMessage } from 'twenty-ui/display';
-import { LightIconButton } from 'twenty-ui/input';
-
 export const RecordShowPage = () => {
   const isLayoutCustomizationModeEnabled = useAtomStateValue(
     isLayoutCustomizationModeEnabledState,
@@ -43,7 +41,6 @@ export const RecordShowPage = () => {
 
   const recordShowComponentInstanceId =
     computeRecordShowComponentInstanceId(objectRecordId);
-  const navigate = useNavigate();
 
   return (
     <RecordComponentInstanceContextsWrapper
@@ -72,16 +69,9 @@ export const RecordShowPage = () => {
               ) : (
                 <PageHeaderToggleSidePanelButton />
               )}
-              <LightIconButton
-                Icon={IconMessage}
-                accent="tertiary"
-                size="medium"
-                aria-label="Open record chat"
-                onClick={() =>
-                  navigate(
-                    `/chat?recordObjectName=${objectNameSingular}&recordId=${objectRecordId}`,
-                  )
-                }
+              <RecordPageChatMenu
+                objectNameSingular={objectNameSingular}
+                objectRecordId={objectRecordId}
               />
             </RecordShowPageHeader>
             <MainContainerLayoutWithSidePanel>

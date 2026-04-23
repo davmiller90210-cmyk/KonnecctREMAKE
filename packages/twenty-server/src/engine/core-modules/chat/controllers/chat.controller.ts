@@ -1,13 +1,16 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpException,
   HttpStatus,
   Logger,
   Param,
+  Patch,
   Post,
   Query,
   Req,
@@ -28,7 +31,9 @@ import { ChatMessageService } from 'src/engine/core-modules/chat/services/chat-m
 import { ChatNotificationService } from 'src/engine/core-modules/chat/services/chat-notification.service';
 import { ChatGiphyService } from 'src/engine/core-modules/chat/services/chat-giphy.service';
 import { ChatRealtimeService } from 'src/engine/core-modules/chat/services/chat-realtime.service';
+import { ChatCrmMentionService } from 'src/engine/core-modules/chat/services/chat-crm-mention.service';
 import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user-workspace.entity';
+import { WorkspaceEventEmitter } from 'src/engine/workspace-event-emitter/workspace-event-emitter';
 
 type VerifiedAccessPayload = {
   sub?: string;
@@ -48,6 +53,8 @@ export class ChatController {
     private readonly chatNotificationService: ChatNotificationService,
     private readonly chatRealtimeService: ChatRealtimeService,
     private readonly chatGiphyService: ChatGiphyService,
+    private readonly chatCrmMentionService: ChatCrmMentionService,
+    private readonly workspaceEventEmitter: WorkspaceEventEmitter,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     @InjectRepository(UserWorkspaceEntity)
@@ -198,6 +205,57 @@ export class ChatController {
       );
     } catch (error) {
       this.rethrowIfMissingChatSchema(error, 'GET /chat/workspace-members');
+    }
+  }
+
+  @Get('channels/:channelId/roster')
+  @HttpCode(HttpStatus.OK)
+  async getChannelRoster(
+    @Req() req: Request,
+    @Param('channelId') channelId: string,
+  ) {
+    const context = await this.resolveVerifiedAccessContext(req);
+
+    try {
+      await this.chatMessageService.assertConversationReadable({
+        workspaceId: context.workspaceId,
+        userWorkspaceId: context.userWorkspaceId,
+        conversation: { kind: 'channel', id: channelId },
+      });
+
+      return await this.chatLayoutService.getChannelRosterMembers(
+        context.workspaceId,
+        channelId,
+      );
+    } catch (error) {
+      this.rethrowIfMissingChatSchema(
+        error,
+        'GET /chat/channels/:channelId/roster',
+      );
+    }
+  }
+
+  @Get('dm/:dmThreadId/roster')
+  @HttpCode(HttpStatus.OK)
+  async getDmThreadRoster(
+    @Req() req: Request,
+    @Param('dmThreadId') dmThreadId: string,
+  ) {
+    const context = await this.resolveVerifiedAccessContext(req);
+
+    try {
+      await this.chatMessageService.assertConversationReadable({
+        workspaceId: context.workspaceId,
+        userWorkspaceId: context.userWorkspaceId,
+        conversation: { kind: 'dm', id: dmThreadId },
+      });
+
+      return await this.chatLayoutService.getDmThreadRosterMembers(
+        context.workspaceId,
+        dmThreadId,
+      );
+    } catch (error) {
+      this.rethrowIfMissingChatSchema(error, 'GET /chat/dm/:dmThreadId/roster');
     }
   }
 
@@ -445,7 +503,84 @@ export class ChatController {
       }
     })();
 
+    this.workspaceEventEmitter.emitCustomBatchEvent(
+      'chat_message_created',
+      [
+        {
+          messageId: message.id,
+          conversationKind: conversation.kind,
+          conversationId: conversation.id,
+          senderUserWorkspaceId: context.userWorkspaceId,
+          bodyPreview: trimmedBody.slice(0, 500),
+          crmMentionSnapshots: message.crmMentionSnapshots ?? [],
+        },
+      ],
+      context.workspaceId,
+    );
+
     return message;
+  }
+
+  @Patch('messages/:messageId')
+  @HttpCode(HttpStatus.OK)
+  async patchMessage(
+    @Req() req: Request,
+    @Param('messageId') messageId: string,
+    @Body() body: { body?: string },
+  ) {
+    const context = await this.resolveVerifiedAccessContext(req);
+
+    if (!body.body?.trim()) {
+      throw new HttpException('body is required', HttpStatus.BAD_REQUEST);
+    }
+
+    try {
+      const updated = await this.chatMessageService.updateMessageText({
+        workspaceId: context.workspaceId,
+        userWorkspaceId: context.userWorkspaceId,
+        messageId,
+        body: body.body,
+      });
+
+      this.chatRealtimeService.publish(
+        updated.conversationKind,
+        updated.conversationId,
+        { type: 'message-updated', messageId: updated.id },
+      );
+
+      return updated;
+    } catch (error) {
+      this.rethrowIfMissingChatSchema(error, 'PATCH /chat/messages/:messageId');
+    }
+  }
+
+  @Delete('messages/:messageId')
+  @HttpCode(HttpStatus.OK)
+  async deleteChatMessage(
+    @Req() req: Request,
+    @Param('messageId') messageId: string,
+  ) {
+    const context = await this.resolveVerifiedAccessContext(req);
+
+    try {
+      const conversation = await this.chatMessageService.softDeleteMessage({
+        workspaceId: context.workspaceId,
+        userWorkspaceId: context.userWorkspaceId,
+        messageId,
+      });
+
+      this.chatRealtimeService.publish(conversation.kind, conversation.id, {
+        type: 'message-updated',
+        messageId,
+      });
+
+      return { ok: true as const };
+    } catch (error) {
+      this.rethrowIfMissingChatSchema(
+        error,
+        'DELETE /chat/messages/:messageId',
+      );
+    }
   }
 
   @Post('messages/:messageId/reactions')
@@ -647,6 +782,146 @@ export class ChatController {
     });
 
     return result;
+  }
+
+  @Get('record-links')
+  @HttpCode(HttpStatus.OK)
+  async listRecordChatLinks(
+    @Req() req: Request,
+    @Query('objectNameSingular') objectNameSingular?: string,
+    @Query('recordId') recordId?: string,
+  ) {
+    const context = await this.resolveVerifiedAccessContext(req);
+
+    if (!objectNameSingular?.trim() || !recordId?.trim()) {
+      throw new HttpException(
+        'objectNameSingular and recordId are required',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    try {
+      return await this.chatMessageService.listRecordChatLinks({
+        workspaceId: context.workspaceId,
+        userWorkspaceId: context.userWorkspaceId,
+        objectNameSingular: objectNameSingular.trim(),
+        recordId: recordId.trim(),
+      });
+    } catch (error) {
+      this.rethrowIfMissingChatSchema(error, 'GET /chat/record-links');
+    }
+  }
+
+  @Post('records/discussion-channel')
+  @HttpCode(HttpStatus.CREATED)
+  async startRecordDiscussionChannel(
+    @Req() req: Request,
+    @Body() body: { objectNameSingular?: string; recordId?: string },
+  ) {
+    const context = await this.resolveVerifiedAccessContext(req);
+
+    if (!body.objectNameSingular?.trim() || !body.recordId?.trim()) {
+      throw new HttpException(
+        'objectNameSingular and recordId are required',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const objectNameSingular = body.objectNameSingular.trim();
+    const recordId = body.recordId.trim();
+
+    try {
+      const snapshot = await this.chatCrmMentionService.getViewerRecordSnapshot(
+        context.workspaceId,
+        context.userWorkspaceId,
+        objectNameSingular,
+        recordId,
+      );
+
+      if (!snapshot) {
+        throw new ForbiddenException('You cannot access this record.');
+      }
+
+      const { id: channelId, slug } =
+        await this.chatMutationService.startRecordDiscussionChannel({
+          workspaceId: context.workspaceId,
+          creatorUserId: context.userId,
+          creatorUserWorkspaceId: context.userWorkspaceId,
+          recordDisplayName: snapshot.displayName,
+        });
+
+      await this.chatMessageService.linkConversationToRecord({
+        workspaceId: context.workspaceId,
+        userWorkspaceId: context.userWorkspaceId,
+        conversation: { kind: 'channel', id: channelId },
+        objectNameSingular,
+        recordId,
+      });
+
+      return { channelId, slug };
+    } catch (error) {
+      this.rethrowIfMissingChatSchema(error, 'POST /chat/records/discussion-channel');
+    }
+  }
+
+  @Post('records/dm-with-owner')
+  @HttpCode(HttpStatus.CREATED)
+  async startDmWithRecordOwner(
+    @Req() req: Request,
+    @Body() body: { objectNameSingular?: string; recordId?: string },
+  ) {
+    const context = await this.resolveVerifiedAccessContext(req);
+
+    if (!body.objectNameSingular?.trim() || !body.recordId?.trim()) {
+      throw new HttpException(
+        'objectNameSingular and recordId are required',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const objectNameSingular = body.objectNameSingular.trim();
+    const recordId = body.recordId.trim();
+
+    try {
+      const ownerUserWorkspaceId =
+        await this.chatCrmMentionService.resolveRecordOwnerUserWorkspaceId(
+          context.workspaceId,
+          context.userWorkspaceId,
+          objectNameSingular,
+          recordId,
+        );
+
+      if (!ownerUserWorkspaceId) {
+        throw new BadRequestException(
+          'No workspace owner or assignee is set on this record.',
+        );
+      }
+
+      if (ownerUserWorkspaceId === context.userWorkspaceId) {
+        throw new BadRequestException(
+          'You cannot start a direct message with yourself as the record owner.',
+        );
+      }
+
+      const { threadId } =
+        await this.chatMutationService.openOrCreateDirectThread({
+          workspaceId: context.workspaceId,
+          userWorkspaceId: context.userWorkspaceId,
+          peerUserWorkspaceId: ownerUserWorkspaceId,
+        });
+
+      await this.chatMessageService.linkConversationToRecord({
+        workspaceId: context.workspaceId,
+        userWorkspaceId: context.userWorkspaceId,
+        conversation: { kind: 'dm', id: threadId },
+        objectNameSingular,
+        recordId,
+      });
+
+      return { dmThreadId: threadId };
+    } catch (error) {
+      this.rethrowIfMissingChatSchema(error, 'POST /chat/records/dm-with-owner');
+    }
   }
 
   @Post('record-link')

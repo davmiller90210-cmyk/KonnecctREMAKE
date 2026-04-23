@@ -4,6 +4,17 @@ export type NativeChatReactionSummary = {
   viewerReacted: boolean;
 };
 
+/** CRM @mention snapshot from server (stable at send time; may be redacted per viewer). */
+export type NativeChatCrmMentionSnapshot = {
+  objectNameSingular: string;
+  recordId: string;
+  displayName: string;
+  objectLabel: string;
+  imageUrl: string | null;
+  ownerDisplayLabel: string | null;
+  restricted?: boolean;
+};
+
 export type NativeChatMessage = {
   id: string;
   conversationKind: 'channel' | 'dm';
@@ -11,6 +22,8 @@ export type NativeChatMessage = {
   body: string;
   kind: 'text' | 'system';
   createdAt: string;
+  editedAt?: string | null;
+  isDeleted?: boolean;
   sender: {
     userWorkspaceId: string;
     firstName: string;
@@ -19,6 +32,7 @@ export type NativeChatMessage = {
   } | null;
   reactions?: NativeChatReactionSummary[];
   isPinned?: boolean;
+  crmMentionSnapshots?: NativeChatCrmMentionSnapshot[];
 };
 
 export type NativeChatPinnedMessage = {

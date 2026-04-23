@@ -5,7 +5,10 @@ import { ChatMessageContent } from '@/chat/components/ChatMessageContent';
 import { ChatMessageActionsDropdownContent } from '@/chat/ui/thread/ChatMessageActionsDropdownContent';
 import { ChatMessageReactionsRow } from '@/chat/ui/thread/ChatMessageReactionsRow';
 import { NATIVE_CHAT_OPTIMISTIC_ID_PREFIX } from '@/chat/hooks/useNativeChatChannel';
-import { type NativeChatReactionSummary } from '@/chat/types/native-chat-message.type';
+import {
+  type NativeChatCrmMentionSnapshot,
+  type NativeChatReactionSummary,
+} from '@/chat/types/native-chat-message.type';
 import { Dropdown } from '@/ui/layout/dropdown/components/Dropdown';
 import { Avatar, IconDotsVertical } from 'twenty-ui/display';
 import { LightIconButton } from 'twenty-ui/input';
@@ -138,6 +141,13 @@ const StyledReadReceipt = styled.div<{ $own: boolean }>`
   text-align: ${({ $own }) => ($own ? 'right' : 'left')};
 `;
 
+const StyledDeletedNotice = styled.div`
+  color: ${themeCssVariables.font.color.tertiary};
+  font-family: ${themeCssVariables.font.family};
+  font-size: ${themeCssVariables.font.size.sm};
+  font-style: italic;
+`;
+
 type ChatMessageClusterProps = {
   messageId: string;
   isOwn: boolean;
@@ -148,14 +158,20 @@ type ChatMessageClusterProps = {
   timeLabel: string;
   avatarUrl: string | null;
   body: string;
+  crmMentionSnapshots?: NativeChatCrmMentionSnapshot[];
   readReceipt: string | null;
   reactions?: NativeChatReactionSummary[];
   isPinned?: boolean;
   highlightSend?: boolean;
   canPin?: boolean;
   onToggleReaction?: (emoji: string, remove: boolean) => void;
+  /** When set with `canPin`, “Pin” appears in the message menu. */
   onPin?: () => Promise<void>;
   onUnpin?: () => Promise<void>;
+  isDeleted?: boolean;
+  isEdited?: boolean;
+  onEditMessage?: () => void;
+  onDeleteMessage?: () => void;
 };
 
 export const ChatMessageCluster = ({
@@ -168,6 +184,7 @@ export const ChatMessageCluster = ({
   timeLabel,
   avatarUrl,
   body,
+  crmMentionSnapshots,
   readReceipt,
   reactions,
   isPinned,
@@ -176,11 +193,16 @@ export const ChatMessageCluster = ({
   canPin = false,
   onPin,
   onUnpin,
+  isDeleted = false,
+  isEdited = false,
+  onEditMessage,
+  onDeleteMessage,
 }: ChatMessageClusterProps) => {
   const { t } = useLingui();
   const isOptimistic = messageId.startsWith(NATIVE_CHAT_OPTIMISTIC_ID_PREFIX);
-  const hasActions = Boolean(onPin && onUnpin);
+  const showMessageMenu = !isOptimistic;
   const dropdownId = `chat-message-actions-${messageId}`;
+  const showCopy = Boolean(body.trim()) && !isDeleted;
 
   return (
     <StyledRow
@@ -204,13 +226,16 @@ export const ChatMessageCluster = ({
           <StyledMeta $own={isOwn}>
             <StyledMetaMain $own={isOwn}>
               <StyledAuthor>{authorLabel}</StyledAuthor>
-              <span>{timeLabel}</span>
+              <span>
+                {timeLabel}
+                {isEdited ? ` · ${t`edited`}` : ''}
+              </span>
             </StyledMetaMain>
           </StyledMeta>
         ) : null}
         <StyledBubbleWrap $own={isOwn}>
           <StyledBubbleActions $own={isOwn} onClick={(e) => e.stopPropagation()}>
-            {hasActions && !isOptimistic ? (
+            {showMessageMenu ? (
               <Dropdown
                 dropdownId={dropdownId}
                 dropdownPlacement={isOwn ? 'bottom-start' : 'bottom-end'}
@@ -224,20 +249,33 @@ export const ChatMessageCluster = ({
                 }
                 dropdownComponents={
                   <ChatMessageActionsDropdownContent
+                    textToCopy={body}
+                    showCopy={showCopy}
                     isPinned={Boolean(isPinned)}
                     canPin={canPin}
-                    onPin={onPin!}
-                    onUnpin={onUnpin!}
+                    onPin={onPin}
+                    onUnpin={onUnpin}
+                    onEdit={onEditMessage}
+                    onDelete={onDeleteMessage}
                   />
                 }
               />
             ) : null}
           </StyledBubbleActions>
           <StyledBubble $own={isOwn} $pulse={Boolean(highlightSend)}>
-            <ChatMessageContent body={body} />
+            {isDeleted ? (
+              <StyledDeletedNotice>
+                {t`This message was deleted.`}
+              </StyledDeletedNotice>
+            ) : (
+              <ChatMessageContent
+                body={body}
+                crmMentionSnapshots={crmMentionSnapshots}
+              />
+            )}
           </StyledBubble>
         </StyledBubbleWrap>
-        {onToggleReaction ? (
+        {onToggleReaction && !isDeleted ? (
           <ChatMessageReactionsRow
             isOwn={isOwn}
             reactions={reactions}

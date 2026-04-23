@@ -1,3 +1,4 @@
+import { type ChatConnectivityStatus } from '@/chat/types/chat-connectivity.type';
 import {
   type NativeChatMessage,
   type NativeTypingMember,
@@ -25,6 +26,9 @@ type UseSendbirdChannelResult = {
   sendTypingStart: (_nickname?: string) => void;
   sendTypingEnd: () => void;
   reload: () => void;
+  connectivity: ChatConnectivityStatus;
+  updateMessage: (messageId: string, body: string) => Promise<void>;
+  deleteMessage: (messageId: string) => Promise<void>;
 };
 
 export const messageBody = nativeMessageBody;
@@ -60,5 +64,8 @@ export const useSendbirdChannel = ({
     sendTypingStart: native.sendTypingStart,
     sendTypingEnd: native.sendTypingEnd,
     reload: native.reload,
+    connectivity: native.connectivity,
+    updateMessage: native.updateMessage,
+    deleteMessage: native.deleteMessage,
   };
 };

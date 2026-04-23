@@ -19,8 +19,16 @@ import {
 } from 'src/engine/core-modules/chat/chat-message.entity';
 import { ChatMessageReactionEntity } from 'src/engine/core-modules/chat/chat-message-reaction.entity';
 import { ChatPinnedMessageEntity } from 'src/engine/core-modules/chat/chat-pinned-message.entity';
+import { ChatMessageCrmMentionEntity } from 'src/engine/core-modules/chat/chat-message-crm-mention.entity';
 import { ChatRecordLinkEntity } from 'src/engine/core-modules/chat/chat-record-link.entity';
+import {
+  type ChatCrmMentionSnapshotDTO,
+  ChatCrmMentionService,
+} from 'src/engine/core-modules/chat/services/chat-crm-mention.service';
 import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user-workspace.entity';
+import { WorkspaceCacheService } from 'src/engine/workspace-cache/services/workspace-cache.service';
+import { TimelineActivityService } from 'src/modules/timeline/services/timeline-activity.service';
+import { isDefined } from 'twenty-shared/utils';
 
 type ConversationRef = {
   kind: ChatMessageConversationKind;
@@ -40,6 +48,8 @@ export type NativeChatMessageDTO = {
   body: string;
   kind: 'text' | 'system';
   createdAt: string;
+  editedAt?: string | null;
+  isDeleted?: boolean;
   sender: {
     userWorkspaceId: string;
     firstName: string;
@@ -48,6 +58,7 @@ export type NativeChatMessageDTO = {
   } | null;
   reactions?: NativeChatReactionSummaryDTO[];
   isPinned?: boolean;
+  crmMentionSnapshots?: ChatCrmMentionSnapshotDTO[];
 };
 
 export type NativeChatPinnedMessageDTO = {
@@ -66,6 +77,13 @@ export type NativeChatReadStateDTO = {
     firstName: string;
     lastName: string;
   }>;
+};
+
+export type NativeChatRecordLinkDTO = {
+  conversationKind: ChatMessageConversationKind;
+  conversationId: string;
+  title: string;
+  linkedAt: string;
 };
 
 @Injectable()
@@ -93,6 +111,9 @@ export class ChatMessageService {
     private readonly chatPinnedMessageRepository: Repository<ChatPinnedMessageEntity>,
     @InjectRepository(UserWorkspaceEntity)
     private readonly userWorkspaceRepository: Repository<UserWorkspaceEntity>,
+    private readonly chatCrmMentionService: ChatCrmMentionService,
+    private readonly workspaceCacheService: WorkspaceCacheService,
+    private readonly timelineActivityService: TimelineActivityService,
   ) {}
 
   private messageRepo(manager?: EntityManager) {
@@ -211,6 +232,14 @@ export class ChatMessageService {
         this.loadPinnedMessageIdSet(input.workspaceId, input.conversation, manager),
       ]);
 
+      const mentionMap =
+        await this.chatCrmMentionService.loadMentionSnapshotsForViewer({
+          workspaceId: input.workspaceId,
+          viewerUserWorkspaceId: input.userWorkspaceId,
+          messageIds,
+          manager,
+        });
+
       const messages = entities.map((entity) => {
         const dto = this.toMessageDTO(entity, senderByUserWorkspaceId);
 
@@ -218,6 +247,7 @@ export class ChatMessageService {
           ...dto,
           reactions: reactionsByMessageId.get(entity.id) ?? [],
           isPinned: pinnedMessageIds.has(entity.id),
+          crmMentionSnapshots: mentionMap.get(entity.id) ?? [],
         };
       });
 
@@ -261,16 +291,24 @@ export class ChatMessageService {
         },
       });
 
-      const bodyById = new Map(
-        messagesForPins.map((message) => [message.id, message.body]),
+      const messageById = new Map(
+        messagesForPins.map((message) => [message.id, message]),
       );
 
-      return pins.map((pin) => ({
-        id: pin.id,
-        messageId: pin.messageId,
-        bodyPreview: this.previewBody(bodyById.get(pin.messageId) ?? ''),
-        createdAt: pin.createdAt.toISOString(),
-      }));
+      return pins.map((pin) => {
+        const msg = messageById.get(pin.messageId);
+
+        const bodyPreview = msg?.deletedAt
+          ? '[Deleted]'
+          : this.previewBody(msg?.body ?? '');
+
+        return {
+          id: pin.id,
+          messageId: pin.messageId,
+          bodyPreview,
+          createdAt: pin.createdAt.toISOString(),
+        };
+      });
     });
   }
 
@@ -292,6 +330,10 @@ export class ChatMessageService {
 
       if (!message) {
         throw new NotFoundException('Message not found');
+      }
+
+      if (message.deletedAt) {
+        throw new BadRequestException('Message was deleted');
       }
 
       const conversation: ConversationRef = {
@@ -348,6 +390,10 @@ export class ChatMessageService {
         throw new NotFoundException('Message not found');
       }
 
+      if (message.deletedAt) {
+        throw new BadRequestException('Message was deleted');
+      }
+
       const conversation: ConversationRef = {
         kind: message.conversationKind,
         id: message.conversationId,
@@ -385,6 +431,10 @@ export class ChatMessageService {
 
       if (!message) {
         throw new NotFoundException('Message not found');
+      }
+
+      if (message.deletedAt) {
+        throw new BadRequestException('Message was deleted');
       }
 
       const conversation: ConversationRef = {
@@ -775,7 +825,7 @@ export class ChatMessageService {
       input.conversation,
     );
 
-    const createdMessage = await this.withChatWorkspaceRls(
+    const { createdMessage, mentionRows } = await this.withChatWorkspaceRls(
       input.workspaceId,
       async (manager) => {
         const row = this.messageRepo(manager).create({
@@ -785,8 +835,16 @@ export class ChatMessageService {
           senderUserWorkspaceId: input.userWorkspaceId,
           kind: 'text',
           body: input.body.trim(),
+          editedAt: null,
+          deletedAt: null,
         });
         await this.messageRepo(manager).save(row);
+        await this.chatCrmMentionService.replaceMentionsForMessage(manager, {
+          workspaceId: input.workspaceId,
+          actorUserWorkspaceId: input.userWorkspaceId,
+          messageId: row.id,
+          body: row.body,
+        });
         await this.markConversationAsRead(
           {
             workspaceId: input.workspaceId,
@@ -797,7 +855,13 @@ export class ChatMessageService {
           manager,
         );
 
-        return row;
+        const mentionRepo = manager.getRepository(ChatMessageCrmMentionEntity);
+        const rows = await mentionRepo.find({
+          where: { workspaceId: input.workspaceId, messageId: row.id },
+          order: { createdAt: 'ASC' },
+        });
+
+        return { createdMessage: row, mentionRows: rows };
       },
     );
 
@@ -806,10 +870,226 @@ export class ChatMessageService {
       relations: ['user'],
     });
 
-    return this.toMessageDTO(
-      createdMessage,
-      new Map(sender ? [[sender.id, sender]] : []),
+    const mentionMap = await this.chatCrmMentionService.buildSnapshotMapFromRows({
+      workspaceId: input.workspaceId,
+      viewerUserWorkspaceId: input.userWorkspaceId,
+      rows: mentionRows,
+    });
+
+    const workspaceMemberId = await this.resolveWorkspaceMemberIdForTimeline(
+      input.workspaceId,
+      input.userWorkspaceId,
     );
+
+    if (isDefined(workspaceMemberId) && mentionRows.length > 0) {
+      let convLabel = 'Chat';
+
+      if (input.conversation.kind === 'channel') {
+        const channelEntity = await this.chatChannelRepository.findOne({
+          where: { workspaceId: input.workspaceId, id: input.conversation.id },
+        });
+        convLabel = channelEntity?.name ? `#${channelEntity.name}` : 'Channel';
+      } else {
+        convLabel = 'Direct message';
+      }
+
+      for (const row of mentionRows) {
+        let payload: { objectNameSingular: string; recordId: string };
+
+        try {
+          payload = JSON.parse(row.snapshotPayload) as {
+            objectNameSingular: string;
+            recordId: string;
+          };
+        } catch {
+          continue;
+        }
+
+        void this.timelineActivityService
+          .appendMorphActivityForRecord({
+            workspaceId: input.workspaceId,
+            workspaceMemberId,
+            objectSingularName: payload.objectNameSingular,
+            recordId: payload.recordId,
+            eventName: 'record.chat-mentioned',
+            summary: `Mentioned in ${convLabel}`,
+            metadata: {
+              messageId: createdMessage.id,
+              conversationKind: input.conversation.kind,
+              conversationId: input.conversation.id,
+            },
+          })
+          .catch(() => {});
+      }
+    }
+
+    return {
+      ...this.toMessageDTO(
+        createdMessage,
+        new Map(sender ? [[sender.id, sender]] : []),
+      ),
+      crmMentionSnapshots: mentionMap.get(createdMessage.id) ?? [],
+    };
+  }
+
+  async updateMessageText(input: {
+    workspaceId: string;
+    userWorkspaceId: string;
+    messageId: string;
+    body: string;
+  }): Promise<NativeChatMessageDTO> {
+    const trimmed = input.body.trim();
+
+    if (!trimmed) {
+      throw new BadRequestException('body is required');
+    }
+
+    return this.withChatWorkspaceRls(input.workspaceId, async (manager) => {
+      const message = await this.messageRepo(manager).findOne({
+        where: { workspaceId: input.workspaceId, id: input.messageId },
+      });
+
+      if (!message) {
+        throw new NotFoundException('Message not found');
+      }
+
+      if (message.kind !== 'text') {
+        throw new BadRequestException('Only text messages can be edited');
+      }
+
+      if (message.deletedAt) {
+        throw new BadRequestException('Message was deleted');
+      }
+
+      if (message.senderUserWorkspaceId !== input.userWorkspaceId) {
+        throw new ForbiddenException('You can only edit your own messages');
+      }
+
+      const conversation: ConversationRef = {
+        kind: message.conversationKind,
+        id: message.conversationId,
+      };
+
+      await this.assertCanReadConversation(
+        input.workspaceId,
+        input.userWorkspaceId,
+        conversation,
+      );
+
+      message.body = trimmed;
+      message.editedAt = new Date();
+      await this.messageRepo(manager).save(message);
+      await this.chatCrmMentionService.replaceMentionsForMessage(manager, {
+        workspaceId: input.workspaceId,
+        actorUserWorkspaceId: input.userWorkspaceId,
+        messageId: message.id,
+        body: message.body,
+      });
+
+      const mentionRepo = manager.getRepository(ChatMessageCrmMentionEntity);
+      const mentionRows = await mentionRepo.find({
+        where: { workspaceId: input.workspaceId, messageId: message.id },
+        order: { createdAt: 'ASC' },
+      });
+
+      const senderRows = message.senderUserWorkspaceId
+        ? await this.userWorkspaceRepository.find({
+            where: {
+              workspaceId: input.workspaceId,
+              id: message.senderUserWorkspaceId,
+            },
+            relations: ['user'],
+          })
+        : [];
+
+      const senderById = new Map(senderRows.map((row) => [row.id, row]));
+
+      const reactions =
+        (await this.buildReactionSummaries(
+          input.workspaceId,
+          [message.id],
+          input.userWorkspaceId,
+          manager,
+        )).get(message.id) ?? [];
+
+      const pinnedIds = await this.loadPinnedMessageIdSet(
+        input.workspaceId,
+        conversation,
+        manager,
+      );
+
+      const dto = this.toMessageDTO(message, senderById);
+
+      const mentionMap = await this.chatCrmMentionService.buildSnapshotMapFromRows({
+        workspaceId: input.workspaceId,
+        viewerUserWorkspaceId: input.userWorkspaceId,
+        rows: mentionRows,
+      });
+
+      return {
+        ...dto,
+        reactions,
+        isPinned: pinnedIds.has(message.id),
+        crmMentionSnapshots: mentionMap.get(message.id) ?? [],
+      };
+    });
+  }
+
+  async softDeleteMessage(input: {
+    workspaceId: string;
+    userWorkspaceId: string;
+    messageId: string;
+  }): Promise<ConversationRef> {
+    return this.withChatWorkspaceRls(input.workspaceId, async (manager) => {
+      const message = await this.messageRepo(manager).findOne({
+        where: { workspaceId: input.workspaceId, id: input.messageId },
+      });
+
+      if (!message) {
+        throw new NotFoundException('Message not found');
+      }
+
+      if (message.kind !== 'text') {
+        throw new BadRequestException('Only text messages can be deleted');
+      }
+
+      if (message.deletedAt) {
+        throw new BadRequestException('Message was already deleted');
+      }
+
+      if (message.senderUserWorkspaceId !== input.userWorkspaceId) {
+        throw new ForbiddenException('You can only delete your own messages');
+      }
+
+      const conversation: ConversationRef = {
+        kind: message.conversationKind,
+        id: message.conversationId,
+      };
+
+      await this.assertCanReadConversation(
+        input.workspaceId,
+        input.userWorkspaceId,
+        conversation,
+      );
+
+      await this.messageReactionRepo(manager).delete({
+        workspaceId: input.workspaceId,
+        messageId: message.id,
+      });
+
+      await this.pinnedMessageRepo(manager).delete({
+        workspaceId: input.workspaceId,
+        conversationKind: conversation.kind,
+        conversationId: conversation.id,
+        messageId: message.id,
+      });
+
+      message.body = '';
+      message.deletedAt = new Date();
+      await this.messageRepo(manager).save(message);
+
+      return conversation;
+    });
   }
 
   async markConversationAsRead(
@@ -897,31 +1177,142 @@ export class ChatMessageService {
       input.conversation,
     );
 
-    return this.withChatWorkspaceRls(input.workspaceId, async (manager) => {
-      const existing = await this.recordLinkRepo(manager).findOne({
-        where: {
-          workspaceId: input.workspaceId,
-          conversationKind: input.conversation.kind,
-          conversationId: input.conversation.id,
-          linkedObjectNameSingular: input.objectNameSingular,
-          linkedRecordId: input.recordId,
-        },
-      });
-
-      if (!existing) {
-        await this.recordLinkRepo(manager).save(
-          this.recordLinkRepo(manager).create({
+    const { created } = await this.withChatWorkspaceRls(
+      input.workspaceId,
+      async (manager) => {
+        const existing = await this.recordLinkRepo(manager).findOne({
+          where: {
             workspaceId: input.workspaceId,
             conversationKind: input.conversation.kind,
             conversationId: input.conversation.id,
             linkedObjectNameSingular: input.objectNameSingular,
             linkedRecordId: input.recordId,
-          }),
+          },
+        });
+
+        if (!existing) {
+          await this.recordLinkRepo(manager).save(
+            this.recordLinkRepo(manager).create({
+              workspaceId: input.workspaceId,
+              conversationKind: input.conversation.kind,
+              conversationId: input.conversation.id,
+              linkedObjectNameSingular: input.objectNameSingular,
+              linkedRecordId: input.recordId,
+            }),
+          );
+        }
+
+        return { created: !existing };
+      },
+    );
+
+    if (created) {
+      const workspaceMemberId = await this.resolveWorkspaceMemberIdForTimeline(
+        input.workspaceId,
+        input.userWorkspaceId,
+      );
+
+      if (isDefined(workspaceMemberId)) {
+        let convLabel = 'Chat';
+
+        if (input.conversation.kind === 'channel') {
+          const channel = await this.chatChannelRepository.findOne({
+            where: {
+              workspaceId: input.workspaceId,
+              id: input.conversation.id,
+            },
+          });
+          convLabel = channel?.name ? `#${channel.name}` : 'Channel';
+        } else {
+          convLabel = 'Direct message';
+        }
+
+        void this.timelineActivityService
+          .appendMorphActivityForRecord({
+            workspaceId: input.workspaceId,
+            workspaceMemberId,
+            objectSingularName: input.objectNameSingular,
+            recordId: input.recordId,
+            eventName: 'record.chat-linked',
+            summary: `Linked conversation ${convLabel}`,
+            metadata: {
+              conversationKind: input.conversation.kind,
+              conversationId: input.conversation.id,
+            },
+          })
+          .catch(() => {});
+      }
+    }
+
+    return { success: true as const };
+  }
+
+  async listRecordChatLinks(input: {
+    workspaceId: string;
+    userWorkspaceId: string;
+    objectNameSingular: string;
+    recordId: string;
+  }): Promise<{ links: NativeChatRecordLinkDTO[] }> {
+    const snapshot = await this.chatCrmMentionService.getViewerRecordSnapshot(
+      input.workspaceId,
+      input.userWorkspaceId,
+      input.objectNameSingular,
+      input.recordId,
+    );
+
+    if (!snapshot) {
+      throw new ForbiddenException('You cannot access this record.');
+    }
+
+    const rows = await this.chatRecordLinkRepository.find({
+      where: {
+        workspaceId: input.workspaceId,
+        linkedObjectNameSingular: input.objectNameSingular,
+        linkedRecordId: input.recordId,
+      },
+      order: { createdAt: 'DESC' },
+      take: 50,
+    });
+
+    const links: NativeChatRecordLinkDTO[] = [];
+
+    for (const row of rows) {
+      const conversation: ConversationRef = {
+        kind: row.conversationKind,
+        id: row.conversationId,
+      };
+
+      try {
+        await this.assertCanReadConversation(
+          input.workspaceId,
+          input.userWorkspaceId,
+          conversation,
         );
+      } catch {
+        continue;
       }
 
-      return { success: true as const };
-    });
+      if (row.conversationKind === 'channel') {
+        const channel = await this.chatChannelRepository.findOne({
+          where: { workspaceId: input.workspaceId, id: row.conversationId },
+        });
+        links.push({
+          conversationKind: 'channel',
+          conversationId: row.conversationId,
+          title: channel?.name ? `#${channel.name}` : 'Channel',
+          linkedAt: row.createdAt.toISOString(),
+        });
+      } else {
+        links.push({
+          conversationKind: 'dm',
+          conversationId: row.conversationId,
+          title: 'Direct message',
+          linkedAt: row.createdAt.toISOString(),
+        });
+      }
+    }
+
+    return { links };
   }
 
   private async assertCanReadConversation(
@@ -979,6 +1370,28 @@ export class ChatMessageService {
     }
   }
 
+  private async resolveWorkspaceMemberIdForTimeline(
+    workspaceId: string,
+    userWorkspaceId: string,
+  ): Promise<string | undefined> {
+    const userWorkspace = await this.userWorkspaceRepository.findOne({
+      where: { workspaceId, id: userWorkspaceId },
+    });
+
+    if (!userWorkspace) {
+      return undefined;
+    }
+
+    const { flatWorkspaceMemberMaps } =
+      await this.workspaceCacheService.getOrRecompute(workspaceId, [
+        'flatWorkspaceMemberMaps',
+      ]);
+    const workspaceMemberId =
+      flatWorkspaceMemberMaps.idByUserId[userWorkspace.userId];
+
+    return isDefined(workspaceMemberId) ? workspaceMemberId : undefined;
+  }
+
   private async assertCanPostConversation(
     workspaceId: string,
     userWorkspaceId: string,
@@ -1019,13 +1432,17 @@ export class ChatMessageService {
       ? senderByUserWorkspaceId.get(entity.senderUserWorkspaceId)
       : undefined;
 
+    const isDeleted = Boolean(entity.deletedAt);
+
     return {
       id: entity.id,
       conversationKind: entity.conversationKind,
       conversationId: entity.conversationId,
-      body: entity.body,
+      body: isDeleted ? '' : entity.body,
       kind: entity.kind,
       createdAt: entity.createdAt.toISOString(),
+      editedAt: entity.editedAt?.toISOString() ?? null,
+      isDeleted,
       sender: senderEntity
         ? {
             userWorkspaceId: senderEntity.id,

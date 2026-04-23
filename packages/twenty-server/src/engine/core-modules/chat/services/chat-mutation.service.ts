@@ -271,6 +271,38 @@ export class ChatMutationService {
     }
   }
 
+  /**
+   * Creates a private channel scoped to a CRM record discussion (name derived from record label).
+   */
+  async startRecordDiscussionChannel(input: {
+    workspaceId: string;
+    creatorUserId: string;
+    creatorUserWorkspaceId: string;
+    recordDisplayName: string;
+  }): Promise<{ channelId: string; slug: string }> {
+    const category = await this.chatCategoryRepository.findOne({
+      where: { workspaceId: input.workspaceId },
+      order: { position: 'ASC' },
+    });
+
+    if (!category) {
+      throw new BadRequestException('No chat category exists in this workspace.');
+    }
+
+    const rawName = input.recordDisplayName.trim() || 'record';
+    const channelName =
+      rawName.length > 72 ? `${rawName.slice(0, 69)}…` : rawName;
+
+    return this.createWorkspaceChannel({
+      workspaceId: input.workspaceId,
+      creatorUserId: input.creatorUserId,
+      creatorUserWorkspaceId: input.creatorUserWorkspaceId,
+      categoryId: category.id,
+      name: channelName,
+      visibility: 'private',
+    });
+  }
+
   async openOrCreateDirectThread(input: {
     workspaceId: string;
     userWorkspaceId: string;

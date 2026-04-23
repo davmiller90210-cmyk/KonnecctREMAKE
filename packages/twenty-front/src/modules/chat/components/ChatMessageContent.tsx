@@ -2,6 +2,7 @@ import { styled } from '@linaria/react';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChatRecordPreviewChip } from '@/chat/components/ChatRecordPreviewChip';
+import { type NativeChatCrmMentionSnapshot } from '@/chat/types/native-chat-message.type';
 import {
   parseChatMessage,
   type ChatMentionNode,
@@ -55,24 +56,31 @@ const StyledInlineImage = styled.img`
 type ChatMessageContentProps = {
   body: string;
   className?: string;
+  crmMentionSnapshots?: NativeChatCrmMentionSnapshot[];
 };
 
 const renderMention = (
   node: ChatMentionNode,
   index: number,
   navigate: ReturnType<typeof useNavigate>,
+  snapshotByKey: Map<string, NativeChatCrmMentionSnapshot>,
 ) => {
   if (
     node.kind === 'record' &&
     node.objectNameSingular &&
     node.recordId
   ) {
+    const snap =
+      snapshotByKey.get(
+        `${node.objectNameSingular}:${node.recordId}`,
+      ) ?? null;
     return (
       <ChatRecordPreviewChip
-        key={index}
+        key={`${node.objectNameSingular}-${node.recordId}-${index}`}
         objectNameSingular={node.objectNameSingular}
         recordId={node.recordId}
         mentionLabel={node.label}
+        snapshot={snap}
       />
     );
   }
@@ -102,8 +110,17 @@ const renderMention = (
 export const ChatMessageContent = ({
   body,
   className,
+  crmMentionSnapshots,
 }: ChatMessageContentProps) => {
   const navigate = useNavigate();
+
+  const snapshotByKey = useMemo(() => {
+    const m = new Map<string, NativeChatCrmMentionSnapshot>();
+    for (const snap of crmMentionSnapshots ?? []) {
+      m.set(`${snap.objectNameSingular}:${snap.recordId}`, snap);
+    }
+    return m;
+  }, [crmMentionSnapshots]);
 
   const nodes = useMemo<ChatNode[]>(() => parseChatMessage(body), [body]);
 
@@ -152,7 +169,7 @@ export const ChatMessageContent = ({
         }
 
         if (node.type === 'mention') {
-          return renderMention(node, index, navigate);
+          return renderMention(node, index, navigate, snapshotByKey);
         }
 
         return null;

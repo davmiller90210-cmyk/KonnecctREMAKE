@@ -26,6 +26,10 @@ export type ChatRealtimeEvent =
     }
   | {
       type: 'pins-updated';
+    }
+  | {
+      type: 'message-updated';
+      messageId: string;
     };
 
 /** Per-user inbox on Redis (badge / notification list refresh). */

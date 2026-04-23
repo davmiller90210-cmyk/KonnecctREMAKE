@@ -1,8 +1,8 @@
 import { styled } from '@linaria/react';
 
 import { type MentionItem } from '@/chat/types/MentionItem';
+import { Avatar, IconRobot, IconSparkles, IconUser } from 'twenty-ui/display';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
-import { IconRobot, IconSparkles, IconUser } from 'twenty-ui/display';
 
 const StyledPopover = styled.div`
   background: ${themeCssVariables.background.primary};
@@ -40,8 +40,24 @@ const StyledRow = styled.button<{ active: boolean }>`
   }
 `;
 
-const StyledRowLabel = styled.span`
+const StyledRowMain = styled.span`
+  display: flex;
   flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+`;
+
+const StyledRowLabel = styled.span`
+  font-weight: ${themeCssVariables.font.weight.medium};
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+const StyledRowHint = styled.span`
+  color: ${themeCssVariables.font.color.secondary};
+  font-size: ${themeCssVariables.font.size.xs};
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -49,7 +65,12 @@ const StyledRowLabel = styled.span`
 
 const StyledRowSubLabel = styled.span`
   color: ${themeCssVariables.font.color.tertiary};
+  flex-shrink: 0;
   font-size: ${themeCssVariables.font.size.xs};
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 `;
 
 type ChatMentionPopoverProps = {
@@ -79,20 +100,39 @@ export const ChatMentionPopover = ({
                 ? IconUser
                 : null;
 
+        const isCrm = item.kind === 'crm';
+
         return (
           <StyledRow
             key={
               item.kind === 'user'
                 ? `${item.kind}-${item.userId}`
-                : `${item.kind}-${item.label}-${index}`
+                : item.kind === 'crm'
+                  ? `${item.kind}-${item.objectNameSingular}-${item.recordId}`
+                  : `${item.kind}-${item.label}-${index}`
             }
             active={index === activeIndex}
             onMouseEnter={() => onHover(index)}
             onClick={() => onSelect(item)}
             type="button"
           >
-            {Icon ? <Icon size={14} /> : null}
-            <StyledRowLabel>{item.label}</StyledRowLabel>
+            {isCrm ? (
+              <Avatar
+                size="sm"
+                placeholder={item.label}
+                avatarUrl={item.imageUrl?.trim() ? item.imageUrl : null}
+              />
+            ) : Icon ? (
+              <Icon size={14} />
+            ) : null}
+            {isCrm ? (
+              <StyledRowMain>
+                <StyledRowLabel>{item.label}</StyledRowLabel>
+                <StyledRowHint>{item.objectLabelSingular}</StyledRowHint>
+              </StyledRowMain>
+            ) : (
+              <StyledRowLabel>{item.label}</StyledRowLabel>
+            )}
             <StyledRowSubLabel>
               {item.kind === 'konnecctai'
                 ? 'AI'
@@ -100,7 +140,7 @@ export const ChatMentionPopover = ({
                   ? 'Agent'
                   : item.kind === 'user'
                     ? 'Member'
-                    : (item.objectLabelSingular ?? '')}
+                    : item.objectNameSingular}
             </StyledRowSubLabel>
           </StyledRow>
         );
