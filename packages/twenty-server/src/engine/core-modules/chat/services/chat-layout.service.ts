@@ -8,6 +8,9 @@ import { ChatChannelEntity } from 'src/engine/core-modules/chat/chat-channel.ent
 import { ChatChannelMemberEntity } from 'src/engine/core-modules/chat/chat-channel-member.entity';
 import { ChatDmParticipantEntity } from 'src/engine/core-modules/chat/chat-dm-participant.entity';
 import { ChatDmThreadEntity } from 'src/engine/core-modules/chat/chat-dm-thread.entity';
+import { ChatMessageReadEntity } from 'src/engine/core-modules/chat/chat-message-read.entity';
+import { ChatMessageEntity } from 'src/engine/core-modules/chat/chat-message.entity';
+import { ChatNotificationService } from 'src/engine/core-modules/chat/services/chat-notification.service';
 import { ChatWorkspaceBootstrapService } from 'src/engine/core-modules/chat/services/chat-workspace-bootstrap.service';
 import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user-workspace.entity';
 import { RoleEntity } from 'src/engine/metadata-modules/role/role.entity';
@@ -24,6 +27,9 @@ export type ChatLayoutChannelDTO = {
   canManage: boolean;
   agoraGroupId: string | null;
   sendbirdChannelUrl: string | null;
+  nativeConversationKind: 'channel';
+  nativeConversationId: string;
+  unreadCount: number;
 };
 
 export type ChatLayoutCategoryDTO = {
@@ -40,6 +46,9 @@ export type ChatLayoutDmDTO = {
   agoraGroupId: string | null;
   sendbirdChannelUrl: string | null;
   peerAgoraUserId: string | null;
+  nativeConversationKind: 'dm';
+  nativeConversationId: string;
+  unreadCount: number;
 };
 
 export type ChatWorkspaceMemberRowDTO = {
@@ -56,6 +65,10 @@ export type ChatWorkspaceMemberRowDTO = {
 export type ChatLayoutResponse = {
   categories: ChatLayoutCategoryDTO[];
   directThreads: ChatLayoutDmDTO[];
+  /** In-app chat notifications (mentions / new messages) not yet marked read */
+  notificationUnreadCount: number;
+  /** Workspace members for @mentions and participant pickers */
+  workspaceMembers: ChatWorkspaceMemberRowDTO[];
   viewer: {
     userWorkspaceId: string;
     isWorkspaceAdmin: boolean;
@@ -73,6 +86,10 @@ export class ChatLayoutService {
     private readonly chatChannelMemberRepository: Repository<ChatChannelMemberEntity>,
     @InjectRepository(ChatDmThreadEntity)
     private readonly chatDmThreadRepository: Repository<ChatDmThreadEntity>,
+    @InjectRepository(ChatMessageEntity)
+    private readonly chatMessageRepository: Repository<ChatMessageEntity>,
+    @InjectRepository(ChatMessageReadEntity)
+    private readonly chatMessageReadRepository: Repository<ChatMessageReadEntity>,
     @InjectRepository(ChatDmParticipantEntity)
     private readonly chatDmParticipantRepository: Repository<ChatDmParticipantEntity>,
     @InjectRepository(RoleEntity)
@@ -81,6 +98,7 @@ export class ChatLayoutService {
     private readonly userWorkspaceRepository: Repository<UserWorkspaceEntity>,
     private readonly userRoleService: UserRoleService,
     private readonly chatWorkspaceBootstrapService: ChatWorkspaceBootstrapService,
+    private readonly chatNotificationService: ChatNotificationService,
     private readonly agoraAuthService: AgoraAuthService,
   ) {}
 
@@ -131,6 +149,14 @@ export class ChatLayoutService {
     });
 
     const channelIds = allChannels.map((channel) => channel.id);
+    const channelUnreadById = await this.resolveUnreadByConversation(
+      workspaceId,
+      userWorkspaceId,
+      channelIds.map((conversationId) => ({
+        conversationKind: 'channel' as const,
+        conversationId,
+      })),
+    );
 
     const memberRows =
       channelIds.length > 0
@@ -165,6 +191,7 @@ export class ChatLayoutService {
               channel,
               memberByChannelId.get(channel.id) ?? null,
               isWorkspaceAdmin,
+              channelUnreadById.get(channel.id) ?? 0,
             ),
           ),
       }))
@@ -175,9 +202,22 @@ export class ChatLayoutService {
       userWorkspaceId,
     );
 
+    const notificationUnreadCount =
+      await this.chatNotificationService.countUnread(
+        workspaceId,
+        userWorkspaceId,
+      );
+
+    const workspaceMembers = await this.getWorkspaceMembersForChat(
+      workspaceId,
+      userWorkspaceId,
+    );
+
     return {
       categories: layoutCategories,
       directThreads,
+      notificationUnreadCount,
+      workspaceMembers,
       viewer: {
         userWorkspaceId,
         isWorkspaceAdmin,
@@ -189,6 +229,7 @@ export class ChatLayoutService {
     channel: ChatChannelEntity,
     member: ChatChannelMemberEntity | null,
     isWorkspaceAdmin: boolean,
+    unreadCount: number,
   ): ChatLayoutChannelDTO {
     if (channel.visibility === 'public') {
       return {
@@ -201,6 +242,9 @@ export class ChatLayoutService {
         canManage: member?.canManage ?? isWorkspaceAdmin,
         agoraGroupId: channel.agoraGroupId,
         sendbirdChannelUrl: channel.sendbirdChannelUrl,
+        nativeConversationKind: 'channel',
+        nativeConversationId: channel.id,
+        unreadCount,
       };
     }
 
@@ -214,6 +258,9 @@ export class ChatLayoutService {
       canManage: member?.canManage === true,
       agoraGroupId: channel.agoraGroupId,
       sendbirdChannelUrl: channel.sendbirdChannelUrl,
+      nativeConversationKind: 'channel',
+      nativeConversationId: channel.id,
+      unreadCount,
     };
   }
 
@@ -276,6 +323,14 @@ export class ChatLayoutService {
     const peerUserIdByUwsId = new Map(
       peerUwsRows.map((uw) => [uw.id, uw.userId]),
     );
+    const unreadByThreadId = await this.resolveUnreadByConversation(
+      workspaceId,
+      userWorkspaceId,
+      threads.map((thread) => ({
+        conversationKind: 'dm' as const,
+        conversationId: thread.id,
+      })),
+    );
 
     return threads.map((thread) => {
       let peerAgoraUserId: string | null = null;
@@ -302,8 +357,98 @@ export class ChatLayoutService {
         agoraGroupId: thread.agoraGroupId,
         sendbirdChannelUrl: thread.sendbirdChannelUrl,
         peerAgoraUserId,
+        nativeConversationKind: 'dm',
+        nativeConversationId: thread.id,
+        unreadCount: unreadByThreadId.get(thread.id) ?? 0,
       };
     });
+  }
+
+  private async resolveUnreadByConversation(
+    workspaceId: string,
+    userWorkspaceId: string,
+    conversations: {
+      conversationKind: 'channel' | 'dm';
+      conversationId: string;
+    }[],
+  ): Promise<Map<string, number>> {
+    if (conversations.length === 0) {
+      return new Map();
+    }
+
+    const readRows = await this.chatMessageReadRepository.find({
+      where: conversations.map((conversation) => ({
+        workspaceId,
+        userWorkspaceId,
+        conversationKind: conversation.conversationKind,
+        conversationId: conversation.conversationId,
+      })),
+    });
+    const readByKey = new Map(
+      readRows.map((row) => [
+        `${row.conversationKind}:${row.conversationId}`,
+        row.lastReadAt,
+      ]),
+    );
+
+    const unreadByConversationId = new Map<string, number>();
+    const conversationIdsByKind = conversations.reduce<{
+      channel: string[];
+      dm: string[];
+    }>(
+      (accumulator, conversation) => {
+        accumulator[conversation.conversationKind].push(conversation.conversationId);
+        return accumulator;
+      },
+      { channel: [], dm: [] },
+    );
+
+    for (const conversationKind of ['channel', 'dm'] as const) {
+      const conversationIds = conversationIdsByKind[conversationKind];
+
+      if (conversationIds.length === 0) {
+        continue;
+      }
+
+      const rows = await this.chatMessageRepository
+        .createQueryBuilder('message')
+        .where('message.workspaceId = :workspaceId', { workspaceId })
+        .andWhere('message.conversationKind = :conversationKind', {
+          conversationKind,
+        })
+        .andWhere('message.conversationId IN (:...conversationIds)', {
+          conversationIds,
+        })
+        .andWhere(
+          '(message.senderUserWorkspaceId IS NULL OR message.senderUserWorkspaceId != :userWorkspaceId)',
+          { userWorkspaceId },
+        )
+        .getMany();
+      const rowsByConversationId = new Map<string, ChatMessageEntity[]>();
+
+      for (const row of rows) {
+        const existingRows = rowsByConversationId.get(row.conversationId) ?? [];
+        existingRows.push(row);
+        rowsByConversationId.set(row.conversationId, existingRows);
+      }
+
+      for (const conversationId of conversationIds) {
+        const lastReadAt =
+          readByKey.get(`${conversationKind}:${conversationId}`) ?? null;
+        let count = 0;
+
+        for (const row of rowsByConversationId.get(conversationId) ?? []) {
+          if (lastReadAt && !(row.createdAt > lastReadAt)) {
+            continue;
+          }
+          count += 1;
+        }
+
+        unreadByConversationId.set(conversationId, count);
+      }
+    }
+
+    return unreadByConversationId;
   }
 
   private async resolveIsWorkspaceAdmin(

@@ -11,7 +11,6 @@ import { RoleEntity } from 'src/engine/metadata-modules/role/role.entity';
 import { UserRoleService } from 'src/engine/metadata-modules/user-role/user-role.service';
 import { AgoraAuthService } from 'src/modules/agora/agora-auth.service';
 import { AgoraChatGroupService } from 'src/modules/agora/agora-chat-group.service';
-import { SendbirdChatProvisionService } from 'src/modules/sendbird/sendbird-chat-provision.service';
 
 @Injectable()
 export class ChatWorkspaceBootstrapService {
@@ -31,7 +30,6 @@ export class ChatWorkspaceBootstrapService {
     private readonly userRoleService: UserRoleService,
     private readonly agoraAuthService: AgoraAuthService,
     private readonly agoraChatGroupService: AgoraChatGroupService,
-    private readonly sendbirdChatProvisionService: SendbirdChatProvisionService,
   ) {}
 
   async ensureDefaultForActivatedWorkspace(
@@ -91,41 +89,9 @@ export class ChatWorkspaceBootstrapService {
 
     await this.provisionAgoraForGeneralChannel(workspaceId, channel, creatorUserId);
 
-    await this.provisionSendbirdForGeneralChannel(
-      workspaceId,
-      channel,
-      creatorUserId,
-    );
-
     this.logger.log(
       `[KONNECCT-CHAT] Seeded default #general for workspace ${workspaceId}`,
     );
-  }
-
-  private async provisionSendbirdForGeneralChannel(
-    workspaceId: string,
-    channel: ChatChannelEntity,
-    creatorUserId: string,
-  ): Promise<void> {
-    if (!this.sendbirdChatProvisionService.isConfigured) {
-      return;
-    }
-
-    const allUws = await this.userWorkspaceRepository.find({
-      where: { workspaceId },
-    });
-
-    const scopedMemberIds = allUws.map((uw) =>
-      this.agoraAuthService.scopedUserIdFor(uw.userId, workspaceId),
-    );
-
-    await this.sendbirdChatProvisionService.provisionWorkspaceChannel({
-      workspaceId,
-      channel,
-      creatorUserId,
-      visibility: 'public',
-      memberScopedUserIds: scopedMemberIds,
-    });
   }
 
   private async provisionAgoraForGeneralChannel(
@@ -247,19 +213,6 @@ export class ChatWorkspaceBootstrapService {
         }
       }
 
-      if (channel.sendbirdChannelUrl) {
-        const uw = await this.userWorkspaceRepository.findOne({
-          where: { id: userWorkspaceId, workspaceId },
-        });
-
-        if (uw) {
-          await this.sendbirdChatProvisionService.inviteToWorkspaceChannel(
-            workspaceId,
-            channel,
-            [uw.userId],
-          );
-        }
-      }
     }
   }
 

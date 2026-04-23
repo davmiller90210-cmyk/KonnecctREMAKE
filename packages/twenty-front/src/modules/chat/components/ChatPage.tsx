@@ -1,20 +1,41 @@
 import { styled } from '@linaria/react';
 import { useLingui } from '@lingui/react/macro';
-import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useAtomValue } from 'jotai';
+import {
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom';
 
-import { ChatComposer } from '@/chat/components/ChatComposer';
+import { tokenPairState } from '@/auth/states/tokenPairState';
+import {
+  ChatComposer,
+  type ChatComposerHandle,
+} from '@/chat/components/ChatComposer';
+import { ChatPinnedMessagesStrip } from '@/chat/components/ChatPinnedMessagesStrip';
 import { ChatContextPanel } from '@/chat/components/ChatContextPanel';
 import { ChatConversationListPanel } from '@/chat/components/ChatConversationListPanel';
+import { ChatInAppNotificationsPopover } from '@/chat/components/ChatInAppNotificationsPopover';
 import { ChatMessageList } from '@/chat/components/ChatMessageList';
+import { ChatQuickSwitcher } from '@/chat/components/ChatQuickSwitcher';
+import { ChatMessageThreadSkeleton } from '@/chat/ui/thread/ChatMessageThreadSkeleton';
+import { ChatThreadFrame } from '@/chat/ui/thread/ChatThreadFrame';
 import { useChatWorkspaceLayout } from '@/chat/hooks/useChatWorkspaceLayout';
-import { useSendbirdChannel } from '@/chat/hooks/useSendbirdChannel';
-import { useSendbirdClient } from '@/chat/providers/SendbirdClientProvider';
-import { useSendbirdCalls } from '@/chat/providers/SendbirdCallsProvider';
+import {
+  isChatSendSoundEnabled,
+  setChatSendSoundEnabled,
+} from '@/chat/constants/chatSendSoundStorage';
+import {
+  NATIVE_CHAT_OPTIMISTIC_ID_PREFIX,
+  useNativeChatChannel,
+} from '@/chat/hooks/useNativeChatChannel';
 import {
   type ChatWorkspaceLayoutChannel,
   type ChatWorkspaceLayoutDm,
+  type ChatWorkspaceLayoutResponse,
 } from '@/chat/types/chat-workspace-layout.type';
+import { useSnackBar } from '@/ui/feedback/snack-bar-manager/hooks/useSnackBar';
 import { PageBody } from '@/ui/layout/page/components/PageBody';
 import { PageHeader } from '@/ui/layout/page/components/PageHeader';
 import { useIsMobile } from '@/ui/utilities/responsive/hooks/useIsMobile';
@@ -23,11 +44,12 @@ import {
   IconList,
   IconLock,
   IconMessage,
-  IconPhone,
+  IconPlayerPlay,
+  IconPlayerStop,
+  IconSearch,
   IconUsers,
-  IconVideo,
 } from 'twenty-ui/display';
-import { LightIconButton } from 'twenty-ui/input';
+import { Button, LightIconButton } from 'twenty-ui/input';
 import { MOBILE_VIEWPORT, themeCssVariables } from 'twenty-ui/theme-constants';
 
 const DETAILS_BREAKPOINT_PX = 1100;
@@ -86,17 +108,6 @@ const StyledDetailsColumn = styled.div<{ $open: boolean }>`
   }
 `;
 
-const StyledChatSurface = styled.div`
-  background: ${themeCssVariables.background.primary};
-  border: 1px solid ${themeCssVariables.border.color.light};
-  border-radius: ${themeCssVariables.border.radius.md};
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
-`;
-
 const StyledEmptyState = styled.div`
   align-items: center;
   color: ${themeCssVariables.font.color.tertiary};
@@ -115,6 +126,28 @@ const StyledError = styled.div`
   font-size: ${themeCssVariables.font.size.sm};
   padding: ${themeCssVariables.spacing[4]};
 `;
+
+const StyledEmptyCta = styled.div`
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: ${themeCssVariables.spacing[4]};
+  max-width: 360px;
+`;
+
+const findFirstChatPath = (
+  layout: ChatWorkspaceLayoutResponse,
+): string | null => {
+  for (const category of layout.categories) {
+    for (const channel of category.channels) {
+      if (channel.canRead) {
+        return `/chat/c/${channel.id}`;
+      }
+    }
+  }
+  const firstDm = layout.directThreads[0];
+  return firstDm ? `/chat/dm/${firstDm.id}` : null;
+};
 
 type ActiveSelection =
   | { kind: 'channel'; channel: ChatWorkspaceLayoutChannel }
@@ -139,18 +172,30 @@ const resolveTitle = (selection: ActiveSelection, fallback: string) => {
 
 export const ChatPage = () => {
   const { t } = useLingui();
+  const { enqueueErrorSnackBar } = useSnackBar();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const params = useParams<{ channelId?: string; dmThreadId?: string }>();
-  const { layout, isLoading: layoutLoading, error: layoutError } =
-    useChatWorkspaceLayout();
-  const { sb, connectError } = useSendbirdClient();
-  const { dialDirect } = useSendbirdCalls();
+  const [searchParams] = useSearchParams();
+  const composerRef = useRef<ChatComposerHandle>(null);
+  const tokenPair = useAtomValue(tokenPairState.atom);
+  const token = tokenPair?.accessOrWorkspaceAgnosticToken?.token;
+  const {
+    layout,
+    isLoading: layoutLoading,
+    error: layoutError,
+    reload: reloadChatLayout,
+  } = useChatWorkspaceLayout();
 
   const [mobileListOpen, setMobileListOpen] = useState(false);
+  const [quickSwitcherOpen, setQuickSwitcherOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(
     () =>
       typeof window !== 'undefined' &&
       window.innerWidth >= DETAILS_BREAKPOINT_PX,
+  );
+  const [sendSoundOn, setSendSoundOn] = useState(() =>
+    isChatSendSoundEnabled(),
   );
 
   useEffect(() => {
@@ -158,6 +203,23 @@ export const ChatPage = () => {
       setDetailsOpen(false);
     }
   }, [isMobile]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && e.key === 'k') {
+        e.preventDefault();
+        setQuickSwitcherOpen((open) => !open);
+        return;
+      }
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'g') {
+        e.preventDefault();
+        setQuickSwitcherOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const selection = useMemo<ActiveSelection>(() => {
     if (!layout) return null;
@@ -181,84 +243,290 @@ export const ChatPage = () => {
     return null;
   }, [layout, params.channelId, params.dmThreadId]);
 
-  const channelUrl =
-    selection?.kind === 'channel'
-      ? selection.channel.sendbirdChannelUrl
-      : selection?.kind === 'dm'
-        ? selection.dm.sendbirdChannelUrl
-        : null;
+  const selectedChannelId =
+    selection?.kind === 'channel' ? selection.channel.id : null;
+  const selectedDmThreadId = selection?.kind === 'dm' ? selection.dm.id : null;
+
+  useEffect(() => {
+    if (layoutLoading || !layout) {
+      return;
+    }
+    if (params.channelId || params.dmThreadId) {
+      return;
+    }
+    const next = findFirstChatPath(layout);
+    if (next) {
+      navigate(next, { replace: true });
+    }
+  }, [layout, layoutLoading, navigate, params.channelId, params.dmThreadId]);
+
+  const viewerProfile = useMemo(() => {
+    if (!layout?.viewer.userWorkspaceId) {
+      return null;
+    }
+    const member = layout.workspaceMembers.find(
+      (m) => m.userWorkspaceId === layout.viewer.userWorkspaceId,
+    );
+    if (!member) {
+      return {
+        userWorkspaceId: layout.viewer.userWorkspaceId,
+        firstName: '',
+        lastName: '',
+        avatarUrl: null as string | null,
+      };
+    }
+    return {
+      userWorkspaceId: member.userWorkspaceId,
+      firstName: member.firstName,
+      lastName: member.lastName,
+      avatarUrl: member.avatarUrl,
+    };
+  }, [layout]);
+
+  const nativeConversationId = useMemo(() => {
+    if (selection?.kind === 'channel') {
+      return selection.channel.nativeConversationId;
+    }
+    if (selection?.kind === 'dm') {
+      return selection.dm.nativeConversationId;
+    }
+    return null;
+  }, [selection]);
 
   const canPost =
     selection?.kind === 'dm' ||
     (selection?.kind === 'channel' && selection.channel.canPost);
 
+  const canPin =
+    selection?.kind === 'channel'
+      ? selection.channel.canManage ||
+        (selection.channel.visibility === 'public' &&
+          selection.channel.canPost)
+      : Boolean(selection?.kind === 'dm');
+
+  const viewerDisplayName = useMemo(() => {
+    if (!layout?.viewer.userWorkspaceId) {
+      return '';
+    }
+    const member = layout.workspaceMembers.find(
+      (m) => m.userWorkspaceId === layout.viewer.userWorkspaceId,
+    );
+    const name = [member?.firstName, member?.lastName]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+    return name.length > 0 ? name : member?.email?.trim() || '';
+  }, [layout]);
+
   const {
-    channel,
     messages,
+    pinnedMessages,
+    readState,
     typingMembers,
     sendMessage,
-    sendFile,
     markAsRead,
     sendTypingStart,
     sendTypingEnd,
-    error: channelError,
+    loadError: channelLoadError,
     isLoading: channelLoading,
-  } = useSendbirdChannel({ channelUrl });
+    toggleReaction,
+    pinMessage,
+    unpinMessage,
+    highlightMessageId,
+  } = useNativeChatChannel({
+    channelId: selectedChannelId,
+    dmThreadId: selectedDmThreadId,
+    nativeConversationId,
+    viewerUserWorkspaceId: layout?.viewer.userWorkspaceId,
+    viewerProfile,
+    onConversationRealtime: reloadChatLayout,
+  });
+
+  const latestMessageId = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      const id = messages[i]?.id;
+      if (id && !id.startsWith(NATIVE_CHAT_OPTIMISTIC_ID_PREFIX)) {
+        return id;
+      }
+    }
+    return null;
+  }, [messages]);
+
+  useEffect(() => {
+    if (!selectedChannelId && !selectedDmThreadId) {
+      return;
+    }
+    composerRef.current?.focusMessageInput();
+  }, [selectedChannelId, selectedDmThreadId]);
 
   useEffect(() => {
     const onVis = () => {
-      if (document.visibilityState === 'visible' && channelUrl) {
-        markAsRead();
+      if (
+        document.visibilityState === 'visible' &&
+        (selectedChannelId || selectedDmThreadId)
+      ) {
+        markAsRead(latestMessageId);
       }
     };
     document.addEventListener('visibilitychange', onVis);
     return () => document.removeEventListener('visibilitychange', onVis);
-  }, [channelUrl, markAsRead]);
+  }, [latestMessageId, markAsRead, selectedChannelId, selectedDmThreadId]);
+
+  useEffect(() => {
+    if (!selectedChannelId && !selectedDmThreadId) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      markAsRead(latestMessageId);
+    }, 320);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [latestMessageId, markAsRead, selectedChannelId, selectedDmThreadId]);
+
+  useEffect(() => {
+    if (!token) {
+      return;
+    }
+    const recordObjectName = searchParams.get('recordObjectName');
+    const recordId = searchParams.get('recordId');
+    if (!recordObjectName || !recordId) {
+      return;
+    }
+
+    if (!selectedChannelId && !selectedDmThreadId) {
+      return;
+    }
+
+    void fetch('/chat/record-link', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        channelId: selectedChannelId,
+        dmThreadId: selectedDmThreadId,
+        objectNameSingular: recordObjectName,
+        recordId,
+      }),
+    }).catch(() => {});
+  }, [searchParams, selectedChannelId, selectedDmThreadId, token]);
 
   const title = selection
     ? resolveTitle(selection, t`Direct message`)
     : t`Chat`;
   const Icon = resolveIcon(selection);
 
-  const dmPeerSendbirdUserId =
-    selection?.kind === 'dm' && selection.dm.kind === 'direct'
-      ? selection.dm.peerAgoraUserId
-      : null;
-
-  const handleVoiceCall = () => {
-    if (!dmPeerSendbirdUserId) {
-      return;
-    }
-    dialDirect({
-      peerUserId: dmPeerSendbirdUserId,
-      isVideoCall: false,
-      title,
-    });
-  };
-
-  const handleVideoCall = () => {
-    if (!dmPeerSendbirdUserId) {
-      return;
-    }
-    dialDirect({
-      peerUserId: dmPeerSendbirdUserId,
-      isVideoCall: true,
-      title,
-    });
-  };
-
-  const errorMessage = connectError ?? channelError ?? layoutError;
+  const errorMessage = channelLoadError ?? layoutError;
 
   const contextSelection = selection;
-  const mentionUserCandidates =
-    channel?.members.map((m) => ({
-      userId: m.userId,
-      label: m.nickname?.trim() || m.userId,
-    })) ?? [];
+
+  const mentionUserCandidates = useMemo(() => {
+    if (!layout?.workspaceMembers?.length) {
+      return [];
+    }
+    const viewerId = layout.viewer.userWorkspaceId;
+    return layout.workspaceMembers
+      .filter((member) => member.userWorkspaceId !== viewerId)
+      .map((member) => ({
+        userId: member.userWorkspaceId,
+        label:
+          [member.firstName, member.lastName].filter(Boolean).join(' ').trim() ||
+          member.email,
+      }));
+  }, [layout]);
+
+  const notificationUnreadCount = layout?.notificationUnreadCount ?? 0;
+
+  const handleToggleReaction = useCallback(
+    async (messageId: string, emoji: string, remove: boolean) => {
+      try {
+        await toggleReaction(messageId, emoji, remove);
+      } catch (error) {
+        enqueueErrorSnackBar({
+          message:
+            error instanceof Error
+              ? error.message
+              : t`Could not update reaction`,
+        });
+      }
+    },
+    [enqueueErrorSnackBar, t, toggleReaction],
+  );
+
+  const handlePinMessage = useCallback(
+    async (messageId: string) => {
+      try {
+        await pinMessage(messageId);
+      } catch (error) {
+        enqueueErrorSnackBar({
+          message:
+            error instanceof Error ? error.message : t`Could not pin message`,
+        });
+      }
+    },
+    [enqueueErrorSnackBar, pinMessage, t],
+  );
+
+  const handleUnpinMessage = useCallback(
+    async (messageId: string) => {
+      try {
+        await unpinMessage(messageId);
+      } catch (error) {
+        enqueueErrorSnackBar({
+          message:
+            error instanceof Error
+              ? error.message
+              : t`Could not unpin message`,
+        });
+      }
+    },
+    [enqueueErrorSnackBar, t, unpinMessage],
+  );
+
+  const scrollToChatMessage = (messageId: string) => {
+    document
+      .getElementById(`chat-msg-${messageId}`)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
 
   return (
     <>
       <PageHeader title={title} Icon={Icon}>
+        <LightIconButton
+          Icon={IconSearch}
+          accent="tertiary"
+          size="medium"
+          title={t`Jump to conversation (Ctrl/⌘+K or Ctrl+Shift+G)`}
+          aria-label={t`Jump to conversation`}
+          onClick={() => setQuickSwitcherOpen(true)}
+        />
+        <ChatInAppNotificationsPopover
+          token={token}
+          unreadCount={notificationUnreadCount}
+          onChanged={() => void reloadChatLayout()}
+        />
+        <LightIconButton
+          Icon={sendSoundOn ? IconPlayerStop : IconPlayerPlay}
+          accent="tertiary"
+          size="medium"
+          title={
+            sendSoundOn
+              ? t`Send sound on — click to mute`
+              : t`Send sound off — click to enable`
+          }
+          aria-label={
+            sendSoundOn
+              ? t`Send sound on — click to mute`
+              : t`Send sound off — click to enable`
+          }
+          onClick={() => {
+            const next = !sendSoundOn;
+            setSendSoundOn(next);
+            setChatSendSoundEnabled(next);
+          }}
+        />
         {isMobile && (
           <LightIconButton
             Icon={IconList}
@@ -277,24 +545,6 @@ export const ChatPage = () => {
             onClick={() => setDetailsOpen((v) => !v)}
           />
         )}
-        {selection && channelUrl && dmPeerSendbirdUserId && (
-          <>
-            <LightIconButton
-              Icon={IconPhone}
-              accent="tertiary"
-              size="medium"
-              aria-label={t`Voice call`}
-              onClick={handleVoiceCall}
-            />
-            <LightIconButton
-              Icon={IconVideo}
-              accent="tertiary"
-              size="medium"
-              aria-label={t`Video call`}
-              onClick={handleVideoCall}
-            />
-          </>
-        )}
       </PageHeader>
       <PageBody>
         <StyledWorkspace>
@@ -307,35 +557,62 @@ export const ChatPage = () => {
           </StyledListColumn>
 
           <StyledThreadColumn>
-            <StyledChatSurface>
+            <ChatThreadFrame>
               {errorMessage ? (
                 <StyledError>{errorMessage}</StyledError>
-              ) : !sb || layoutLoading ? (
+              ) : layoutLoading ? (
                 <StyledEmptyState>{t`Connecting…`}</StyledEmptyState>
               ) : !selection ? (
                 <StyledEmptyState>
-                  {t`Pick a channel or conversation to start chatting.`}
-                </StyledEmptyState>
-              ) : !channelUrl ? (
-                <StyledEmptyState>
-                  {t`This conversation isn't connected to Sendbird yet.`}
+                  <StyledEmptyCta>
+                    <span>{t`Pick a channel or conversation to start chatting.`}</span>
+                    <Button
+                      title={t`Browse conversations`}
+                      variant="primary"
+                      accent="blue"
+                      onClick={() => setQuickSwitcherOpen(true)}
+                    />
+                  </StyledEmptyCta>
                 </StyledEmptyState>
               ) : channelLoading && messages.length === 0 ? (
-                <StyledEmptyState>{t`Loading messages…`}</StyledEmptyState>
+                <ChatMessageThreadSkeleton />
               ) : (
                 <>
+                  <ChatPinnedMessagesStrip
+                    pins={pinnedMessages}
+                    onSelectMessageId={scrollToChatMessage}
+                  />
                   <ChatMessageList
+                    key={`${selectedChannelId ?? ''}:${selectedDmThreadId ?? ''}`}
                     messages={messages}
                     typingMembers={typingMembers}
+                    readState={readState}
+                    viewerUserWorkspaceId={
+                      layout?.viewer.userWorkspaceId ?? null
+                    }
+                    conversationKind={
+                      selection.kind === 'channel' ? 'channel' : 'dm'
+                    }
+                    dmKind={
+                      selection.kind === 'dm' ? selection.dm.kind : null
+                    }
+                    highlightMessageId={highlightMessageId}
+                    canPin={canPin}
+                    onToggleReaction={handleToggleReaction}
+                    onPinMessage={handlePinMessage}
+                    onUnpinMessage={handleUnpinMessage}
                   />
                   {canPost ? (
                     <ChatComposer
+                      ref={composerRef}
                       onSend={sendMessage}
-                      onSendFile={sendFile}
                       onTypingStart={sendTypingStart}
                       onTypingEnd={sendTypingEnd}
                       placeholder={t`Message ${title}`}
                       mentionUserCandidates={mentionUserCandidates}
+                      viewerDisplayName={viewerDisplayName}
+                      onCollapseThreadUi={() => setDetailsOpen(false)}
+                      gifPickerToken={token}
                     />
                   ) : (
                     <StyledEmptyState>
@@ -344,7 +621,7 @@ export const ChatPage = () => {
                   )}
                 </>
               )}
-            </StyledChatSurface>
+            </ChatThreadFrame>
           </StyledThreadColumn>
 
           <StyledDetailsColumn $open={detailsOpen}>
@@ -355,6 +632,14 @@ export const ChatPage = () => {
           </StyledDetailsColumn>
         </StyledWorkspace>
       </PageBody>
+      <ChatQuickSwitcher
+        isOpen={quickSwitcherOpen}
+        onClose={() => setQuickSwitcherOpen(false)}
+        layout={layout ?? null}
+        onAfterNavigate={
+          isMobile ? () => setMobileListOpen(false) : undefined
+        }
+      />
     </>
   );
 };

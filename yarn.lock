@@ -36476,6 +36476,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"emoji-picker-react@npm:4.12.2":
+  version: 4.12.2
+  resolution: "emoji-picker-react@npm:4.12.2"
+  dependencies:
+    flairup: "npm:1.0.0"
+  peerDependencies:
+    react: ">=16"
+  checksum: 10c0/52f024672b0bc7eda90adc0ecf36695491e59471b354390ed744839119be4f22e075bc6d282192b98d71c3246159833da69f2123f4a71ccddc609f87f3189008
+  languageName: node
+  linkType: hard
+
 "emoji-regex@npm:^10.3.0":
   version: 10.4.0
   resolution: "emoji-regex@npm:10.4.0"
@@ -38919,6 +38930,13 @@ __metadata:
   dependencies:
     readable-stream: "npm:^2.0.2"
   checksum: 10c0/240357d31e2810313a226ec10923670cae953b2baa785a91b1e198aba18d0abd154101cb003983493216594234fbfd26e67059f07762c211146e9b9047f8f70b
+  languageName: node
+  linkType: hard
+
+"flairup@npm:1.0.0":
+  version: 1.0.0
+  resolution: "flairup@npm:1.0.0"
+  checksum: 10c0/2d9fe1f1c890383be65ae0ec95d57b96f3ff42eecffaf493f8a39f09f4982e12109a865e79baca051e784919eecd72fa6cf620cfae8a4663b98deaa6d883d7ba
   languageName: node
   linkType: hard
 
@@ -60204,6 +60222,7 @@ __metadata:
     buffer: "npm:^6.0.3"
     cron-parser: "npm:5.1.1"
     date-fns: "npm:^2.30.0"
+    emoji-picker-react: "npm:4.12.2"
     file-saver: "npm:^2.0.5"
     graphiql: "npm:^3.1.1"
     graphql: "npm:16.8.1"

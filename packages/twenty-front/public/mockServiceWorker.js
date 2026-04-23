@@ -1,4 +1,4 @@
-/* oxlint-disable */
+/* eslint-disable */
 /* tslint:disable */
 
 /**

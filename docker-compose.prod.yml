@@ -28,9 +28,9 @@ services:
       args:
         REACT_APP_STREAM_API_KEY: ${REACT_APP_STREAM_API_KEY:-${STREAM_API_KEY:-}}
         STREAM_API_KEY: ${STREAM_API_KEY:-}
-        REACT_APP_CHAT_PROVIDER: ${REACT_APP_CHAT_PROVIDER:-sendbird}
+        REACT_APP_CHAT_PROVIDER: ${REACT_APP_CHAT_PROVIDER:-native}
         REACT_APP_SENDBIRD_APP_ID: ${REACT_APP_SENDBIRD_APP_ID:-${SENDBIRD_APPLICATION_ID:-}}
-        REACT_APP_MATTERMOST_WEBAPP_URL: ${REACT_APP_MATTERMOST_WEBAPP_URL:-https://chat.konnecct.com}
+        REACT_APP_MATTERMOST_WEBAPP_URL: ${REACT_APP_MATTERMOST_WEBAPP_URL:-}
     depends_on:
       crm-db:
         condition: service_healthy
@@ -49,16 +49,12 @@ services:
       STREAM_API_KEY: ${STREAM_API_KEY:-}
       STREAM_API_SECRET: ${STREAM_API_SECRET:-}
       REACT_APP_STREAM_API_KEY: ${REACT_APP_STREAM_API_KEY:-${STREAM_API_KEY:-}}
-      REACT_APP_CHAT_PROVIDER: ${REACT_APP_CHAT_PROVIDER:-sendbird}
+      REACT_APP_CHAT_PROVIDER: ${REACT_APP_CHAT_PROVIDER:-native}
       REACT_APP_SENDBIRD_APP_ID: ${REACT_APP_SENDBIRD_APP_ID:-${SENDBIRD_APPLICATION_ID:-}}
-      REACT_APP_MATTERMOST_WEBAPP_URL: ${REACT_APP_MATTERMOST_WEBAPP_URL:-https://chat.konnecct.com}
+      REACT_APP_MATTERMOST_WEBAPP_URL: ${REACT_APP_MATTERMOST_WEBAPP_URL:-}
       SENDBIRD_APPLICATION_ID: ${SENDBIRD_APPLICATION_ID:-}
       SENDBIRD_API_TOKEN: ${SENDBIRD_API_TOKEN:-}
       SENDBIRD_CHAT_API_BASE: ${SENDBIRD_CHAT_API_BASE:-}
-      # Dedicated chat host (nginx server_name chat.konnecct.com) — avoids Mattermost subpath redirect loops on app.*
-      MATTERMOST_SITE_URL: ${MATTERMOST_SITE_URL:-https://chat.konnecct.com}
-      # Optional: Mattermost Admin API (system admin personal access token) to pre-create users for OIDC (see docs/mattermost-konnecct-runbook.md).
-      MATTERMOST_ADMIN_TOKEN: ${MATTERMOST_ADMIN_TOKEN:-}
       # Any one of these names in .env is enough; avoid empty duplicate keys that masked Docker (see generate-front-config dotenv override:false).
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-${CLERK_PUBLISHABLE_KEY:-}}
       REACT_APP_CLERK_PUBLISHABLE_KEY: ${REACT_APP_CLERK_PUBLISHABLE_KEY:-${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-${CLERK_PUBLISHABLE_KEY:-}}}
@@ -104,65 +100,7 @@ services:
       IS_WORKSPACE_CREATION_LIMITED_TO_SERVER_ADMINS: ${IS_WORKSPACE_CREATION_LIMITED_TO_SERVER_ADMINS:-false}
     restart: always
 
-  mattermost-db:
-    image: postgres:15-alpine
-    restart: always
-    environment:
-      POSTGRES_USER: mmuser
-      POSTGRES_PASSWORD: ${MATTERMOST_DB_PASSWORD:-mattermost-db-change-me}
-      POSTGRES_DB: mattermost
-    volumes:
-      - mattermost-pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U mmuser -d mattermost"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  # Site URL must match nginx chat host (see nginx.conf server_name chat.konnecct.com) and .env.
-  # Stale config in mattermost-config volume can override env — set Site URL in System Console to https://chat.konnecct.com
-  mattermost:
-    image: mattermost/mattermost-team-edition:${MATTERMOST_IMAGE_TAG:-release-10}
-    restart: always
-    expose:
-      - "8065"
-    environment:
-      MM_SQLSETTINGS_DRIVERNAME: postgres
-      MM_SQLSETTINGS_DATASOURCE: postgres://mmuser:${MATTERMOST_DB_PASSWORD:-mattermost-db-change-me}@mattermost-db:5432/mattermost?sslmode=disable&connect_timeout=10
-      MM_SERVICESETTINGS_SITEURL: ${MATTERMOST_SITE_URL:-https://chat.konnecct.com}
-      MM_SERVICESETTINGS_LISTENADDRESS: ":8065"
-      MM_SERVICESETTINGS_TLSSTRICT: "false"
-      # CRM at app.* embeds chat.* in an iframe (Mattermost 10.7+).
-      MM_SERVICESETTINGS_FRAMEANCESTORS: ${MATTERMOST_FRAME_ANCESTORS:-https://app.konnecct.com}
-      MM_SERVICESETTINGS_ALLOWCORSFROM: ${MATTERMOST_ALLOW_CORS_FROM:-https://app.konnecct.com}
-      # Site name in UI / tab (replaces default “Mattermost”).
-      MM_TEAMSETTINGS_SITENAME: ${MATTERMOST_TEAM_SITE_NAME:-Konnecct}
-      # Hide green “Preview Mode: Email notifications…” banner when SMTP not configured.
-      MM_EMAILSETTINGS_ENABLEPREVIEWMODEBANNER: "${MATTERMOST_EMAIL_PREVIEW_BANNER:-false}"
-      # Single-account: no open server / email self-signup (SSO + invites only). See runbook for Clerk OIDC.
-      MM_TEAMSETTINGS_ENABLEOPENSERVER: ${MATTERMOST_ENABLE_OPEN_SERVER:-false}
-      MM_EMAILSETTINGS_ENABLESIGNUPWITHEMAIL: ${MATTERMOST_ENABLE_EMAIL_SIGNUP:-false}
-      # OpenID Connect (Other) — set in .env when IdP is ready; Team Edition may require a paid tier for non-GitLab OIDC (verify current MM license docs).
-      MM_OPENIDSETTINGS_ENABLE: ${MM_OPENIDSETTINGS_ENABLE:-false}
-      MM_OPENIDSETTINGS_DISCOVERYENDPOINT: ${MM_OPENIDSETTINGS_DISCOVERYENDPOINT:-}
-      MM_OPENIDSETTINGS_ID: ${MM_OPENIDSETTINGS_ID:-}
-      MM_OPENIDSETTINGS_SECRET: ${MM_OPENIDSETTINGS_SECRET:-}
-      MM_OPENIDSETTINGS_BUTTONTEXT: ${MM_OPENIDSETTINGS_BUTTONTEXT:-Continue with Konnecct}
-      MM_OPENIDSETTINGS_SCOPE: ${MM_OPENIDSETTINGS_SCOPE:-profile openid email}
-      MM_FILESETTINGS_DRIVERNAME: local
-      MM_LOGSETTINGS_CONSOLELEVEL: INFO
-      MM_CLUSTERSETTINGS_ENABLE: "false"
-    volumes:
-      - mattermost-config:/mattermost/config
-      - mattermost-data:/mattermost/data
-      - mattermost-logs:/mattermost/logs
-      - mattermost-plugins:/mattermost/plugins
-      - mattermost-client-plugins:/mattermost/client/plugins
-    depends_on:
-      mattermost-db:
-        condition: service_healthy
-
-  # Do not depends_on crm-server/mattermost: if either fails, nginx must still bind :80/:443
+  # Do not depends_on crm-server: if it fails, nginx must still bind :80/:443
   # or the whole site shows ERR_CONNECTION_REFUSED. Unready upstreams return 502 until healthy.
   nginx:
     image: nginx:1.25-alpine
@@ -171,8 +109,6 @@ services:
       - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/konnecct-mm-overrides.css:/etc/nginx/konnecct-mm-overrides.css:ro
-      - ./nginx/mattermost-upstream-common.conf:/etc/nginx/mattermost-upstream-common.conf:ro
       - ./nginx/certbot-etc:/etc/letsencrypt:ro
       - ./nginx/certbot-www:/var/www/certbot:ro
     restart: always
@@ -188,9 +124,3 @@ services:
 volumes:
   crm-postgres-data:
   crm-redis-data:
-  mattermost-pgdata:
-  mattermost-config:
-  mattermost-data:
-  mattermost-logs:
-  mattermost-plugins:
-  mattermost-client-plugins:

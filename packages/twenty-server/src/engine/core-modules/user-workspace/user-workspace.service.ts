@@ -21,7 +21,6 @@ import { WorkspaceDomainsService } from 'src/engine/core-modules/domain/workspac
 import { FileCorePictureService } from 'src/engine/core-modules/file/file-core-picture/services/file-core-picture.service';
 import { extractFileIdFromUrl } from 'src/engine/core-modules/file/files-field/utils/extract-file-id-from-url.util';
 import { FileService } from 'src/engine/core-modules/file/services/file.service';
-import { MattermostProvisioningService } from 'src/engine/core-modules/mattermost/mattermost-provisioning.service';
 import { OnboardingService } from 'src/engine/core-modules/onboarding/onboarding.service';
 import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user-workspace.entity';
 import { type AuthContextUser } from 'src/engine/core-modules/auth/types/auth-context.type';
@@ -64,7 +63,6 @@ export class UserWorkspaceService extends TypeOrmQueryService<UserWorkspaceEntit
     private readonly fileCorePictureService: FileCorePictureService,
     private readonly fileService: FileService,
     private readonly onboardingService: OnboardingService,
-    private readonly mattermostProvisioningService: MattermostProvisioningService,
   ) {
     super(userWorkspaceRepository);
   }
@@ -147,9 +145,6 @@ export class UserWorkspaceService extends TypeOrmQueryService<UserWorkspaceEntit
       );
     }, authContext);
 
-    void this.mattermostProvisioningService.ensureChatUserForWorkspaceMember(
-      user,
-    );
   }
 
   async addUserToWorkspaceIfUserNotInWorkspace(

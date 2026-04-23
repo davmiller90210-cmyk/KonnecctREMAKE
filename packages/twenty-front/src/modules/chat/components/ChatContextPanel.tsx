@@ -11,9 +11,10 @@ import { IconLayoutSidebarRightCollapse } from 'twenty-ui/display';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 const StyledRoot = styled.div`
-  background: ${themeCssVariables.background.primary};
+  background: ${themeCssVariables.background.secondary};
   border: 1px solid ${themeCssVariables.border.color.light};
-  border-radius: ${themeCssVariables.border.radius.md};
+  border-radius: ${themeCssVariables.border.radius.xl};
+  box-shadow: ${themeCssVariables.boxShadow.light};
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -107,7 +108,7 @@ export const ChatContextPanel = ({
       <StyledBody>
         {!selection ? (
           <StyledMuted>
-            {t`Select a conversation to see channel information, Sendbird link status, and members.`}
+            {t`Select a conversation to see channel information, permissions, and native conversation metadata.`}
           </StyledMuted>
         ) : selection.kind === 'channel' ? (
           <StyledDl>
@@ -130,9 +131,13 @@ export const ChatContextPanel = ({
               </StyledDd>
             </div>
             <div>
-              <StyledDt>{t`Sendbird`}</StyledDt>
+              <StyledDt>{t`Native conversation`}</StyledDt>
+              <StyledDd>{selection.channel.nativeConversationId}</StyledDd>
+            </div>
+            <div>
+              <StyledDt>{t`Legacy Sendbird bridge`}</StyledDt>
               <StyledDd>
-                {selection.channel.sendbirdChannelUrl ?? t`Not linked`}
+                {selection.channel.sendbirdChannelUrl ?? t`Not linked (native chat)`}
               </StyledDd>
             </div>
             <div>
@@ -165,9 +170,13 @@ export const ChatContextPanel = ({
               </StyledDd>
             </div>
             <div>
-              <StyledDt>{t`Sendbird`}</StyledDt>
+              <StyledDt>{t`Native conversation`}</StyledDt>
+              <StyledDd>{selection.dm.nativeConversationId}</StyledDd>
+            </div>
+            <div>
+              <StyledDt>{t`Legacy Sendbird bridge`}</StyledDt>
               <StyledDd>
-                {selection.dm.sendbirdChannelUrl ?? t`Not linked`}
+                {selection.dm.sendbirdChannelUrl ?? t`Not linked (native chat)`}
               </StyledDd>
             </div>
           </StyledDl>

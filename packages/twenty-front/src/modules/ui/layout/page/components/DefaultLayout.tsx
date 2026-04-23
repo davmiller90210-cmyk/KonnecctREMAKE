@@ -1,9 +1,5 @@
 import { AuthModal } from '@/auth/components/AuthModal';
-import { GlobalCallOverlay } from '@/chat/components/GlobalCallOverlay';
-import { IncomingCallDialog } from '@/chat/components/calls/IncomingCallDialog';
 import { CallOverlayProvider } from '@/chat/contexts/CallOverlayContext';
-import { SendbirdClientProvider } from '@/chat/providers/SendbirdClientProvider';
-import { SendbirdCallsProvider } from '@/chat/providers/SendbirdCallsProvider';
 import { AppErrorBoundary } from '@/error-handler/components/AppErrorBoundary';
 import { AppFullScreenErrorFallback } from '@/error-handler/components/AppFullScreenErrorFallback';
 import { AppPageErrorFallback } from '@/error-handler/components/AppPageErrorFallback';
@@ -139,15 +135,9 @@ const DefaultLayoutBody = () => {
 export const DefaultLayout = () => {
   return (
     <CallOverlayProvider>
-      <SendbirdClientProvider>
-        <SendbirdCallsProvider>
-          <FileUploadProvider>
-            <DefaultLayoutBody />
-          </FileUploadProvider>
-          <GlobalCallOverlay />
-          <IncomingCallDialog />
-        </SendbirdCallsProvider>
-      </SendbirdClientProvider>
+      <FileUploadProvider>
+        <DefaultLayoutBody />
+      </FileUploadProvider>
     </CallOverlayProvider>
   );
 };

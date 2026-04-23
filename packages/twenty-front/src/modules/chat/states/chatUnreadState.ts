@@ -3,7 +3,7 @@ import { selectAtom } from 'jotai/utils';
 
 import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
 
-/** Unread message count per Sendbird channel url. */
+/** Unread message count per native conversation key (channel:<id> | dm:<id>). */
 export const chatUnreadMapState = createAtomState<Record<string, number>>({
   key: 'chatUnreadMapState',
   defaultValue: {},
@@ -21,5 +21,5 @@ export const chatTotalUnreadState = atom((get) => {
   return total;
 });
 
-export const selectChannelUnread = (channelUrl: string) =>
-  selectAtom(chatUnreadMapState.atom, (map) => map[channelUrl] ?? 0);
+export const selectChannelUnread = (conversationKey: string) =>
+  selectAtom(chatUnreadMapState.atom, (map) => map[conversationKey] ?? 0);

@@ -10,7 +10,6 @@ import { WorkspaceDomainsModule } from 'src/engine/core-modules/domain/workspace
 import { EnterpriseModule } from 'src/engine/core-modules/enterprise/enterprise.module';
 import { FeatureFlagModule } from 'src/engine/core-modules/feature-flag/feature-flag.module';
 import { FileModule } from 'src/engine/core-modules/file/file.module';
-import { MattermostModule } from 'src/engine/core-modules/mattermost/mattermost.module';
 import { OnboardingModule } from 'src/engine/core-modules/onboarding/onboarding.module';
 import { UploadProfilePicturePermissionGuard } from 'src/engine/core-modules/user-workspace/guards/upload-profile-picture-permission.guard';
 import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user-workspace.entity';
@@ -29,7 +28,6 @@ import { WorkspaceDataSourceModule } from 'src/engine/workspace-datasource/works
 
 @Module({
   imports: [
-    MattermostModule,
     NestjsQueryGraphQLModule.forFeature({
       imports: [
         NestjsQueryTypeOrmModule.forFeature([
@@ -54,8 +52,6 @@ import { WorkspaceDataSourceModule } from 'src/engine/workspace-datasource/works
         OnboardingModule,
         EnterpriseModule,
         FeatureFlagModule,
-        // Required here: forFeature() creates an isolated module scope; UserWorkspaceService is resolved in this context.
-        MattermostModule,
       ],
       services: [UserWorkspaceService],
     }),

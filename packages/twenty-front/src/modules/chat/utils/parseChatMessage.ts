@@ -2,9 +2,8 @@
  * Lightweight tokenizer for chat message bodies.
  *
  * Recognises markdown-style links `[@Label](target)` and turns them into
- * mention nodes. Bare http(s) URLs become plain link nodes. Everything else
- * becomes a text node. The parser is intentionally tolerant: when the target
- * is not a shape we know about, we fall back to rendering the label as text.
+ * mention nodes. Bare http(s) URLs become plain link nodes. Markdown images
+ * `![alt](url)` become image nodes. Everything else becomes a text node.
  */
 
 export type ChatTextNode = { type: 'text'; value: string };
@@ -12,6 +11,12 @@ export type ChatTextNode = { type: 'text'; value: string };
 export type ChatLinkNode = {
   type: 'link';
   label: string;
+  href: string;
+};
+
+export type ChatImageNode = {
+  type: 'image';
+  alt: string;
   href: string;
 };
 
@@ -29,9 +34,14 @@ export type ChatMentionNode = {
   href: string;
 };
 
-export type ChatNode = ChatTextNode | ChatLinkNode | ChatMentionNode;
+export type ChatNode =
+  | ChatTextNode
+  | ChatLinkNode
+  | ChatImageNode
+  | ChatMentionNode;
 
-const LINK_REGEX = /\[([^\]]+)\]\(([^)\s]+)\)/g;
+const LINK_REGEX = /(?<!!)\[([^\]]+)\]\(([^)\s]+)\)/g;
+const IMAGE_REGEX = /!\[([^\]]*)\]\(([^)\s]+)\)/g;
 const URL_REGEX = /\bhttps?:\/\/[^\s<>"']+/g;
 
 const classifyMentionTarget = (
@@ -126,6 +136,33 @@ const splitPlainText = (value: string): ChatNode[] => {
   return nodes;
 };
 
+type NextToken =
+  | { kind: 'image'; match: RegExpExecArray }
+  | { kind: 'link'; match: RegExpExecArray };
+
+const findNextMarkdownToken = (input: string, fromIndex: number): NextToken | null => {
+  IMAGE_REGEX.lastIndex = fromIndex;
+  LINK_REGEX.lastIndex = fromIndex;
+  const imageMatch = IMAGE_REGEX.exec(input);
+  const linkMatch = LINK_REGEX.exec(input);
+
+  if (!imageMatch && !linkMatch) {
+    return null;
+  }
+
+  if (!imageMatch) {
+    return { kind: 'link', match: linkMatch as RegExpExecArray };
+  }
+
+  if (!linkMatch) {
+    return { kind: 'image', match: imageMatch };
+  }
+
+  return imageMatch.index <= linkMatch.index
+    ? { kind: 'image', match: imageMatch }
+    : { kind: 'link', match: linkMatch };
+};
+
 export const parseChatMessage = (input: string): ChatNode[] => {
   if (!input) {
     return [];
@@ -134,26 +171,36 @@ export const parseChatMessage = (input: string): ChatNode[] => {
   const nodes: ChatNode[] = [];
   let cursor = 0;
 
-  LINK_REGEX.lastIndex = 0;
-  let match: RegExpExecArray | null = LINK_REGEX.exec(input);
+  let next = findNextMarkdownToken(input, cursor);
 
-  while (match !== null) {
-    const [full, label, target] = match;
-    const start = match.index;
-    const end = start + full.length;
+  while (next !== null) {
+    const start = next.match.index;
+    const end = start + next.match[0].length;
 
     if (start > cursor) {
       nodes.push(...splitPlainText(input.slice(cursor, start)));
     }
 
-    if (label.startsWith('@')) {
-      nodes.push(classifyMentionTarget(label.slice(1), target));
+    if (next.kind === 'image') {
+      const [, alt, href] = next.match;
+
+      nodes.push({
+        type: 'image',
+        alt: alt ?? '',
+        href: href ?? '',
+      });
     } else {
-      nodes.push({ type: 'link', label, href: target });
+      const [, label, target] = next.match;
+
+      if (label.startsWith('@')) {
+        nodes.push(classifyMentionTarget(label.slice(1), target));
+      } else {
+        nodes.push({ type: 'link', label, href: target });
+      }
     }
 
     cursor = end;
-    match = LINK_REGEX.exec(input);
+    next = findNextMarkdownToken(input, cursor);
   }
 
   if (cursor < input.length) {

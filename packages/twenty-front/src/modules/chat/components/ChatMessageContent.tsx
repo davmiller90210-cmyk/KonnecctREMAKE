@@ -1,13 +1,16 @@
 import { styled } from '@linaria/react';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AppPath } from 'twenty-shared/types';
-import { getAppPath } from 'twenty-shared/utils';
-
-import { parseChatMessage, type ChatNode } from '@/chat/utils/parseChatMessage';
+import { ChatRecordPreviewChip } from '@/chat/components/ChatRecordPreviewChip';
+import {
+  parseChatMessage,
+  type ChatMentionNode,
+  type ChatNode,
+} from '@/chat/utils/parseChatMessage';
+import { isAllowedChatImageUrl } from '@/chat/utils/isAllowedChatImageUrl';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 
-const StyledContent = styled.span`
+const StyledContent = styled.div`
   color: ${themeCssVariables.font.color.primary};
   font-family: ${themeCssVariables.font.family};
   font-size: ${themeCssVariables.font.size.md};
@@ -39,9 +42,61 @@ const StyledLink = styled.a`
   word-break: break-all;
 `;
 
+const StyledInlineImage = styled.img`
+  border-radius: ${themeCssVariables.border.radius.sm};
+  display: block;
+  margin-top: ${themeCssVariables.spacing[1]};
+  max-height: 200px;
+  max-width: min(240px, 100%);
+  object-fit: contain;
+  vertical-align: middle;
+`;
+
 type ChatMessageContentProps = {
   body: string;
   className?: string;
+};
+
+const renderMention = (
+  node: ChatMentionNode,
+  index: number,
+  navigate: ReturnType<typeof useNavigate>,
+) => {
+  if (
+    node.kind === 'record' &&
+    node.objectNameSingular &&
+    node.recordId
+  ) {
+    return (
+      <ChatRecordPreviewChip
+        key={index}
+        objectNameSingular={node.objectNameSingular}
+        recordId={node.recordId}
+        mentionLabel={node.label}
+      />
+    );
+  }
+
+  const onClick = () => {
+    if (node.kind === 'agent' && node.recordId) {
+      navigate(`/superagents/${node.recordId}`);
+      return;
+    }
+
+    if (node.kind === 'user') {
+      return;
+    }
+
+    if (node.href && node.href.startsWith('http')) {
+      window.open(node.href, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  return (
+    <StyledMentionChip key={index} onClick={onClick} type="button">
+      @{node.label}
+    </StyledMentionChip>
+  );
 };
 
 export const ChatMessageContent = ({
@@ -72,35 +127,35 @@ export const ChatMessageContent = ({
           );
         }
 
-        const onClick = () => {
-          if (node.kind === 'record' && node.objectNameSingular && node.recordId) {
-            const path = getAppPath(AppPath.RecordShowPage, {
-              objectNameSingular: node.objectNameSingular,
-              objectRecordId: node.recordId,
-            });
-            navigate(path);
-            return;
+        if (node.type === 'image') {
+          if (!isAllowedChatImageUrl(node.href)) {
+            return (
+              <StyledLink
+                key={index}
+                href={node.href}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {node.alt?.trim() ? node.alt : node.href}
+              </StyledLink>
+            );
           }
 
-          if (node.kind === 'agent' && node.recordId) {
-            navigate(`/superagents/${node.recordId}`);
-            return;
-          }
+          return (
+            <StyledInlineImage
+              key={index}
+              src={node.href}
+              alt={node.alt?.trim() ? node.alt : 'GIF'}
+              loading="lazy"
+            />
+          );
+        }
 
-          if (node.kind === 'user') {
-            return;
-          }
+        if (node.type === 'mention') {
+          return renderMention(node, index, navigate);
+        }
 
-          if (node.href && node.href.startsWith('http')) {
-            window.open(node.href, '_blank', 'noopener,noreferrer');
-          }
-        };
-
-        return (
-          <StyledMentionChip key={index} onClick={onClick} type="button">
-            @{node.label}
-          </StyledMentionChip>
-        );
+        return null;
       })}
     </StyledContent>
   );

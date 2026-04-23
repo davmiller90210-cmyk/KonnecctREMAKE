@@ -17,8 +17,6 @@ import { RoleEntity } from 'src/engine/metadata-modules/role/role.entity';
 import { UserRoleService } from 'src/engine/metadata-modules/user-role/user-role.service';
 import { AgoraAuthService } from 'src/modules/agora/agora-auth.service';
 import { AgoraChatGroupService } from 'src/modules/agora/agora-chat-group.service';
-import { SendbirdChatProvisionService } from 'src/modules/sendbird/sendbird-chat-provision.service';
-import { StreamAuthService } from 'src/modules/stream/stream-auth.service';
 
 const slugify = (raw: string): string => {
   const slug = raw
@@ -51,8 +49,6 @@ export class ChatMutationService {
     private readonly userRoleService: UserRoleService,
     private readonly agoraAuthService: AgoraAuthService,
     private readonly agoraChatGroupService: AgoraChatGroupService,
-    private readonly sendbirdChatProvisionService: SendbirdChatProvisionService,
-    private readonly streamAuthService: StreamAuthService,
   ) {}
 
   async createWorkspaceCategory(input: {
@@ -189,29 +185,6 @@ export class ChatMutationService {
       scopedMemberIds,
     });
 
-    const creatorScoped = this.agoraAuthService.scopedUserIdFor(
-      input.creatorUserId,
-      input.workspaceId,
-    );
-
-    if (this.sendbirdChatProvisionService.isConfigured) {
-      await this.sendbirdChatProvisionService.provisionWorkspaceChannel({
-        workspaceId: input.workspaceId,
-        channel,
-        creatorUserId: input.creatorUserId,
-        visibility: input.visibility,
-        memberScopedUserIds: scopedMemberIds,
-      });
-    } else if (this.streamAuthService.isConfigured) {
-      await this.streamAuthService.provisionMessagingChannel({
-        workspaceId: input.workspaceId,
-        channelId: channel.id,
-        name: channel.name,
-        creatorScopedUserId: creatorScoped,
-        memberScopedUserIds: scopedMemberIds,
-      });
-    }
-
     return { id: channel.id, slug: channel.slug };
   }
 
@@ -320,33 +293,6 @@ export class ChatMutationService {
     });
 
     if (existing) {
-      if (
-        this.sendbirdChatProvisionService.isConfigured &&
-        !existing.sendbirdChannelUrl
-      ) {
-        const selfUw = await this.userWorkspaceRepository.findOne({
-          where: {
-            id: input.userWorkspaceId,
-            workspaceId: input.workspaceId,
-          },
-        });
-        const peerUw = await this.userWorkspaceRepository.findOne({
-          where: {
-            id: input.peerUserWorkspaceId,
-            workspaceId: input.workspaceId,
-          },
-        });
-
-        if (selfUw && peerUw) {
-          await this.sendbirdChatProvisionService.provisionDirectThread({
-            workspaceId: input.workspaceId,
-            thread: existing,
-            userIdA: selfUw.userId,
-            userIdB: peerUw.userId,
-          });
-        }
-      }
-
       return { threadId: existing.id };
     }
 
@@ -369,28 +315,6 @@ export class ChatMutationService {
         userWorkspaceId: input.peerUserWorkspaceId,
       }),
     ]);
-
-    const selfUw = await this.userWorkspaceRepository.findOne({
-      where: {
-        id: input.userWorkspaceId,
-        workspaceId: input.workspaceId,
-      },
-    });
-    const peerUw = await this.userWorkspaceRepository.findOne({
-      where: {
-        id: input.peerUserWorkspaceId,
-        workspaceId: input.workspaceId,
-      },
-    });
-
-    if (selfUw && peerUw && this.sendbirdChatProvisionService.isConfigured) {
-      await this.sendbirdChatProvisionService.provisionDirectThread({
-        workspaceId: input.workspaceId,
-        thread,
-        userIdA: selfUw.userId,
-        userIdB: peerUw.userId,
-      });
-    }
 
     return { threadId: thread.id };
   }

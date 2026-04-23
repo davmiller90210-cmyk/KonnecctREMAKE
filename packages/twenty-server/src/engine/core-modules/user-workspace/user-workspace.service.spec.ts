@@ -12,7 +12,6 @@ import { FeatureFlagService } from 'src/engine/core-modules/feature-flag/service
 import { FileStorageService } from 'src/engine/core-modules/file-storage/file-storage.service';
 import { FileCorePictureService } from 'src/engine/core-modules/file/file-core-picture/services/file-core-picture.service';
 import { FileService } from 'src/engine/core-modules/file/services/file.service';
-import { MattermostProvisioningService } from 'src/engine/core-modules/mattermost/mattermost-provisioning.service';
 import { OnboardingService } from 'src/engine/core-modules/onboarding/onboarding.service';
 import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user-workspace.entity';
 import { UserWorkspaceService } from 'src/engine/core-modules/user-workspace/user-workspace.service';
@@ -143,12 +142,6 @@ describe('UserWorkspaceService', () => {
           provide: OnboardingService,
           useValue: {
             setOnboardingCreateProfilePending: jest.fn(),
-          },
-        },
-        {
-          provide: MattermostProvisioningService,
-          useValue: {
-            ensureChatUserForWorkspaceMember: jest.fn(),
           },
         },
         {

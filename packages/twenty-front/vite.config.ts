@@ -31,7 +31,7 @@ export default defineConfig(({ mode }) => {
     IS_DEBUG_MODE,
   } = env;
 
-  const REACT_APP_CHAT_PROVIDER = envChatProvider ?? 'sendbird';
+  const REACT_APP_CHAT_PROVIDER = envChatProvider ?? 'native';
   const REACT_APP_SENDBIRD_APP_ID = envSendbirdAppId ?? '';
 
   const port = isNonEmptyString(REACT_APP_PORT)

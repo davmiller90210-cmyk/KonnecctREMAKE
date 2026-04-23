@@ -2,24 +2,33 @@
 import { styled } from '@linaria/react';
 import { useLingui } from '@lingui/react/macro';
 import {
+  forwardRef,
   useCallback,
   useEffect,
+  useImperativeHandle,
+  useMemo,
   useRef,
   useState,
   type ChangeEvent,
   type KeyboardEvent,
 } from 'react';
+import { playChatSendSound } from '@/chat/constants/chatSendSoundStorage';
 import { ChatMentionPopover } from '@/chat/components/ChatMentionPopover';
+import {
+  ChatSlashCommandPopover,
+  type ChatSlashCommandItem,
+} from '@/chat/components/ChatSlashCommandPopover';
+import { ChatGifPickerPopover } from '@/chat/components/ChatGifPickerPopover';
+import { ChatComposerBar } from '@/chat/ui/composer/ChatComposerBar';
 import { useCrmMentionSearch } from '@/chat/hooks/useCrmMentionSearch';
 import { type MentionItem } from '@/chat/types/MentionItem';
+import { useSnackBar } from '@/ui/feedback/snack-bar-manager/hooks/useSnackBar';
 import { Button, LightIconButton } from 'twenty-ui/input';
-import { IconPaperclip, IconSend } from 'twenty-ui/display';
+import { IconPaperclip, IconPhoto, IconSend } from 'twenty-ui/display';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 const StyledContainer = styled.div`
-  background: ${themeCssVariables.background.primary};
-  border-top: 1px solid ${themeCssVariables.border.color.light};
-  padding: ${themeCssVariables.spacing[3]};
+  flex-shrink: 0;
   position: relative;
 `;
 
@@ -60,13 +69,6 @@ const StyledHiddenFileInput = styled.input`
   display: none;
 `;
 
-const StyledHint = styled.div`
-  color: ${themeCssVariables.font.color.tertiary};
-  font-family: ${themeCssVariables.font.family};
-  font-size: ${themeCssVariables.font.size.xs};
-  margin-top: ${themeCssVariables.spacing[1]};
-`;
-
 type ChatComposerProps = {
   disabled?: boolean;
   placeholder?: string;
@@ -74,23 +76,42 @@ type ChatComposerProps = {
   onSendFile?: (file: File) => Promise<void> | void;
   onTypingStart?: () => void;
   onTypingEnd?: () => void;
+  /** Shown name for `/me` (workspace member display name). */
+  viewerDisplayName?: string;
+  /** Optional: collapse chat details / side panel (UI-only `/collapse`). */
+  onCollapseThreadUi?: () => void;
   /** Current channel members for @user mentions (Sendbird user ids). */
   mentionUserCandidates?: { userId: string; label: string }[];
+  /** Bearer token for server-proxied Giphy GIF picker (native chat). */
+  gifPickerToken?: string | null;
+};
+
+export type ChatComposerHandle = {
+  focusMessageInput: () => void;
 };
 
 const MENTION_DEBOUNCE_MS = 150;
 const MENTION_REGEX = /@([\w\s]*)$/;
+const SLASH_COMMAND_REGEX = /(?:^|\s)\/([\w-]*)$/;
 
-export const ChatComposer = ({
-  disabled,
-  placeholder,
-  onSend,
-  onSendFile,
-  onTypingStart,
-  onTypingEnd,
-  mentionUserCandidates = [],
-}: ChatComposerProps) => {
+export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
+  function ChatComposer(
+    {
+      disabled,
+      placeholder,
+      onSend,
+      onSendFile,
+      onTypingStart,
+      onTypingEnd,
+      viewerDisplayName,
+      onCollapseThreadUi,
+      mentionUserCandidates = [],
+      gifPickerToken,
+    },
+    ref,
+  ) {
   const { t } = useLingui();
+  const { enqueueErrorSnackBar, enqueueSuccessSnackBar } = useSnackBar();
   const { searchMentionRecords } = useCrmMentionSearch();
 
   const [value, setValue] = useState('');
@@ -101,11 +122,24 @@ export const ChatComposer = ({
   const [mentionActiveIndex, setMentionActiveIndex] = useState(0);
   const [mentionStart, setMentionStart] = useState<number | null>(null);
 
+  const [slashOpen, setSlashOpen] = useState(false);
+  const [slashItems, setSlashItems] = useState<ChatSlashCommandItem[]>([]);
+  const [slashActiveIndex, setSlashActiveIndex] = useState(0);
+  const [slashStart, setSlashStart] = useState<number | null>(null);
+
+  const [gifPickerOpen, setGifPickerOpen] = useState(false);
+
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const mentionDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTypingRef = useRef(false);
+
+  useImperativeHandle(ref, () => ({
+    focusMessageInput: () => {
+      textareaRef.current?.focus();
+    },
+  }));
 
   useEffect(() => {
     return () => {
@@ -145,6 +179,76 @@ export const ChatComposer = ({
     setMentionActiveIndex(0);
   };
 
+  const resetSlash = () => {
+    setSlashOpen(false);
+    setSlashItems([]);
+    setSlashStart(null);
+    setSlashActiveIndex(0);
+  };
+
+  const insertGifMarkdown = useCallback(
+    (imageUrl: string) => {
+      const snippet = `![gif](${imageUrl})`;
+      const ta = textareaRef.current;
+      if (!ta) {
+        setValue((previous) =>
+          previous.length > 0 ? `${previous}\n${snippet}` : snippet,
+        );
+        return;
+      }
+      const caret = ta.selectionStart ?? value.length;
+      const end = ta.selectionEnd ?? value.length;
+      const before = value.slice(0, caret);
+      const after = value.slice(end);
+      const needsLeadingNewline =
+        before.length > 0 && !before.endsWith('\n') && !before.endsWith(' ');
+      const insertion = `${needsLeadingNewline ? '\n' : ''}${snippet}`;
+      const nextValue = before + insertion + after;
+      setValue(nextValue);
+      const pos = (before + insertion).length;
+      requestAnimationFrame(() => {
+        const el = textareaRef.current;
+        if (!el) {
+          return;
+        }
+        el.focus();
+        el.setSelectionRange(pos, pos);
+      });
+    },
+    [value],
+  );
+
+  const allSlashCommands = useMemo<ChatSlashCommandItem[]>(
+    () => [
+      {
+        id: 'me',
+        label: '/me',
+        description: t`Insert your name as an action line`,
+      },
+      {
+        id: 'shrug',
+        label: '/shrug',
+        description: t`Append a shrug`,
+      },
+      {
+        id: 'remind',
+        label: '/remind',
+        description: t`Insert a reminder stub (CRM task link coming soon)`,
+      },
+      {
+        id: 'here',
+        label: '/here',
+        description: t`Insert @here for visibility`,
+      },
+      {
+        id: 'collapse',
+        label: '/collapse',
+        description: t`Hide the details panel`,
+      },
+    ],
+    [t],
+  );
+
   const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     const next = e.target.value;
     setValue(next);
@@ -152,6 +256,28 @@ export const ChatComposer = ({
 
     const caret = e.target.selectionStart ?? next.length;
     const before = next.slice(0, caret);
+    const slashMatch = SLASH_COMMAND_REGEX.exec(before);
+
+    if (slashMatch) {
+      setGifPickerOpen(false);
+      resetMention();
+      const query = slashMatch[1].toLowerCase();
+      const start = caret - slashMatch[0].length;
+      setSlashStart(start);
+      setSlashOpen(true);
+      setSlashActiveIndex(0);
+      const filtered = allSlashCommands.filter(
+        (cmd) =>
+          query.length === 0 ||
+          cmd.id.startsWith(query) ||
+          cmd.label.toLowerCase().includes(query),
+      );
+      setSlashItems(filtered);
+      return;
+    }
+
+    resetSlash();
+
     const match = MENTION_REGEX.exec(before);
 
     if (!match) {
@@ -159,6 +285,7 @@ export const ChatComposer = ({
       return;
     }
 
+    setGifPickerOpen(false);
     const query = match[1];
     setMentionStart(caret - match[0].length);
     setMentionOpen(true);
@@ -213,6 +340,57 @@ export const ChatComposer = ({
     }, MENTION_DEBOUNCE_MS);
   };
 
+  const applySlashCommand = (item: ChatSlashCommandItem) => {
+    if (slashStart === null || !textareaRef.current) {
+      return;
+    }
+    const caret = textareaRef.current.selectionStart ?? value.length;
+    const before = value.slice(0, slashStart);
+    const after = value.slice(caret);
+    const name =
+      viewerDisplayName?.trim() ||
+      t`You`;
+
+    let insertion = '';
+    if (item.id === 'me') {
+      insertion = `*${name}* `;
+    } else if (item.id === 'shrug') {
+      insertion = `¯\\_(ツ)_/¯ `;
+    } else if (item.id === 'remind') {
+      insertion = t`Reminder: `;
+    } else if (item.id === 'here') {
+      insertion = '@here ';
+    } else if (item.id === 'collapse') {
+      onCollapseThreadUi?.();
+      resetSlash();
+      const nextValue = before + after;
+      setValue(nextValue);
+      requestAnimationFrame(() => {
+        const ta = textareaRef.current;
+        if (!ta) {
+          return;
+        }
+        ta.focus();
+        ta.setSelectionRange(before.length, before.length);
+      });
+      return;
+    }
+
+    const nextValue = before + insertion + after;
+    setValue(nextValue);
+    resetSlash();
+
+    requestAnimationFrame(() => {
+      const ta = textareaRef.current;
+      if (!ta) {
+        return;
+      }
+      const pos = (before + insertion).length;
+      ta.focus();
+      ta.setSelectionRange(pos, pos);
+    });
+  };
+
   const applyMention = (item: MentionItem) => {
     if (mentionStart === null || !textareaRef.current) return;
     const caret =
@@ -234,6 +412,7 @@ export const ChatComposer = ({
     const nextValue = before + insertion + after;
     setValue(nextValue);
     resetMention();
+    resetSlash();
 
     requestAnimationFrame(() => {
       const ta = textareaRef.current;
@@ -252,14 +431,56 @@ export const ChatComposer = ({
       await onSend(text);
       setValue('');
       resetMention();
+      resetSlash();
+      setGifPickerOpen(false);
+      enqueueSuccessSnackBar({
+        message: t`Message sent`,
+        options: { dedupeKey: 'chat-composer-sent' },
+      });
+      playChatSendSound();
       onTypingEnd?.();
       isTypingRef.current = false;
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : t`Could not send message`;
+      enqueueErrorSnackBar({ message });
     } finally {
       setIsSending(false);
     }
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (gifPickerOpen && e.key === 'Escape') {
+      e.preventDefault();
+      setGifPickerOpen(false);
+      return;
+    }
+
+    if (slashOpen && slashItems.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSlashActiveIndex((i) => (i + 1) % slashItems.length);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSlashActiveIndex(
+          (i) => (i - 1 + slashItems.length) % slashItems.length,
+        );
+        return;
+      }
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        applySlashCommand(slashItems[slashActiveIndex]);
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        resetSlash();
+        return;
+      }
+    }
+
     if (mentionOpen && mentionItems.length > 0) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -297,65 +518,104 @@ export const ChatComposer = ({
     const file = e.target.files?.[0];
     if (!file || !onSendFile) return;
     e.target.value = '';
-    await onSendFile(file);
+    try {
+      await onSendFile(file);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : t`Could not attach file`;
+      enqueueErrorSnackBar({ message });
+    }
   };
 
   return (
-    <StyledContainer>
-      {mentionOpen && mentionItems.length > 0 && (
-        <ChatMentionPopover
-          items={mentionItems}
-          activeIndex={mentionActiveIndex}
-          onSelect={applyMention}
-          onHover={setMentionActiveIndex}
-        />
-      )}
-      <StyledRow>
-        {onSendFile && (
-          <>
+    <ChatComposerBar
+      hint={t`Enter to send · Shift+Enter for newline · @ mention · / commands`}
+    >
+      <StyledContainer>
+        {gifPickerOpen && gifPickerToken ? (
+          <ChatGifPickerPopover
+            token={gifPickerToken}
+            onClose={() => setGifPickerOpen(false)}
+            onPick={(gif) => {
+              insertGifMarkdown(gif.url);
+              setGifPickerOpen(false);
+            }}
+          />
+        ) : null}
+        {slashOpen && slashItems.length > 0 ? (
+          <ChatSlashCommandPopover
+            items={slashItems}
+            activeIndex={slashActiveIndex}
+            onSelect={applySlashCommand}
+            onHover={setSlashActiveIndex}
+          />
+        ) : null}
+        {mentionOpen && mentionItems.length > 0 && (
+          <ChatMentionPopover
+            items={mentionItems}
+            activeIndex={mentionActiveIndex}
+            onSelect={applyMention}
+            onHover={setMentionActiveIndex}
+          />
+        )}
+        <StyledRow>
+          {gifPickerToken ? (
             <LightIconButton
-              Icon={IconPaperclip}
+              Icon={IconPhoto}
               size="medium"
               accent="tertiary"
               disabled={disabled}
-              onClick={handleFileClick}
-              aria-label={t`Attach file`}
+              onClick={() => setGifPickerOpen((open) => !open)}
+              aria-label={t`Insert GIF`}
+              title={t`Insert GIF`}
+              aria-expanded={gifPickerOpen}
             />
-            <StyledHiddenFileInput
-              ref={fileInputRef}
-              type="file"
-              aria-label={t`Attach file`}
-              onChange={handleFileChange}
-            />
-          </>
-        )}
-        <StyledTextarea
-          ref={textareaRef}
-          value={value}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          onBlur={() => {
-            if (isTypingRef.current) {
-              isTypingRef.current = false;
-              onTypingEnd?.();
-            }
-          }}
-          placeholder={placeholder ?? t`Message`}
-          disabled={disabled || isSending}
-          rows={1}
-        />
-        <Button
-          title={t`Send`}
-          Icon={IconSend}
-          onClick={() => void submit()}
-          disabled={disabled || isSending || value.trim().length === 0}
-          variant="primary"
-          accent="blue"
-        />
-      </StyledRow>
-      <StyledHint>
-        {t`Enter to send · Shift+Enter for newline · Type @ to mention`}
-      </StyledHint>
-    </StyledContainer>
+          ) : null}
+          {onSendFile && (
+            <>
+              <LightIconButton
+                Icon={IconPaperclip}
+                size="medium"
+                accent="tertiary"
+                disabled={disabled}
+                onClick={handleFileClick}
+                aria-label={t`Attach file`}
+              />
+              <StyledHiddenFileInput
+                ref={fileInputRef}
+                type="file"
+                aria-label={t`Attach file`}
+                onChange={handleFileChange}
+              />
+            </>
+          )}
+          <StyledTextarea
+            ref={textareaRef}
+            value={value}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            onBlur={() => {
+              if (isTypingRef.current) {
+                isTypingRef.current = false;
+                onTypingEnd?.();
+              }
+            }}
+            placeholder={placeholder ?? t`Message`}
+            disabled={disabled || isSending}
+            rows={1}
+          />
+          <Button
+            title={t`Send`}
+            Icon={IconSend}
+            onClick={() => void submit()}
+            disabled={disabled || isSending || value.trim().length === 0}
+            variant="primary"
+            accent="blue"
+          />
+        </StyledRow>
+      </StyledContainer>
+    </ChatComposerBar>
   );
-};
+});
+
+ChatComposer.displayName = 'ChatComposer';

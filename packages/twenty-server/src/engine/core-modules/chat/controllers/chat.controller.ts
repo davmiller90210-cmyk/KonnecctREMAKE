@@ -1,33 +1,34 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpException,
   HttpStatus,
   Logger,
+  Param,
   Post,
+  Query,
   Req,
   Res,
   ServiceUnavailableException,
   UnauthorizedException,
-  UploadedFile,
-  UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { InjectRepository } from '@nestjs/typeorm';
 import { type Request, type Response } from 'express';
 import { createHash } from 'crypto';
-import { QueryFailedError } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 
 import { ChatLayoutService } from 'src/engine/core-modules/chat/services/chat-layout.service';
 import { ChatMutationService } from 'src/engine/core-modules/chat/services/chat-mutation.service';
-import {
-  MATTERMOST_USER_FACING_UNAVAILABLE,
-  MattermostBridgeService,
-} from 'src/engine/core-modules/mattermost/mattermost-bridge.service';
-import { MattermostProvisioningService } from 'src/engine/core-modules/mattermost/mattermost-provisioning.service';
+import { ChatMessageService } from 'src/engine/core-modules/chat/services/chat-message.service';
+import { ChatNotificationService } from 'src/engine/core-modules/chat/services/chat-notification.service';
+import { ChatGiphyService } from 'src/engine/core-modules/chat/services/chat-giphy.service';
+import { ChatRealtimeService } from 'src/engine/core-modules/chat/services/chat-realtime.service';
+import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user-workspace.entity';
 
 type VerifiedAccessPayload = {
   sub?: string;
@@ -43,10 +44,14 @@ export class ChatController {
   constructor(
     private readonly chatLayoutService: ChatLayoutService,
     private readonly chatMutationService: ChatMutationService,
-    private readonly mattermostBridgeService: MattermostBridgeService,
-    private readonly mattermostProvisioningService: MattermostProvisioningService,
+    private readonly chatMessageService: ChatMessageService,
+    private readonly chatNotificationService: ChatNotificationService,
+    private readonly chatRealtimeService: ChatRealtimeService,
+    private readonly chatGiphyService: ChatGiphyService,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
+    @InjectRepository(UserWorkspaceEntity)
+    private readonly userWorkspaceRepository: Repository<UserWorkspaceEntity>,
   ) {}
 
   @Post('categories')
@@ -83,119 +88,102 @@ export class ChatController {
     }
   }
 
-  @Get('mattermost/session')
+  @Get('notifications')
   @HttpCode(HttpStatus.OK)
-  async getMattermostSession(@Req() req: Request) {
-    const context = await this.resolveVerifiedAccessContext(req);
-
-    if (!this.mattermostBridgeService.isConfigured()) {
-      this.logger.warn(
-        'GET /chat/mattermost/session: MATTERMOST_SITE_URL not set on crm-server',
-      );
-      throw new ServiceUnavailableException(MATTERMOST_USER_FACING_UNAVAILABLE);
-    }
-
-    if (
-      !(await this.mattermostBridgeService.hasStoredCredential(context.userId))
-    ) {
-      await this.mattermostProvisioningService.ensureChatUserForTwentyUserId(
-        context.userId,
-      );
-    }
-
-    return this.mattermostBridgeService.getSessionForTwentyUser(context.userId);
-  }
-
-  @Post('mattermost/link-token')
-  @HttpCode(HttpStatus.OK)
-  async linkMattermostPersonalToken(
+  async listNotifications(
     @Req() req: Request,
-    @Body() body: { token?: string },
+    @Query('limit') limitRaw?: string,
   ) {
     const context = await this.resolveVerifiedAccessContext(req);
+    const limit =
+      typeof limitRaw === 'string' ? Number.parseInt(limitRaw, 10) : undefined;
 
-    if (!this.mattermostBridgeService.isConfigured()) {
-      this.logger.warn(
-        'POST /chat/mattermost/link-token: MATTERMOST_SITE_URL not set on crm-server',
+    try {
+      return await this.chatNotificationService.listForRecipient({
+        workspaceId: context.workspaceId,
+        recipientUserWorkspaceId: context.userWorkspaceId,
+        limit: Number.isFinite(limit) ? limit : undefined,
+      });
+    } catch (error) {
+      this.rethrowIfMissingChatSchema(error, 'GET /chat/notifications');
+    }
+  }
+
+  @Post('notifications/read-all')
+  @HttpCode(HttpStatus.OK)
+  async markAllNotificationsRead(@Req() req: Request) {
+    const context = await this.resolveVerifiedAccessContext(req);
+
+    try {
+      const result = await this.chatNotificationService.markAllRead(
+        context.workspaceId,
+        context.userWorkspaceId,
       );
-      throw new ServiceUnavailableException(MATTERMOST_USER_FACING_UNAVAILABLE);
+      this.chatRealtimeService.publishInbox(
+        context.workspaceId,
+        context.userWorkspaceId,
+        { type: 'notification-updated' },
+      );
+      return result;
+    } catch (error) {
+      this.rethrowIfMissingChatSchema(error, 'POST /chat/notifications/read-all');
     }
+  }
 
-    const raw = body?.token;
+  @Post('notifications/read')
+  @HttpCode(HttpStatus.OK)
+  async markNotificationsRead(
+    @Req() req: Request,
+    @Body() body: { ids?: string[] },
+  ) {
+    const context = await this.resolveVerifiedAccessContext(req);
+    const ids = Array.isArray(body?.ids) ? body.ids : [];
 
-    if (!raw || typeof raw !== 'string') {
-      throw new HttpException('token is required', HttpStatus.BAD_REQUEST);
+    try {
+      const result = await this.chatNotificationService.markReadByIds(
+        context.workspaceId,
+        context.userWorkspaceId,
+        ids,
+      );
+      this.chatRealtimeService.publishInbox(
+        context.workspaceId,
+        context.userWorkspaceId,
+        { type: 'notification-updated' },
+      );
+      return result;
+    } catch (error) {
+      this.rethrowIfMissingChatSchema(error, 'POST /chat/notifications/read');
     }
+  }
 
-    await this.mattermostBridgeService.linkPersonalAccessTokenForTwentyUser(
-      context.userId,
-      raw,
+  @Get('notifications/stream')
+  async streamNotifications(@Req() req: Request, @Res() res: Response) {
+    const context = await this.resolveVerifiedAccessContext(req);
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+    res.write(': connected\n\n');
+
+    const unsubscribe = this.chatRealtimeService.subscribeInbox(
+      context.workspaceId,
+      context.userWorkspaceId,
+      (event) => {
+        res.write(`event: ${event.type}\n`);
+        res.write(`data: ${JSON.stringify(event)}\n\n`);
+      },
     );
 
-    return { linked: true as const };
-  }
+    const heartbeat = setInterval(() => {
+      res.write(': heartbeat\n\n');
+    }, 25000);
 
-  @Post('mattermost/files')
-  @HttpCode(HttpStatus.OK)
-  @UseInterceptors(
-    FileInterceptor('files', { limits: { fileSize: 52 * 1024 * 1024 } }),
-  )
-  async uploadMattermostFile(
-    @Req() req: Request,
-    @UploadedFile()
-    file:
-      | { buffer: Buffer; originalname: string; mimetype?: string }
-      | undefined,
-  ) {
-    const context = await this.resolveVerifiedAccessContext(req);
-    const channelId = (req.body as { channel_id?: string }).channel_id;
-
-    if (!channelId || typeof channelId !== 'string') {
-      throw new HttpException('channel_id is required', HttpStatus.BAD_REQUEST);
-    }
-
-    if (!file) {
-      throw new HttpException(
-        'Multipart field "files" is required',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    return this.mattermostBridgeService.uploadFile(
-      context.userId,
-      channelId,
-      file,
-    );
-  }
-
-  @Post('mattermost/forward')
-  async forwardMattermostV4(
-    @Req() req: Request,
-    @Res() res: Response,
-    @Body()
-    body: {
-      method?: string;
-      path?: string;
-      body?: unknown;
-    },
-  ) {
-    const context = await this.resolveVerifiedAccessContext(req);
-
-    if (!body?.path || typeof body.path !== 'string') {
-      throw new HttpException('path is required', HttpStatus.BAD_REQUEST);
-    }
-
-    const result = await this.mattermostBridgeService.forwardV4(context.userId, {
-      method: typeof body.method === 'string' ? body.method : 'GET',
-      path: body.path,
-      body: body.body,
+    req.on('close', () => {
+      clearInterval(heartbeat);
+      unsubscribe();
+      res.end();
     });
-
-    if (result.kind === 'json') {
-      return res.status(result.status).json(result.data);
-    }
-
-    return res.status(result.status).type('text/plain').send(result.text);
   }
 
   @Get('workspace-members')
@@ -235,7 +223,10 @@ export class ChatController {
     }
 
     if (body.visibility !== 'public' && body.visibility !== 'private') {
-      throw new HttpException('visibility must be public or private', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'visibility must be public or private',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     return this.chatMutationService.createWorkspaceChannel({
@@ -271,10 +262,424 @@ export class ChatController {
     });
   }
 
-  /**
-   * When chat tables are not migrated yet, Postgres returns 42P01 (undefined_table).
-   * Without this, the client only sees HTTP 500.
-   */
+  @Post('typing')
+  @HttpCode(HttpStatus.OK)
+  async postTyping(
+    @Req() req: Request,
+    @Body()
+    body: {
+      channelId?: string;
+      dmThreadId?: string;
+      active?: boolean;
+    },
+  ) {
+    const context = await this.resolveVerifiedAccessContext(req);
+    const conversation = this.resolveConversationRef(body);
+
+    await this.chatMessageService.assertConversationReadable({
+      workspaceId: context.workspaceId,
+      userWorkspaceId: context.userWorkspaceId,
+      conversation,
+    });
+
+    const uw = await this.userWorkspaceRepository.findOne({
+      where: {
+        id: context.userWorkspaceId,
+        workspaceId: context.workspaceId,
+      },
+      relations: ['user'],
+    });
+
+    const nickname =
+      [uw?.user?.firstName, uw?.user?.lastName].filter(Boolean).join(' ').trim() ||
+      'Member';
+
+    this.chatRealtimeService.publish(conversation.kind, conversation.id, {
+      type: 'typing',
+      userWorkspaceId: context.userWorkspaceId,
+      active: body.active !== false,
+      nickname,
+    });
+
+    return { ok: true as const };
+  }
+
+  @Get('messages')
+  @HttpCode(HttpStatus.OK)
+  async getMessages(
+    @Req() req: Request,
+    @Query()
+    body: {
+      channelId?: string;
+      dmThreadId?: string;
+      limit?: number | string;
+      after?: string;
+    },
+  ) {
+    const context = await this.resolveVerifiedAccessContext(req);
+    const conversation = this.resolveConversationRef(body);
+
+    return this.chatMessageService.listMessages({
+      workspaceId: context.workspaceId,
+      userWorkspaceId: context.userWorkspaceId,
+      conversation,
+      limit:
+        typeof body.limit === 'string'
+          ? Number.parseInt(body.limit, 10)
+          : body.limit,
+      after: body.after,
+    });
+  }
+
+  @Get('pins')
+  @HttpCode(HttpStatus.OK)
+  async listPins(
+    @Req() req: Request,
+    @Query()
+    query: {
+      channelId?: string;
+      dmThreadId?: string;
+    },
+  ) {
+    const context = await this.resolveVerifiedAccessContext(req);
+    const conversation = this.resolveConversationRef(query);
+
+    try {
+      return await this.chatMessageService.listPinnedMessages({
+        workspaceId: context.workspaceId,
+        userWorkspaceId: context.userWorkspaceId,
+        conversation,
+      });
+    } catch (error) {
+      this.rethrowIfMissingChatSchema(error, 'GET /chat/pins');
+    }
+  }
+
+  @Get('gifs/search')
+  @HttpCode(HttpStatus.OK)
+  async searchGifs(
+    @Req() req: Request,
+    @Query('q') q?: string,
+    @Query('limit') limitRaw?: string,
+  ) {
+    await this.resolveVerifiedAccessContext(req);
+    const parsed =
+      typeof limitRaw === 'string' ? Number.parseInt(limitRaw, 10) : 24;
+
+    return this.chatGiphyService.searchGifs(
+      q ?? '',
+      Number.isFinite(parsed) ? parsed : 24,
+    );
+  }
+
+  @Get('gifs/trending')
+  @HttpCode(HttpStatus.OK)
+  async trendingGifs(
+    @Req() req: Request,
+    @Query('limit') limitRaw?: string,
+  ) {
+    await this.resolveVerifiedAccessContext(req);
+    const parsed =
+      typeof limitRaw === 'string' ? Number.parseInt(limitRaw, 10) : 24;
+
+    return this.chatGiphyService.trendingGifs(
+      Number.isFinite(parsed) ? parsed : 24,
+    );
+  }
+
+  @Post('messages')
+  @HttpCode(HttpStatus.CREATED)
+  async postMessage(
+    @Req() req: Request,
+    @Body()
+    body: {
+      channelId?: string;
+      dmThreadId?: string;
+      body?: string;
+    },
+  ) {
+    const context = await this.resolveVerifiedAccessContext(req);
+    const conversation = this.resolveConversationRef(body);
+
+    if (!body.body?.trim()) {
+      throw new HttpException('body is required', HttpStatus.BAD_REQUEST);
+    }
+
+    const trimmedBody = body.body.trim();
+
+    const message = await this.chatMessageService.postMessage({
+      workspaceId: context.workspaceId,
+      userWorkspaceId: context.userWorkspaceId,
+      conversation,
+      body: trimmedBody,
+    });
+
+    this.chatRealtimeService.publishMessageCreated({
+      conversationKind: conversation.kind,
+      conversationId: conversation.id,
+      messageId: message.id,
+      createdAt: new Date(message.createdAt),
+    });
+
+    void (async () => {
+      try {
+        const { recipientUserWorkspaceIds } =
+          await this.chatNotificationService.notifyNewMessage({
+            workspaceId: context.workspaceId,
+            conversation,
+            messageId: message.id,
+            senderUserWorkspaceId: context.userWorkspaceId,
+            body: trimmedBody,
+          });
+        for (const recipientUserWorkspaceId of recipientUserWorkspaceIds) {
+          this.chatRealtimeService.publishInbox(
+            context.workspaceId,
+            recipientUserWorkspaceId,
+            { type: 'notification-updated' },
+          );
+        }
+      } catch (error: unknown) {
+        this.logger.warn(
+          `Chat notification fan-out failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    })();
+
+    return message;
+  }
+
+  @Post('messages/:messageId/reactions')
+  @HttpCode(HttpStatus.OK)
+  async addMessageReaction(
+    @Req() req: Request,
+    @Param('messageId') messageId: string,
+    @Body() body: { emoji?: string },
+  ) {
+    const context = await this.resolveVerifiedAccessContext(req);
+
+    if (!body?.emoji?.trim()) {
+      throw new HttpException('emoji is required', HttpStatus.BAD_REQUEST);
+    }
+
+    try {
+      const conversation = await this.chatMessageService.addMessageReaction({
+        workspaceId: context.workspaceId,
+        userWorkspaceId: context.userWorkspaceId,
+        messageId,
+        emoji: body.emoji,
+      });
+
+      this.chatRealtimeService.publish(
+        conversation.kind,
+        conversation.id,
+        { type: 'reactions-updated' },
+      );
+
+      return { ok: true as const };
+    } catch (error) {
+      this.rethrowIfMissingChatSchema(error, 'POST /chat/messages/:messageId/reactions');
+    }
+  }
+
+  @Delete('messages/:messageId/reactions')
+  @HttpCode(HttpStatus.OK)
+  async removeMessageReaction(
+    @Req() req: Request,
+    @Param('messageId') messageId: string,
+    @Query('emoji') emoji?: string,
+  ) {
+    const context = await this.resolveVerifiedAccessContext(req);
+
+    if (!emoji?.trim()) {
+      throw new HttpException('emoji is required', HttpStatus.BAD_REQUEST);
+    }
+
+    try {
+      const conversation = await this.chatMessageService.removeMessageReaction({
+        workspaceId: context.workspaceId,
+        userWorkspaceId: context.userWorkspaceId,
+        messageId,
+        emoji,
+      });
+
+      this.chatRealtimeService.publish(
+        conversation.kind,
+        conversation.id,
+        { type: 'reactions-updated' },
+      );
+
+      return { ok: true as const };
+    } catch (error) {
+      this.rethrowIfMissingChatSchema(
+        error,
+        'DELETE /chat/messages/:messageId/reactions',
+      );
+    }
+  }
+
+  @Post('messages/:messageId/pin')
+  @HttpCode(HttpStatus.OK)
+  async pinMessage(
+    @Req() req: Request,
+    @Param('messageId') messageId: string,
+  ) {
+    const context = await this.resolveVerifiedAccessContext(req);
+
+    try {
+      const conversation = await this.chatMessageService.pinMessage({
+        workspaceId: context.workspaceId,
+        userWorkspaceId: context.userWorkspaceId,
+        messageId,
+      });
+
+      this.chatRealtimeService.publish(
+        conversation.kind,
+        conversation.id,
+        { type: 'pins-updated' },
+      );
+
+      return { ok: true as const };
+    } catch (error) {
+      this.rethrowIfMissingChatSchema(error, 'POST /chat/messages/:messageId/pin');
+    }
+  }
+
+  @Delete('messages/:messageId/pin')
+  @HttpCode(HttpStatus.OK)
+  async unpinMessage(
+    @Req() req: Request,
+    @Param('messageId') messageId: string,
+  ) {
+    const context = await this.resolveVerifiedAccessContext(req);
+
+    try {
+      const conversation = await this.chatMessageService.unpinMessage({
+        workspaceId: context.workspaceId,
+        userWorkspaceId: context.userWorkspaceId,
+        messageId,
+      });
+
+      this.chatRealtimeService.publish(
+        conversation.kind,
+        conversation.id,
+        { type: 'pins-updated' },
+      );
+
+      return { ok: true as const };
+    } catch (error) {
+      this.rethrowIfMissingChatSchema(
+        error,
+        'DELETE /chat/messages/:messageId/pin',
+      );
+    }
+  }
+
+  @Get('messages/stream')
+  async streamMessages(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query()
+    body: {
+      channelId?: string;
+      dmThreadId?: string;
+    },
+  ) {
+    const context = await this.resolveVerifiedAccessContext(req);
+    const conversation = this.resolveConversationRef(body);
+
+    await this.chatMessageService.assertConversationReadable({
+      workspaceId: context.workspaceId,
+      userWorkspaceId: context.userWorkspaceId,
+      conversation,
+    });
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+    res.write(': connected\n\n');
+
+    const unsubscribe = this.chatRealtimeService.subscribe(
+      conversation.kind,
+      conversation.id,
+      (event) => {
+        res.write(`event: ${event.type}\n`);
+        res.write(`data: ${JSON.stringify(event)}\n\n`);
+      },
+    );
+
+    const heartbeat = setInterval(() => {
+      res.write(': heartbeat\n\n');
+    }, 25000);
+
+    req.on('close', () => {
+      clearInterval(heartbeat);
+      unsubscribe();
+      res.end();
+    });
+  }
+
+  @Post('messages/read')
+  @HttpCode(HttpStatus.OK)
+  async markConversationRead(
+    @Req() req: Request,
+    @Body()
+    body: {
+      channelId?: string;
+      dmThreadId?: string;
+      upToMessageId?: string;
+    },
+  ) {
+    const context = await this.resolveVerifiedAccessContext(req);
+    const conversation = this.resolveConversationRef(body);
+
+    const result = await this.chatMessageService.markConversationAsRead({
+      workspaceId: context.workspaceId,
+      userWorkspaceId: context.userWorkspaceId,
+      conversation,
+      upToMessageId: body.upToMessageId,
+    });
+
+    this.chatRealtimeService.publish(conversation.kind, conversation.id, {
+      type: 'read-updated',
+      userWorkspaceId: context.userWorkspaceId,
+      lastReadAt: result.lastReadAt,
+    });
+
+    return result;
+  }
+
+  @Post('record-link')
+  @HttpCode(HttpStatus.OK)
+  async linkConversationToRecord(
+    @Req() req: Request,
+    @Body()
+    body: {
+      channelId?: string;
+      dmThreadId?: string;
+      objectNameSingular?: string;
+      recordId?: string;
+    },
+  ) {
+    const context = await this.resolveVerifiedAccessContext(req);
+    const conversation = this.resolveConversationRef(body);
+
+    if (!body.objectNameSingular?.trim() || !body.recordId?.trim()) {
+      throw new HttpException(
+        'objectNameSingular and recordId are required',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return this.chatMessageService.linkConversationToRecord({
+      workspaceId: context.workspaceId,
+      userWorkspaceId: context.userWorkspaceId,
+      conversation,
+      objectNameSingular: body.objectNameSingular,
+      recordId: body.recordId,
+    });
+  }
+
   private static isMissingChatTablesError(error: unknown): boolean {
     if (!(error instanceof QueryFailedError)) {
       return false;
@@ -293,7 +698,8 @@ export class ChatController {
       msg.includes('chatcategory') ||
       msg.includes('chatdmthread') ||
       msg.includes('chatdmparticipant') ||
-      msg.includes('chatchannelmember')
+      msg.includes('chatchannelmember') ||
+      msg.includes('chatnotification')
     );
   }
 
@@ -375,5 +781,30 @@ export class ChatController {
 
       throw new UnauthorizedException('Invalid CRM session token');
     }
+  }
+
+  private resolveConversationRef(body: {
+    channelId?: string;
+    dmThreadId?: string;
+  }): { kind: 'channel' | 'dm'; id: string } {
+    if (body.channelId && body.dmThreadId) {
+      throw new HttpException(
+        'Provide either channelId or dmThreadId',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (body.channelId) {
+      return { kind: 'channel', id: body.channelId };
+    }
+
+    if (body.dmThreadId) {
+      return { kind: 'dm', id: body.dmThreadId };
+    }
+
+    throw new HttpException(
+      'channelId or dmThreadId is required',
+      HttpStatus.BAD_REQUEST,
+    );
   }
 }
