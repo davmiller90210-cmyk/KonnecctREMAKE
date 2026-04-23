@@ -32,9 +32,19 @@ export type ChatRealtimeEvent =
       messageId: string;
     };
 
-/** Per-user inbox on Redis (badge / notification list refresh). */
+/** Per-user inbox on Redis (badge / notification list / layout refresh). */
 export type ChatInboxRealtimeEvent = {
   type: 'notification-updated';
+  conversationKind?: 'channel' | 'dm';
+  conversationId?: string;
+  reason?:
+    | 'new-message'
+    | 'message-edited'
+    | 'message-deleted'
+    | 'record-links-changed'
+    | 'user-mentioned';
+  objectNameSingular?: string;
+  recordId?: string;
 };
 
 const SUBSCRIBER_RECONNECT_DEBOUNCE_MS = 400;

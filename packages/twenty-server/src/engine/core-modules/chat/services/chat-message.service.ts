@@ -1170,7 +1170,7 @@ export class ChatMessageService {
     conversation: ConversationRef;
     objectNameSingular: string;
     recordId: string;
-  }): Promise<{ success: true }> {
+  }): Promise<{ success: true; recordLinkCreated: boolean }> {
     await this.assertCanReadConversation(
       input.workspaceId,
       input.userWorkspaceId,
@@ -1244,7 +1244,7 @@ export class ChatMessageService {
       }
     }
 
-    return { success: true as const };
+    return { success: true as const, recordLinkCreated: created };
   }
 
   async listRecordChatLinks(input: {

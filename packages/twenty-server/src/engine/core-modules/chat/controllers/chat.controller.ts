@@ -32,6 +32,7 @@ import { ChatNotificationService } from 'src/engine/core-modules/chat/services/c
 import { ChatGiphyService } from 'src/engine/core-modules/chat/services/chat-giphy.service';
 import { ChatRealtimeService } from 'src/engine/core-modules/chat/services/chat-realtime.service';
 import { ChatCrmMentionService } from 'src/engine/core-modules/chat/services/chat-crm-mention.service';
+import { extractMentionedUserWorkspaceIdsFromChatBody } from 'src/engine/core-modules/chat/utils/extract-mentioned-user-workspace-ids-from-chat-body.util';
 import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user-workspace.entity';
 import { WorkspaceEventEmitter } from 'src/engine/workspace-event-emitter/workspace-event-emitter';
 
@@ -479,6 +480,13 @@ export class ChatController {
       createdAt: new Date(message.createdAt),
     });
 
+    const mentionedUserWorkspaceIds =
+      extractMentionedUserWorkspaceIdsFromChatBody(trimmedBody);
+    const channelMentionRestrict =
+      conversation.kind === 'channel' && mentionedUserWorkspaceIds.length > 0
+        ? mentionedUserWorkspaceIds
+        : undefined;
+
     void (async () => {
       try {
         const { recipientUserWorkspaceIds } =
@@ -488,14 +496,30 @@ export class ChatController {
             messageId: message.id,
             senderUserWorkspaceId: context.userWorkspaceId,
             body: trimmedBody,
+            restrictRecipientsToUserWorkspaceIds: channelMentionRestrict,
           });
         for (const recipientUserWorkspaceId of recipientUserWorkspaceIds) {
           this.chatRealtimeService.publishInbox(
             context.workspaceId,
             recipientUserWorkspaceId,
-            { type: 'notification-updated' },
+            {
+              type: 'notification-updated',
+              conversationKind: conversation.kind,
+              conversationId: conversation.id,
+              reason: 'new-message',
+            },
           );
         }
+        this.chatRealtimeService.publishInbox(
+          context.workspaceId,
+          context.userWorkspaceId,
+          {
+            type: 'notification-updated',
+            conversationKind: conversation.kind,
+            conversationId: conversation.id,
+            reason: 'new-message',
+          },
+        );
       } catch (error: unknown) {
         this.logger.warn(
           `Chat notification fan-out failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -548,6 +572,15 @@ export class ChatController {
         { type: 'message-updated', messageId: updated.id },
       );
 
+      this.fanoutLayoutRefreshForConversation(
+        context.workspaceId,
+        {
+          kind: updated.conversationKind,
+          id: updated.conversationId,
+        },
+        'message-edited',
+      );
+
       return updated;
     } catch (error) {
       this.rethrowIfMissingChatSchema(error, 'PATCH /chat/messages/:messageId');
@@ -573,6 +606,12 @@ export class ChatController {
         type: 'message-updated',
         messageId,
       });
+
+      this.fanoutLayoutRefreshForConversation(
+        context.workspaceId,
+        conversation,
+        'message-deleted',
+      );
 
       return { ok: true as const };
     } catch (error) {
@@ -850,13 +889,24 @@ export class ChatController {
           recordDisplayName: snapshot.displayName,
         });
 
-      await this.chatMessageService.linkConversationToRecord({
-        workspaceId: context.workspaceId,
-        userWorkspaceId: context.userWorkspaceId,
-        conversation: { kind: 'channel', id: channelId },
-        objectNameSingular,
-        recordId,
-      });
+      const linkResult = await this.chatMessageService.linkConversationToRecord(
+        {
+          workspaceId: context.workspaceId,
+          userWorkspaceId: context.userWorkspaceId,
+          conversation: { kind: 'channel', id: channelId },
+          objectNameSingular,
+          recordId,
+        },
+      );
+
+      if (linkResult.recordLinkCreated) {
+        this.fanoutRecordLinksChanged(
+          context.workspaceId,
+          { kind: 'channel', id: channelId },
+          objectNameSingular,
+          recordId,
+        );
+      }
 
       return { channelId, slug };
     } catch (error) {
@@ -910,13 +960,24 @@ export class ChatController {
           peerUserWorkspaceId: ownerUserWorkspaceId,
         });
 
-      await this.chatMessageService.linkConversationToRecord({
-        workspaceId: context.workspaceId,
-        userWorkspaceId: context.userWorkspaceId,
-        conversation: { kind: 'dm', id: threadId },
-        objectNameSingular,
-        recordId,
-      });
+      const linkResult = await this.chatMessageService.linkConversationToRecord(
+        {
+          workspaceId: context.workspaceId,
+          userWorkspaceId: context.userWorkspaceId,
+          conversation: { kind: 'dm', id: threadId },
+          objectNameSingular,
+          recordId,
+        },
+      );
+
+      if (linkResult.recordLinkCreated) {
+        this.fanoutRecordLinksChanged(
+          context.workspaceId,
+          { kind: 'dm', id: threadId },
+          objectNameSingular,
+          recordId,
+        );
+      }
 
       return { dmThreadId: threadId };
     } catch (error) {
@@ -946,13 +1007,73 @@ export class ChatController {
       );
     }
 
-    return this.chatMessageService.linkConversationToRecord({
+    const result = await this.chatMessageService.linkConversationToRecord({
       workspaceId: context.workspaceId,
       userWorkspaceId: context.userWorkspaceId,
       conversation,
-      objectNameSingular: body.objectNameSingular,
-      recordId: body.recordId,
+      objectNameSingular: body.objectNameSingular.trim(),
+      recordId: body.recordId.trim(),
     });
+
+    if (result.recordLinkCreated) {
+      this.fanoutRecordLinksChanged(
+        context.workspaceId,
+        conversation,
+        body.objectNameSingular.trim(),
+        body.recordId.trim(),
+      );
+    }
+
+    return result;
+  }
+
+  private fanoutLayoutRefreshForConversation(
+    workspaceId: string,
+    conversation: { kind: 'channel' | 'dm'; id: string },
+    reason: 'message-edited' | 'message-deleted',
+  ): void {
+    void this.chatNotificationService
+      .listConversationMemberUserWorkspaceIds({
+        workspaceId,
+        conversation,
+      })
+      .then((memberIds) => {
+        for (const userWorkspaceId of memberIds) {
+          this.chatRealtimeService.publishInbox(workspaceId, userWorkspaceId, {
+            type: 'notification-updated',
+            conversationKind: conversation.kind,
+            conversationId: conversation.id,
+            reason,
+          });
+        }
+      })
+      .catch(() => {});
+  }
+
+  private fanoutRecordLinksChanged(
+    workspaceId: string,
+    conversation: { kind: 'channel' | 'dm'; id: string },
+    objectNameSingular: string,
+    recordId: string,
+  ): void {
+    void this.chatNotificationService
+      .listConversationMemberUserWorkspaceIds({
+        workspaceId,
+        conversation,
+      })
+      .then((memberIds) => {
+        for (const userWorkspaceId of memberIds) {
+          this.chatRealtimeService.publishInbox(workspaceId, userWorkspaceId, {
+            type: 'notification-updated',
+            reason: 'record-links-changed',
+            objectNameSingular,
+            recordId,
+            conversationKind: conversation.kind,
+            conversationId: conversation.id,
+          });
+        }
+      })
+      .catch(() => {});
   }
 
   private static isMissingChatTablesError(error: unknown): boolean {

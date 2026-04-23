@@ -8,7 +8,22 @@ import {
   parseSseBlock,
   parseSseEventBlocks,
 } from '@/chat/utils/parseChatSse';
+import { chatRecordLinksInvalidateState } from '@/chat/states/chatRecordLinksInvalidateState';
 import { notifyIncomingChatIfBackground } from '@/chat/utils/chat-desktop-notify';
+
+type ChatInboxSsePayload = {
+  type?: string;
+  reason?:
+    | 'new-message'
+    | 'message-edited'
+    | 'message-deleted'
+    | 'record-links-changed'
+    | 'user-mentioned';
+  objectNameSingular?: string;
+  recordId?: string;
+  conversationKind?: 'channel' | 'dm';
+  conversationId?: string;
+};
 
 const sleep = (ms: number) =>
   new Promise<void>((resolve) => {
@@ -117,15 +132,18 @@ export const useChatWorkspaceLayout = () => {
     }
   }, [setUnreadMap, token]);
 
-  const scheduleReload = useCallback(() => {
-    if (layoutRefreshTimerRef.current) {
-      clearTimeout(layoutRefreshTimerRef.current);
-    }
-    layoutRefreshTimerRef.current = setTimeout(() => {
-      layoutRefreshTimerRef.current = null;
-      void reload();
-    }, 350);
-  }, [reload]);
+  const scheduleReload = useCallback(
+    (delayMs: number = 350) => {
+      if (layoutRefreshTimerRef.current) {
+        clearTimeout(layoutRefreshTimerRef.current);
+      }
+      layoutRefreshTimerRef.current = setTimeout(() => {
+        layoutRefreshTimerRef.current = null;
+        void reload();
+      }, delayMs);
+    },
+    [reload],
+  );
 
   useEffect(() => {
     void reload();
@@ -182,6 +200,7 @@ export const useChatWorkspaceLayout = () => {
         notifyIncomingChatIfBackground({
           title: 'New chat message',
           body: firstUnread.bodyPreview,
+          tag: `konnecct-chat-${firstUnread.id}`,
         });
       } catch {
         // ignore
@@ -224,10 +243,21 @@ export const useChatWorkspaceLayout = () => {
 
               if (sseType && data) {
                 try {
-                  const payload = JSON.parse(data) as { type?: string };
+                  const payload = JSON.parse(data) as ChatInboxSsePayload;
                   const eventKind = payload.type ?? sseType;
                   if (eventKind === 'notification-updated') {
-                    scheduleReload();
+                    if (payload.reason === 'record-links-changed') {
+                      setRecordLinksInvalidate((prev) => ({
+                        nonce: prev.nonce + 1,
+                        objectNameSingular: payload.objectNameSingular,
+                        recordId: payload.recordId,
+                      }));
+                    }
+                    const fastReason =
+                      payload.reason === 'message-edited' ||
+                      payload.reason === 'message-deleted' ||
+                      payload.reason === 'new-message';
+                    scheduleReload(fastReason ? 120 : 350);
                     void fetchAndMaybeNotifyDesktop();
                   }
                 } catch {
@@ -261,7 +291,7 @@ export const useChatWorkspaceLayout = () => {
         layoutRefreshTimerRef.current = null;
       }
     };
-  }, [scheduleReload, token]);
+  }, [scheduleReload, setRecordLinksInvalidate, token]);
 
   return {
     layout,

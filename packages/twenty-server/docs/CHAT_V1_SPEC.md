@@ -24,6 +24,12 @@ Internal workspace chat only (same auth as CRM). Slack-like: **channels** (publi
 ## Environment
 
 - `REDIS_URL` required for realtime fanout (`crm-redis` in Docker). If SSE works but peers never see updates, verify the same Redis URL/DB index/TLS/ACL as the API process that publishes chat events.
+- **Multi-process:** Every `crm-server` and `crm-worker` instance that handles chat must use the **same** `REDIS_URL`; otherwise pub/sub fanout only reaches clients connected to the instance that published.
+- **Reverse proxy (nginx):** For `GET /chat/messages/stream` and `GET /chat/notifications/stream`, disable buffering and allow long-lived connections, for example:
+  - `proxy_buffering off;`
+  - `proxy_read_timeout` / `proxy_send_timeout` well above the 25s heartbeat interval (e.g. 3600s)
+  - `proxy_http_version 1.1` and `Connection` upgrade handling as appropriate for your setup  
+  Without this, SSE may appear to connect but deliver no events or disconnect early.
 - `REACT_APP_CHAT_PROVIDER=native` for front build (Konnecct default)
 - Optional `GIPHY_API_KEY` for server-proxied GIF search in native chat (key stays on the server). Production use must follow [GIPHY’s developer terms](https://developers.giphy.com/docs/api/#terms) (attribution/branding as required).
 - Core DB: native chat tables use Postgres RLS scoped by transaction-local `app.current_workspace_id` (see migration `1775700000000-core-chat-row-level-security`). Use PgBouncer **transaction** or **session** pooling so `set_config(..., true)` and queries share the same backend transaction/session.

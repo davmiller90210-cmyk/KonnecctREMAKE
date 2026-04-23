@@ -1,6 +1,7 @@
 import { styled } from '@linaria/react';
 
 import { EventRowActivity } from '@/activities/timeline-activities/rows/activity/components/EventRowActivity';
+import { EventRowChatActivity } from '@/activities/timeline-activities/rows/chat/components/EventRowChatActivity';
 import { EventRowCalendarEvent } from '@/activities/timeline-activities/rows/calendar/components/EventRowCalendarEvent';
 import { EventRowMainObject } from '@/activities/timeline-activities/rows/main-object/components/EventRowMainObject';
 import { EventRowMessage } from '@/activities/timeline-activities/rows/message/components/EventRowMessage';
@@ -42,6 +43,23 @@ export const EventRowDynamicComponent = ({
   authorFullName,
   createdAt,
 }: EventRowDynamicComponentProps) => {
+  if (
+    event.name === 'record.chat-linked' ||
+    event.name === 'record.chat-mentioned' ||
+    Boolean(event.properties?.diff?.chatActivity)
+  ) {
+    return (
+      <EventRowChatActivity
+        labelIdentifierValue={labelIdentifierValue}
+        event={event}
+        mainObjectMetadataItem={mainObjectMetadataItem}
+        linkedObjectMetadataItem={linkedObjectMetadataItem}
+        authorFullName={authorFullName}
+        createdAt={createdAt}
+      />
+    );
+  }
+
   switch (linkedObjectMetadataItem?.nameSingular) {
     case 'calendarEvent':
       return (

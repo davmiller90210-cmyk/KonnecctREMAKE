@@ -3,6 +3,7 @@ import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/Enriche
 import {
   IconCirclePlus,
   IconEditCircle,
+  IconMessage,
   IconRestore,
   IconTrash,
   useIcons,
@@ -17,6 +18,14 @@ export const EventIconDynamicComponent = ({
 }) => {
   const { getIcon } = useIcons();
   const [, eventAction] = event.name.split('.');
+
+  if (
+    event.name === 'record.chat-linked' ||
+    event.name === 'record.chat-mentioned' ||
+    Boolean(event.properties?.diff?.chatActivity)
+  ) {
+    return <IconMessage />;
+  }
 
   if (eventAction === 'created') {
     return <IconCirclePlus />;

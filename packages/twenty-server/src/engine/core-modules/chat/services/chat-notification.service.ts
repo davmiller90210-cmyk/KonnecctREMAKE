@@ -33,6 +33,8 @@ export class ChatNotificationService {
     messageId: string;
     senderUserWorkspaceId: string;
     body: string;
+    /** When set (channel only), only these readers receive a notification row (must still be channel members). */
+    restrictRecipientsToUserWorkspaceIds?: string[] | null;
   }): Promise<{ recipientUserWorkspaceIds: string[] }> {
     const bodyPreview = input.body.slice(0, 512);
     const kind: ChatNotificationKind =
@@ -49,9 +51,23 @@ export class ChatNotificationService {
           canRead: true,
         },
       });
-      recipientUserWorkspaceIds = members
+      const baseRecipients = members
         .map((member) => member.userWorkspaceId)
         .filter((id) => id !== input.senderUserWorkspaceId);
+
+      if (input.restrictRecipientsToUserWorkspaceIds?.length) {
+        const allow = new Set(input.restrictRecipientsToUserWorkspaceIds);
+
+        recipientUserWorkspaceIds = baseRecipients.filter((id) =>
+          allow.has(id),
+        );
+
+        if (recipientUserWorkspaceIds.length === 0) {
+          recipientUserWorkspaceIds = baseRecipients;
+        }
+      } else {
+        recipientUserWorkspaceIds = baseRecipients;
+      }
     } else {
       const participants = await this.chatDmParticipantRepository.find({
         where: { threadId: input.conversation.id },
@@ -82,6 +98,32 @@ export class ChatNotificationService {
     await this.chatNotificationRepository.save(rows);
 
     return { recipientUserWorkspaceIds };
+  }
+
+  /**
+   * All workspace members who can read a conversation (channel readers or DM participants).
+   * Used to fan out inbox SSE so conversation list previews stay in sync after edits/deletes.
+   */
+  async listConversationMemberUserWorkspaceIds(input: {
+    workspaceId: string;
+    conversation: ConversationRef;
+  }): Promise<string[]> {
+    if (input.conversation.kind === 'channel') {
+      const members = await this.chatChannelMemberRepository.find({
+        where: {
+          channelId: input.conversation.id,
+          canRead: true,
+        },
+      });
+
+      return members.map((member) => member.userWorkspaceId);
+    }
+
+    const participants = await this.chatDmParticipantRepository.find({
+      where: { threadId: input.conversation.id },
+    });
+
+    return participants.map((participant) => participant.userWorkspaceId);
   }
 
   async countUnread(

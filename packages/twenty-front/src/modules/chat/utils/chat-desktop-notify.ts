@@ -1,6 +1,8 @@
 export const notifyIncomingChatIfBackground = (options: {
   title: string;
   body: string;
+  /** Defaults to `konnecct-chat`; pass a unique id to avoid replacing unrelated alerts. */
+  tag?: string;
 }) => {
   if (typeof window === 'undefined' || document.visibilityState === 'visible') {
     return;
@@ -13,7 +15,7 @@ export const notifyIncomingChatIfBackground = (options: {
   try {
     new Notification(options.title.trim() || 'Konnecct', {
       body: options.body,
-      tag: 'konnecct-chat',
+      tag: options.tag ?? 'konnecct-chat',
     });
   } catch {
     // Ignore unsupported environments

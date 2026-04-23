@@ -1,10 +1,12 @@
 import { styled } from '@linaria/react';
 import { useLingui } from '@lingui/react/macro';
 import { useAtomValue } from 'jotai';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 
 import { tokenPairState } from '@/auth/states/tokenPairState';
+import { chatRecordLinksInvalidateState } from '@/chat/states/chatRecordLinksInvalidateState';
 import { type ChatWorkspaceLayoutResponse } from '@/chat/types/chat-workspace-layout.type';
 import { Dropdown } from '@/ui/layout/dropdown/components/Dropdown';
 import { DropdownContent } from '@/ui/layout/dropdown/components/DropdownContent';
@@ -294,6 +296,8 @@ export const RecordPageChatMenu = ({
   const [menuDataPhase, setMenuDataPhase] =
     useState<RecordMenuDataPhase>('pristine');
   const menuDataLoadGenerationRef = useRef(0);
+  const lastHandledRecordLinksNonceRef = useRef(0);
+  const recordLinksInvalidate = useAtomStateValue(chatRecordLinksInvalidateState);
 
   const loadMenuData = useCallback(
     async (generation: number) => {
@@ -353,6 +357,39 @@ export const RecordPageChatMenu = ({
   );
 
   const dropdownId = `record-chat-menu-${objectNameSingular}-${objectRecordId}`;
+
+  useEffect(() => {
+    if (recordLinksInvalidate.nonce === 0) {
+      return;
+    }
+    if (recordLinksInvalidate.nonce === lastHandledRecordLinksNonceRef.current) {
+      return;
+    }
+    if (
+      recordLinksInvalidate.objectNameSingular !== objectNameSingular ||
+      recordLinksInvalidate.recordId !== objectRecordId
+    ) {
+      return;
+    }
+    if (menuDataPhase === 'pristine') {
+      return;
+    }
+    lastHandledRecordLinksNonceRef.current = recordLinksInvalidate.nonce;
+    menuDataLoadGenerationRef.current += 1;
+    const generation = menuDataLoadGenerationRef.current;
+    setMenuDataPhase('loading');
+    setLinks(null);
+    setPostableChannels([]);
+    void loadMenuData(generation);
+  }, [
+    loadMenuData,
+    menuDataPhase,
+    objectNameSingular,
+    objectRecordId,
+    recordLinksInvalidate.nonce,
+    recordLinksInvalidate.objectNameSingular,
+    recordLinksInvalidate.recordId,
+  ]);
 
   return (
     <Dropdown

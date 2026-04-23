@@ -370,6 +370,14 @@ export const ChatPage = () => {
     onConversationRealtime: reloadChatLayout,
   });
 
+  const sendMessageAndRefreshSidebar = useCallback(
+    async (text: string) => {
+      await sendMessage(text);
+      void reloadChatLayout();
+    },
+    [sendMessage, reloadChatLayout],
+  );
+
   const latestMessageId = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i -= 1) {
       const id = messages[i]?.id;
@@ -716,7 +724,7 @@ export const ChatPage = () => {
                     <ChatComposer
                       ref={composerRef}
                       disabled={connectivity === 'offline'}
-                      onSend={sendMessage}
+                      onSend={sendMessageAndRefreshSidebar}
                       onTypingStart={sendTypingStart}
                       onTypingEnd={sendTypingEnd}
                       placeholder={t`Message ${title}`}
