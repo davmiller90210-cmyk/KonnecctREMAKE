@@ -3,6 +3,7 @@ import { ApolloCoreClientContext } from '@/object-metadata/contexts/ApolloCoreCl
 import { flatObjectMetadataItemsSelector } from '@/object-metadata/states/flatObjectMetadataItemsSelector';
 import { useObjectPermissions } from '@/object-record/hooks/useObjectPermissions';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+import { useApolloClient } from '@apollo/client/react';
 import { useCallback, useContext, useMemo } from 'react';
 import { isDefined } from 'twenty-shared/utils';
 import {
@@ -24,6 +25,7 @@ export const useCrmMentionSearch = () => {
   const flatObjectMetadataItems =
     useAtomStateValue(flatObjectMetadataItemsSelector) ?? [];
   const apolloCoreClient = useContext(ApolloCoreClientContext);
+  const apolloMetadataClient = useApolloClient();
   const { objectPermissionsByObjectMetadataId } = useObjectPermissions();
 
   const objectsToSearch = useMemo(() => {
@@ -53,60 +55,64 @@ export const useCrmMentionSearch = () => {
         return [];
       }
 
-      const { data } = await apolloCoreClient.query<
-        SearchQuery,
-        SearchQueryVariables
-      >({
-        query: SEARCH_QUERY,
-        variables: {
-          searchInput: query,
-          limit: MENTION_SEARCH_LIMIT,
-          includedObjectNameSingulars: objectsToSearch,
-        },
-      });
+      try {
+        const { data } = await apolloCoreClient.query<
+          SearchQuery,
+          SearchQueryVariables
+        >({
+          query: SEARCH_QUERY,
+          variables: {
+            searchInput: query,
+            limit: MENTION_SEARCH_LIMIT,
+            includedObjectNameSingulars: objectsToSearch,
+          },
+        });
 
-      const searchRecords = data?.search.edges.map((edge) => edge.node) ?? [];
-      const { data: agentsData } = await apolloCoreClient.query({
-        query: FindManyAgentsDocument,
-      });
+        const searchRecords = data?.search.edges.map((edge) => edge.node) ?? [];
+        const { data: agentsData } = await apolloMetadataClient.query({
+          query: FindManyAgentsDocument,
+        });
 
-      const normalizedQuery = normalizeSearchText(query);
-      const matchedAgents = (agentsData?.findManyAgents ?? [])
-        .filter(
-          (agent) =>
-            normalizeSearchText(agent.label).includes(normalizedQuery) ||
-            normalizeSearchText(agent.name).includes(normalizedQuery),
-        )
-        .map((agent) => ({
-          imageUrl:
-            (agent.modelConfiguration as
-              | {
-                  superagentProfile?: {
-                    imageUrl?: string;
-                  };
-                }
-              | null
-              | undefined)?.superagentProfile?.imageUrl ?? '',
-          mentionType: 'agent' as const,
-          recordId: agent.id,
-          objectNameSingular: 'agent',
-          objectLabelSingular: 'Agent',
-          label: agent.label,
-        }));
+        const normalizedQuery = normalizeSearchText(query);
+        const matchedAgents = (agentsData?.findManyAgents ?? [])
+          .filter(
+            (agent) =>
+              normalizeSearchText(agent.label).includes(normalizedQuery) ||
+              normalizeSearchText(agent.name).includes(normalizedQuery),
+          )
+          .map((agent) => ({
+            imageUrl:
+              (agent.modelConfiguration as
+                | {
+                    superagentProfile?: {
+                      imageUrl?: string;
+                    };
+                  }
+                | null
+                | undefined)?.superagentProfile?.imageUrl ?? '',
+            mentionType: 'agent' as const,
+            recordId: agent.id,
+            objectNameSingular: 'agent',
+            objectLabelSingular: 'Agent',
+            label: agent.label,
+          }));
 
-      return [
-        ...matchedAgents,
-        ...searchRecords.map((searchRecord) => ({
-          mentionType: 'record' as const,
-          recordId: searchRecord.recordId,
-          objectNameSingular: searchRecord.objectNameSingular,
-          objectLabelSingular: searchRecord.objectLabelSingular,
-          label: searchRecord.label,
-          imageUrl: searchRecord.imageUrl ?? '',
-        })),
-      ];
+        return [
+          ...matchedAgents,
+          ...searchRecords.map((searchRecord) => ({
+            mentionType: 'record' as const,
+            recordId: searchRecord.recordId,
+            objectNameSingular: searchRecord.objectNameSingular,
+            objectLabelSingular: searchRecord.objectLabelSingular,
+            label: searchRecord.label,
+            imageUrl: searchRecord.imageUrl ?? '',
+          })),
+        ];
+      } catch {
+        return [];
+      }
     },
-    [apolloCoreClient, objectsToSearch],
+    [apolloCoreClient, apolloMetadataClient, objectsToSearch],
   );
 
   return { searchMentionRecords };

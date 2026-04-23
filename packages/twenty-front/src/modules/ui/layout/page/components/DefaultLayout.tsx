@@ -1,4 +1,6 @@
 import { AuthModal } from '@/auth/components/AuthModal';
+import { ChatConversationRail } from '@/chat/components/ChatConversationRail';
+import { isChatConversationRailOpenState } from '@/chat/states/isChatConversationRailOpenState';
 import { CallOverlayProvider } from '@/chat/contexts/CallOverlayContext';
 import { AppErrorBoundary } from '@/error-handler/components/AppErrorBoundary';
 import { AppFullScreenErrorFallback } from '@/error-handler/components/AppFullScreenErrorFallback';
@@ -13,7 +15,7 @@ import { useIsChatPage } from '@/navigation/hooks/useIsChatPage';
 import { useIsSettingsPage } from '@/navigation/hooks/useIsSettingsPage';
 import { OBJECT_SETTINGS_WIDTH } from '@/settings/data-model/constants/ObjectSettings';
 import { SignInAppNavigationDrawerMock } from '@/sign-in-background-mock/components/SignInAppNavigationDrawerMock';
-import { Suspense, lazy, useContext } from 'react';
+import { Suspense, lazy, useContext, useEffect } from 'react';
 
 const SignInBackgroundMockPage = lazy(() =>
   import('@/sign-in-background-mock/components/SignInBackgroundMockPage').then(
@@ -29,6 +31,8 @@ import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import { Outlet } from 'react-router-dom';
 import { useScreenSize } from 'twenty-ui/utilities';
 import { ThemeContext, themeCssVariables } from 'twenty-ui/theme-constants';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+import { useSetAtomState } from '@/ui/utilities/state/jotai/hooks/useSetAtomState';
 
 const StyledLayout = styled.div`
   background: ${themeCssVariables.background.noisy};
@@ -54,7 +58,11 @@ const StyledPageContainerBase = styled.div`
 const StyledPageContainer = motion.create(StyledPageContainerBase);
 
 const StyledNavigationDrawerWrapper = styled.div`
+  display: flex;
+  flex-direction: row;
   flex-shrink: 0;
+  height: 100%;
+  min-height: 0;
 `;
 
 const StyledMainContainer = styled.div`
@@ -67,10 +75,25 @@ const DefaultLayoutBody = () => {
   const isMobile = useIsMobile();
   const isSettingsPage = useIsSettingsPage();
   const isChatPage = useIsChatPage();
+  const isChatConversationRailOpen = useAtomStateValue(
+    isChatConversationRailOpenState,
+  );
+  const setChatConversationRailOpen = useSetAtomState(
+    isChatConversationRailOpenState,
+  );
   const windowsWidth = useScreenSize().width;
   const showAuthModal = useShowAuthModal();
   const useShowFullScreen = useShowFullscreen();
   const { theme } = useContext(ThemeContext);
+
+  useEffect(() => {
+    if (isChatPage && isChatConversationRailOpen) {
+      setChatConversationRailOpen(false);
+    }
+  }, [isChatPage, isChatConversationRailOpen, setChatConversationRailOpen]);
+
+  const showChatConversationRail =
+    isChatConversationRailOpen && !isChatPage && !isMobile;
 
   return (
     <StyledLayout>
@@ -100,6 +123,7 @@ const DefaultLayoutBody = () => {
             ) : useShowFullScreen ? null : (
               <StyledNavigationDrawerWrapper>
                 <AppNavigationDrawer />
+                {showChatConversationRail ? <ChatConversationRail /> : null}
               </StyledNavigationDrawerWrapper>
             )}
             {showAuthModal ? (
